@@ -1,0 +1,25 @@
+/* Tên file: /app/user/UserDashboard.module.css */
+.pageBackground {
+  background-color: #f5f5f5; /* Màu nền xám nhạt giống Shopee */
+  padding: 2rem 0;
+  min-height: 80vh;
+}
+
+.dashboard {
+  display: flex;
+  flex-direction: row;
+  gap: 1.5rem; /* Khoảng cách giữa sidebar và content */
+}
+
+.sidebar {
+  width: 200px; /* Độ rộng cố định cho sidebar */
+  flex-shrink: 0; /* Không co lại khi màn hình hẹp */
+}
+
+.content {
+  flex-grow: 1; /* Chiếm hết phần còn lại */
+  background-color: #ffffff; /* Nền trắng cho nội dung */
+  border-radius: 4px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+}

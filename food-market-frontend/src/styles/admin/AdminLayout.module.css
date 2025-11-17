@@ -1,0 +1,28 @@
+.adminLayout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #f4f7fa;
+}
+
+.mainContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.pageContent {
+  padding: 24px;
+  flex: 1;
+  /* Đảm bảo nội dung có thể cuộn nếu quá dài */
+  overflow-y: auto;
+}
+
+/* CSS cho trang cấm (Forbidden) */
+.forbiddenContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  text-align: center;
+}

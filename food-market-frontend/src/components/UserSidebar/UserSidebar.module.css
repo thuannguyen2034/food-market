@@ -1,0 +1,86 @@
+/* Tên file: /components/UserSidebar/UserSidebar.module.css */
+.sidebarNav {
+  font-size: 0.9rem;
+}
+
+/* User Profile Header */
+.userProfile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 1rem;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: #555;
+  border: 1px solid #ddd;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.username {
+  font-weight: 600;
+  color: #333;
+}
+
+.editProfile {
+  font-size: 0.8rem;
+  color: #888;
+  text-decoration: none;
+}
+.editProfile:hover {
+  color: var(--primary-color); /* Giả sử bạn có biến màu chính */
+}
+
+.divider {
+  border-top: 1px solid #f0f0f0;
+  margin-bottom: 1rem;
+}
+
+/* Navigation Links */
+.navGroup {
+  margin-bottom: 1.5rem;
+}
+
+.groupTitle {
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.75rem;
+  display: block;
+  font-size: 1rem;
+}
+
+.navList {
+  list-style: none;
+  padding-left: 12px; /* Thụt vào 1 chút giống Shopee */
+  margin: 0;
+}
+
+.navLink {
+  display: block;
+  padding: 8px 0;
+  color: #555;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.navLink:hover {
+  color: var(--primary-color);
+}
+
+.navLink.active {
+  color: var(--primary-color);
+  font-weight: 600;
+}

@@ -1,0 +1,155 @@
+/* Tên file: app/(protected)/user/profile/Profile.module.css */
+
+.title {
+  font-size: 1.25rem; /* 20px */
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 0.25rem 0;
+}
+
+.subtitle {
+  font-size: 0.9rem; /* 14px */
+  color: #666;
+  margin-bottom: 1.5rem;
+}
+
+.divider {
+  border-top: 1px solid #f0f0f0;
+  margin-bottom: 2rem;
+}
+
+/* Chia 2 cột: 1 cho form, 1 cho avatar */
+.formWrapper {
+  display: flex;
+  gap: 3rem;
+  /* flex-direction: row-reverse; (Nếu muốn avatar bên trái) */
+}
+
+/* Cột 1: Form */
+.formFields {
+  flex-grow: 1;
+  max-width: 600px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 120px 1fr; /* Label (120px) | Field (phần còn lại) */
+  gap: 1.5rem;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.label {
+  font-size: 0.9rem;
+  color: #555;
+  text-align: right;
+  justify-self: end;
+}
+
+.fieldValue {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+.input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+.saveButton {
+  background-color: pink; /* Màu chính của bạn */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: opacity 0.2s;
+  justify-self: start; /* Nút nằm bên trái */
+}
+.saveButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Cột 2: Avatar */
+.avatarSection {
+  width: 250px; /* Độ rộng cố định */
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 1rem;
+  padding-left: 3rem;
+  border-left: 1px solid #f0f0f0;
+}
+
+.avatarPreview {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  overflow: hidden; /* Để img vừa khít */
+}
+
+/* Chữ cái đầu (fallback) */
+.avatarPreview span {
+  font-weight: bold;
+  font-size: 3rem;
+  color: #555;
+}
+
+/* Ảnh preview */
+.avatarPreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarInput {
+  display: none; /* Ẩn input file mặc định */
+}
+
+.avatarButton {
+  display: inline-block;
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  color: #333;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+.avatarButton:hover {
+  background-color: #f8f8f8;
+}
+
+.avatarHint {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 1rem;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Thông báo lỗi/thành công */
+.errorMessage {
+  color: #d93025; /* Màu đỏ */
+  font-size: 0.9rem;
+}
+.successMessage {
+  color: #1e8e3e; /* Màu xanh lá */
+  font-size: 0.9rem;
+}

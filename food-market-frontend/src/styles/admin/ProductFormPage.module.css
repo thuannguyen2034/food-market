@@ -1,0 +1,11 @@
+.formPageContainer {
+  /* Giới hạn chiều rộng tối đa của trang, giúp form dễ nhìn hơn trên màn hình lớn */
+  max-width: 1200px;
+  margin: 0 auto; /* Căn giữa trang */
+}
+
+.formPageContainer h1 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 24px;
+}

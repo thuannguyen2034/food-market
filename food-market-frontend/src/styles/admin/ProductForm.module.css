@@ -1,0 +1,84 @@
+.formGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+.mainContent {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sidebarContent {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.formGroup {
+  margin-bottom: 16px;
+}
+
+.formGroup label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.formGroup input,
+.formGroup textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.inlineGroup {
+  display: flex;
+  gap: 16px;
+}
+.inlineGroup > .formGroup {
+  flex: 1;
+}
+
+.error {
+  color: #d93025;
+  font-size: 0.875rem;
+  margin-top: 4px;
+}
+
+.submitBar {
+  grid-column: 1 / -1; /* Trải dài hết */
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+}
+
+.saveButton {
+  background-color: #007bff;
+  color: white;
+}
+
+.selectWithButton {
+  display: flex;
+  gap: 8px;
+}
+
+.reactSelect {
+  flex: 1;
+}
+
+.quickAddButton {
+  width: 40px;
+  height: 38px; /* Cùng chiều cao với react-select */
+  flex-shrink: 0;
+}

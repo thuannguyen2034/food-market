@@ -1,0 +1,113 @@
+############################################
+# Global ignores
+############################################
+# OS junk
+.DS_Store
+Thumbs.db
+
+# IDE configs
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
+logs/
+log/
+
+# Common backup files
+*.bak
+*.tmp
+*.swp
+*.swo
+
+############################################
+# Java / Spring Boot
+############################################
+
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# Gradle
+.gradle/
+build/
+out/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Spring-specific
+*.class
+*.jar
+*.war
+*.ear
+
+# Lombok config
+lombok.config
+
+# Local dev files
+application-local.properties
+application-local.yml
+application-dev.properties
+application-dev.yml
+application.properties
+application.yml
+# Env files
+.env
+.env.local
+.env.*.local
+
+############################################
+# Node / Next.js
+############################################
+
+# Dependencies
+node_modules/
+
+# Next.js build outputs
+.next/
+out/
+
+# Next.js cache
+.next/cache/
+.next/static/
+
+# Turbopack (Next.js 14+)
+.turbo/
+
+# Vite / swc / bundler caches
+dist/
+build/
+
+# Coverage
+coverage/
+
+# npm/yarn/pnpm logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# env
+.env
+.env.local
+.env.development.local
+.env.production.local
+.env.test.local
+
+# TypeScript files
+*.tsbuildinfo
+
+
+
+############################################
+# Docker
+############################################
+docker-data/
+*.pid
+
+############################################
+# If monorepo (optional)
+############################################
+# backend/target/
+# frontend/.next/
+# frontend/node_modules/
