@@ -52,7 +52,7 @@ public class InventoryServiceImpl implements InventoryService {
                 .orElseThrow(() -> new EntityNotFoundException("InventoryBatch not found with ID: " + batchId));
 
         // Lấy list adjustments (giả sử repo có method findByInventoryBatchOrderByAdjustmentDateDesc)
-        List<InventoryAdjustment> adjustments = inventoryAdjustmentRepository.findByInventoryBatchOrderByAdjustmentDateDesc(batch);
+        List<InventoryAdjustment> adjustments = inventoryAdjustmentRepository.findByInventoryBatchOrderByCreatedAtDesc(batch);
         List<InventoryAdjustmentDTO> adjustmentDTOs = adjustments.stream()
                 .map(InventoryAdjustmentDTO::fromEntity)
                 .toList();
@@ -63,26 +63,33 @@ public class InventoryServiceImpl implements InventoryService {
     // Cao ưu tiên 2: getAllBatches (sửa thành int daysThreshold để dễ filter < now + days)
     @Override
     @Transactional(readOnly = true)
-    public Page<InventoryBatchDTO> getAllBatches(Pageable pageable, int daysThreshold) {
-        Specification<InventoryBatch> spec = Specification.allOf();  // Bắt đầu empty
+    public Page<InventoryBatchDTO> getInventoryBatches(
+            Pageable pageable,
+            Integer daysThreshold) {   // Integer thay vì int để có thể null = "không filter"
 
-        if (daysThreshold >= 0) {  // Nếu threshold >=0, filter sắp hết hạn
-            spec = spec.and(InventoryBatchSpecification.expiringWithinDays(daysThreshold));
-        } else {  // Nếu negative, có thể filter hết hạn hoặc tất cả
-            // Ví dụ: nếu daysThreshold = -1, filter expired
-            if (daysThreshold == -1) {
+        Specification<InventoryBatch> spec = Specification.allOf();
+
+        // Chỉ filter nếu có truyền daysThreshold
+        if (daysThreshold != null) {
+            if (daysThreshold >= 0) {
+                spec = spec.and(InventoryBatchSpecification.expiringWithinDays(daysThreshold));
+            } else if (daysThreshold == -1) {
                 spec = spec.and(InventoryBatchSpecification.expired());
             }
-            // Không filter nếu khác
         }
+        // Nếu daysThreshold == null → lấy tất cả (không filter)
 
-        // Sort mặc định: expirationDate ASC
+        // Sort mặc định: gần hết hạn trước
         if (pageable.getSort().isEmpty()) {
-            pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by("expirationDate").ascending());
+            pageable = PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    Sort.by("expirationDate").ascending()
+            );
         }
 
-        Page<InventoryBatch> batchesPage = inventoryBatchRepository.findAll(spec, pageable);
-        return batchesPage.map(InventoryBatchDTO::fromEntity);  // Không include adjustments để nhẹ
+        Page<InventoryBatch> page = inventoryBatchRepository.findAll(spec, pageable);
+        return page.map(InventoryBatchDTO::fromEntity);
     }
 
     // Cao ưu tiên 3: destroyBatch
@@ -126,6 +133,16 @@ public class InventoryServiceImpl implements InventoryService {
         return inventoryBatchRepository.save(newBatch);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<InventoryAdjustmentDTO> getAdjustmentsForBatch(Long batchId, Pageable pageable) {
+        InventoryBatch batch = inventoryBatchRepository.findById(batchId)
+                .orElseThrow(() -> new EntityNotFoundException("InventoryBatch not found with ID: " + batchId));
+        // Giả sử repo có method findByInventoryBatchId (thêm @Query nếu cần)
+        Page<InventoryAdjustment> adjustmentsPage = inventoryAdjustmentRepository.findByInventoryBatchOrderByCreatedAtDesc(batch, pageable);
+
+        return adjustmentsPage.map(InventoryAdjustmentDTO::fromEntity);
+    }
     /**
      * {@inheritDoc}
      *
@@ -140,7 +157,7 @@ public class InventoryServiceImpl implements InventoryService {
 
         // 1. Lấy tất cả các lô còn hàng, SẮP XẾP THEO HSD TĂNG DẦN (FEFO)
         List<InventoryBatch> batches = inventoryBatchRepository
-                .findByProductIdAndCurrentQuantityGreaterThanOrderByExpirationDateAsc(productId);
+                .findStillHasProductByProductIdOrderByExpirationDateAsc(productId);
 
         // 2. Kiểm tra tổng tồn kho
         int totalAvailable = batches.stream().mapToInt(InventoryBatch::getCurrentQuantity).sum();
@@ -218,7 +235,7 @@ public class InventoryServiceImpl implements InventoryService {
     public int getStockAvailability(Long productId) {
         // Sử dụng phương thức repository đã định nghĩa
         List<InventoryBatch> batches = inventoryBatchRepository
-                .findByProductIdAndCurrentQuantityGreaterThanOrderByExpirationDateAsc(productId);
+                .findStillHasProductByProductIdOrderByExpirationDateAsc(productId);
 
         // Tính tổng
         return batches.stream().mapToInt(InventoryBatch::getCurrentQuantity).sum();
@@ -232,7 +249,7 @@ public class InventoryServiceImpl implements InventoryService {
         // Lấy tất cả các lô còn hàng, sắp xếp FEFO
         // (Đây chính là hàm repo mà chúng ta đã viết)
         List<InventoryBatch> batches = inventoryBatchRepository
-                .findByProductIdAndCurrentQuantityGreaterThanOrderByExpirationDateAsc(productId);
+                .findStillHasProductByProductIdOrderByExpirationDateAsc(productId);
 
         if (batches.isEmpty()) {
             // Không còn hàng, không có HSD
@@ -243,7 +260,7 @@ public class InventoryServiceImpl implements InventoryService {
         int totalStock = batches.stream().mapToInt(InventoryBatch::getCurrentQuantity).sum();
 
         // 2. Lấy HSD sớm nhất (là phần tử đầu tiên vì đã sắp xếp)
-        LocalDate soonestDate = batches.get(0).getExpirationDate();
+        LocalDate soonestDate = batches.getFirst().getExpirationDate();
 
         return new ProductStockInfoDTO(totalStock, soonestDate);
     }

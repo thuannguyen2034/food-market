@@ -14,8 +14,9 @@ public interface InventoryService {
 
     InventoryBatchDTO getBatchDetails(Long batchId);
 
-    // Cao ưu tiên 2: getAllBatches (sửa thành int daysThreshold để dễ filter < now + days)
-    Page<InventoryBatchDTO> getAllBatches(Pageable pageable, int daysThreshold);
+    Page<InventoryBatchDTO> getInventoryBatches(Pageable pageable, Integer daysThreshold);
+
+    Page<InventoryAdjustmentDTO> getAdjustmentsForBatch(Long batchId, Pageable pageable);
 
     // Cao ưu tiên 3: destroyBatch
     void destroyBatch(Long batchId, String reason, String userId);

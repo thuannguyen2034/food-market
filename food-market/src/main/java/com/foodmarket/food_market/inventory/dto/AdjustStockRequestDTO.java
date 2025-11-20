@@ -12,7 +12,6 @@ public class AdjustStockRequestDTO {
     @NotNull(message = "Batch ID is required")
     private Long batchId;
 
-    @NotNull(message = "Adjusted by User ID is required")
     private UUID adjustedByUserId;
 
     @NotNull(message = "Adjustment quantity is required")
