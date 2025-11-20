@@ -16,8 +16,6 @@ public class ProductSaveRequestDTO {
 
     private String description;
 
-    private String imageUrl;
-
     @NotNull(message = "Giá gốc không được để trống")
     @Positive(message = "Giá gốc phải lớn hơn 0")
     private BigDecimal basePrice;
@@ -29,4 +27,5 @@ public class ProductSaveRequestDTO {
     private Long categoryId;
 
     private List<String> tags; // Admin chỉ cần gửi tên tag (ví dụ: ["Tươi", "Hữu cơ"])
+    private List<Long> deletedImageIds; //Id của các ảnh muốn xoá
 }

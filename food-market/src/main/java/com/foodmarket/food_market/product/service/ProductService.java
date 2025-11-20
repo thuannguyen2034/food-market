@@ -3,6 +3,7 @@ package com.foodmarket.food_market.product.service;
 import com.foodmarket.food_market.product.dto.AdminProductResponseDTO;
 import com.foodmarket.food_market.product.dto.ProductResponseDTO;
 import com.foodmarket.food_market.product.dto.ProductSaveRequestDTO;
+import com.foodmarket.food_market.product.model.ProductImage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,23 +23,24 @@ public interface ProductService {
     // --- Admin Methods ---
     // ==================================================================
     // Thêm vào phần Admin Methods
-    @Transactional(readOnly = true)
     Page<AdminProductResponseDTO> getAdminProducts(Pageable pageable, String searchTerm, Long categoryId);
 
+    @Transactional(readOnly = true)
+
     // --- Admin ---
-    ProductResponseDTO createProduct(ProductSaveRequestDTO request, List<MultipartFile> files) throws IOException;
+    AdminProductResponseDTO createProduct(ProductSaveRequestDTO request, List<MultipartFile> files) throws IOException;
 
-    ProductResponseDTO updateProduct(Long id, ProductSaveRequestDTO request);
+    AdminProductResponseDTO updateProduct(Long id, ProductSaveRequestDTO request, List<MultipartFile> files) throws IOException;
 
-    void deleteProduct(Long id);
+    void deleteProduct(Long id) throws IOException;
 
-    @Transactional(rollbackFor = Exception.class)
-    ProductResponseDTO addImagesToProduct(Long productId, List<MultipartFile> files) throws IOException;
 
-    void deleteProductImage(Long imageId);
+    void softDeleteProduct(Long productId);
 
-    @Transactional
-    void setMainImage(Long imageId);
+    void restoreSoftDeleteProduct(Long productId);
+
+    List<ProductImage> addImagesToProduct(Long productId, List<MultipartFile> files) throws IOException;
+
 
     AdminProductResponseDTO getAdminProductDetails(Long id);
 }

@@ -1,5 +1,7 @@
 package com.foodmarket.food_market.admin.controller;
 
+import com.foodmarket.food_market.inventory.dto.InventoryBatchDTO;
+import com.foodmarket.food_market.inventory.service.InventoryService;
 import com.foodmarket.food_market.product.dto.AdminProductResponseDTO;
 import com.foodmarket.food_market.product.dto.ProductResponseDTO;
 import com.foodmarket.food_market.product.dto.ProductSaveRequestDTO;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -26,6 +29,8 @@ import java.util.List;
 public class AdminProductController {
 
     private final ProductService productService;
+    private final InventoryService inventoryService;
+
     @GetMapping
     public ResponseEntity<Page<AdminProductResponseDTO>> getAdminProducts(
             @PageableDefault(size = 20) Pageable pageable, // Paging mặc định: page=0, size=20, sort optional
@@ -42,6 +47,7 @@ public class AdminProductController {
         AdminProductResponseDTO product = productService.getAdminProductDetails(id);
         return ResponseEntity.ok(product);
     }
+
     /**
      * API Tạo sản phẩm MỚI
      * Dùng multipart/form-data
@@ -50,13 +56,12 @@ public class AdminProductController {
      * 2. Part "images": là 1 mảng các file
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ProductResponseDTO> createProduct(
+    public ResponseEntity<AdminProductResponseDTO> createProduct(
             @RequestPart("product") @Valid ProductSaveRequestDTO request,
             @RequestPart(value = "images", required = false) List<MultipartFile> images
     ) throws IOException {
 
-        // ProductSaveRequestDTO.imageUrl sẽ bị lờ đi
-        ProductResponseDTO createdProduct = productService.createProduct(request, images);
+        AdminProductResponseDTO createdProduct = productService.createProduct(request, images);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
     }
 
@@ -64,53 +69,42 @@ public class AdminProductController {
      * API Cập nhật THÔNG TIN (Text) của sản phẩm
      * API này KHÔNG cập nhật ảnh.
      */
-    @PutMapping("/{id}")
-    public ResponseEntity<ProductResponseDTO> updateProductInfo(
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<AdminProductResponseDTO> updateProductInfo(
             @PathVariable Long id,
-            @Valid @RequestBody ProductSaveRequestDTO request
-    ) {
-        // Hàm này giờ chỉ cập nhật text (name, price, tags, v.v.)
-        ProductResponseDTO updatedProduct = productService.updateProduct(id, request);
-        return ResponseEntity.ok(updatedProduct);
-    }
-
-    /**
-     * API Thêm ảnh MỚI cho sản phẩm đã có
-     */
-    @PostMapping(value = "/{id}/images", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ProductResponseDTO> addImagesToProduct(
-            @PathVariable Long id,
-            @RequestPart("images") List<MultipartFile> images
+            @RequestPart("product") @Valid ProductSaveRequestDTO request,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images
     ) throws IOException {
-        ProductResponseDTO updatedProduct = productService.addImagesToProduct(id, images);
+
+        AdminProductResponseDTO updatedProduct = productService.updateProduct(id, request, images);
         return ResponseEntity.ok(updatedProduct);
     }
 
     /**
-     * API Xóa 1 ảnh cụ thể
-     */
-    @DeleteMapping("/images/{imageId}")
-    public ResponseEntity<Void> deleteProductImage(@PathVariable Long imageId) {
-        productService.deleteProductImage(imageId);
-        return ResponseEntity.noContent().build();
-    }
-
-    /**
-     * API Đặt 1 ảnh làm ảnh chính (displayOrder = 0)
-     */
-    @PutMapping("/images/set-main/{imageId}")
-    public ResponseEntity<Void> setMainProductImage(@PathVariable Long imageId) {
-        productService.setMainImage(imageId);
-        return ResponseEntity.noContent().build();
-    }
-
-
-    /**
-     * API Xóa 1 sản phẩm (và tất cả ảnh của nó)
+     * API Xóa hoàn toàn 1 sản phẩm (và tất cả ảnh của nó)
      */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) throws IOException {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/soft-delete/{id}")
+    public ResponseEntity<Void> softDeleteProduct(@PathVariable Long id) throws IOException {
+        productService.softDeleteProduct(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/restore-deleted/{id}")
+    public ResponseEntity<Void> restoreDeletedProduct(@PathVariable Long id) throws IOException {
+        productService.restoreSoftDeleteProduct(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    //Lấy danh sách các lô hàng của sản phẩm
+    @GetMapping("/{productId}/inventory-batches")
+    public ResponseEntity<Page<InventoryBatchDTO>> getBatchesForProduct(@PathVariable Long productId, @PageableDefault(size = 20) Pageable pageable,@RequestParam Boolean includeZeroQuantity) {
+        Page<InventoryBatchDTO> batches =  inventoryService.getBatchesForProduct(productId,includeZeroQuantity,pageable);
+        return ResponseEntity.ok(batches);
     }
 }

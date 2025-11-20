@@ -1,6 +1,5 @@
 package com.foodmarket.food_market.product.dto;
 
-import com.foodmarket.food_market.category.dto.CategoryResponseDTO; // Dùng lại DTO của Category
 import com.foodmarket.food_market.product.model.Product;
 import lombok.Builder;
 import lombok.Data;
@@ -25,6 +24,7 @@ public class AdminProductResponseDTO {
     private CategorySummaryDTO category; // Dùng 1 DTO con để tránh trả về quá nhiều
     private List<TagDTO> tags;
     private LocalDate soonestExpirationDate;
+    private boolean isDeleted;
     /**
      * Hàm static fromEntity phức tạp
      * Logic tính giá (finalPrice) sẽ do Service thực hiện và truyền vào đây.
@@ -51,6 +51,7 @@ public class AdminProductResponseDTO {
                 .tags(product.getTags().stream()
                         .map(TagDTO::fromEntity)
                         .collect(Collectors.toList()))
+                .isDeleted(product.isDeleted())
                 .build();
     }
 }
