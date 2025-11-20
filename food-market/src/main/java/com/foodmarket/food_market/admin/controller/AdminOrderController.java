@@ -1,8 +1,14 @@
 package com.foodmarket.food_market.admin.controller;
 
-import com.foodmarket.food_market.admin.service.AdminOrderService;
+import com.foodmarket.food_market.order.dto.OrderFilterDTO;
+import com.foodmarket.food_market.order.dto.OrderResponseDTO;
 import com.foodmarket.food_market.order.dto.UpdateOrderStatusDTO;
+import com.foodmarket.food_market.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -15,8 +21,15 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AdminOrderController {
 
-    private final AdminOrderService adminOrderService; // Service mới
+    private final OrderService orderService;
 
+    @GetMapping("")
+    public ResponseEntity<Page<OrderResponseDTO>> getAllOrders(
+            @ModelAttribute OrderFilterDTO filterDTO, // Hứng params
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return ResponseEntity.ok(orderService.getAllOrders(filterDTO, pageable));
+    }
     /**
      * API Cốt lõi: Cập nhật trạng thái đơn hàng
      * (Shipper/Admin sẽ gọi)
@@ -26,7 +39,8 @@ public class AdminOrderController {
             @PathVariable UUID orderId,
             @RequestBody UpdateOrderStatusDTO request // DTO mới
     ) {
-        adminOrderService.updateOrderStatus(orderId, request.getNewStatus());
+       orderService.updateOrderStatus(orderId, request.getNewStatus());
         return ResponseEntity.ok().build();
     }
+
 }
