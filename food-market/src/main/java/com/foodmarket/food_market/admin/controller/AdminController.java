@@ -24,12 +24,6 @@ public class AdminController {
      * API Endpoint này CHỈ DÀNH CHO ADMIN.
      * Spring Security sẽ tự động kiểm tra role của user từ JWT token.
      */
-    @GetMapping("/users")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
-        // Logic lấy tất cả user (sẽ implement sau)
-         return ResponseEntity.ok(adminService.getAllUsers());
-    }
 
     @GetMapping("/dashboard")
     @PreAuthorize("hasAnyRole('ADMIN', 'SHIPPER')") // ADMIN hoặc SHIPPER

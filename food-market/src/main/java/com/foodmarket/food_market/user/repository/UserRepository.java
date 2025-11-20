@@ -2,13 +2,17 @@ package com.foodmarket.food_market.user.repository;
 
 import com.foodmarket.food_market.user.model.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
-@Repository
-public interface UserRepository extends JpaRepository<User, UUID> {
+
+public interface UserRepository extends JpaRepository<User,UUID>, JpaSpecificationExecutor<User> {
 
     /**
      * Tìm kiếm user bằng email.
@@ -28,5 +32,8 @@ public interface UserRepository extends JpaRepository<User, UUID> {
      */
     boolean existsByPhone(String phone);
 
-
+    // KPI: Đếm khách hàng đăng ký mới trong ngày
+    @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt BETWEEN :start AND :end")
+    long countNewUsers(@Param("start") LocalDateTime start,
+                       @Param("end") LocalDateTime end);
 }

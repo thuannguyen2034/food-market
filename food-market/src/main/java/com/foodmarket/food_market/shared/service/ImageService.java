@@ -169,7 +169,7 @@ public class ImageService {
      *
      * @param publicId ID ảnh trên Cloudinary
      */
-    public void deleteImage(String publicId) {
+    public void deleteImage(String publicId) throws IOException {
         try {
             Map<?, ?> result = cloudinary.uploader().destroy(publicId, Map.of("resource_type", "image"));
             log.info("Attempted to delete image {}. Result: {}", publicId, result);

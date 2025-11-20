@@ -11,6 +11,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 
 @Service
 @RequiredArgsConstructor
@@ -116,6 +118,11 @@ public class UserServiceImpl implements UserService {
 
         // 3. Cập nhật xuống (UPDATE)
         userRepository.save(user);
+    }
+
+    @Override
+    public long countNewUsers(LocalDateTime start, LocalDateTime end) {
+       return userRepository.countNewUsers(start, end);
     }
 
 }

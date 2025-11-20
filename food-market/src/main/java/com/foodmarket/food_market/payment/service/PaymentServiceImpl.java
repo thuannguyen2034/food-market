@@ -44,11 +44,8 @@ public class PaymentServiceImpl implements PaymentService {
 
         // Logic nghiệp vụ thanh toán (nếu có)
         PaymentStatus initialStatus;
-        if (request.getPaymentMethod().equals("COD")) {
-            initialStatus = PaymentStatus.PENDING; // Chờ thu tiền mặt
-        } else {
-            initialStatus = PaymentStatus.PENDING; // Chờ thanh toán online
-        }
+        // Chờ thanh toán online
+        initialStatus = PaymentStatus.PENDING; // Chờ thu tiền
 
         Payment newPayment = new Payment();
         newPayment.setOrder(request.getOrder());

@@ -52,7 +52,7 @@ public class CartServiceImpl implements CartService {
         // 1. Kiểm tra tồn kho (dựa trên logic HSD của bạn)
         // Chúng ta chỉ cần check xem có lô nào còn hàng không (quantity > 0)
         boolean inStock = inventoryBatchRepository
-                .findByProductIdAndCurrentQuantityGreaterThanOrderByExpirationDateAsc(request.getProductId())
+                .findStillHasProductByProductIdOrderByExpirationDateAsc(request.getProductId())
                 .isEmpty();
 
         if (inStock) {
