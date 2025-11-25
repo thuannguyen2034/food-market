@@ -1,0 +1,236 @@
+/* src/styles/admin/Dashboard.module.css */
+
+.container {
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.header h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.dateFilter select {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+/* KPI Cards */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.statCard {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.statInfo h3 {
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.statInfo .value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #212529;
+}
+
+.iconBox {
+  padding: 12px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Colors for Icons */
+.blue { background-color: #e3f2fd; color: #1976d2; }
+.green { background-color: #e8f5e9; color: #2e7d32; }
+.purple { background-color: #f3e5f5; color: #7b1fa2; }
+.orange { background-color: #fff3e0; color: #f57c00; }
+
+/* Charts Section */
+.chartsGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr; /* Chart trái lớn gấp đôi chart phải */
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.cardHeader {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+/* Bottom Section */
+.bottomGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+/* Top Products Table */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  text-align: left;
+  color: #6c757d;
+  font-size: 0.85rem;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eee;
+}
+
+.table td {
+  padding: 12px 0;
+  border-bottom: 1px solid #f8f9fa;
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+.productCell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.productImg {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  background-color: #eee;
+}
+
+/* Urgent Orders */
+.urgentItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f1f1;
+}
+
+.urgentInfo h4 {
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.urgentInfo p {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.urgentAction {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #d32f2f;
+  background: #ffebee;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+@media (max-width: 1024px) {
+  .chartsGrid, .bottomGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ... Các style cũ giữ nguyên ... */
+
+/* Style cho bộ lọc Buttons */
+.filterBox {
+  display: flex;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.filterBox button {
+  padding: 8px 16px;
+  border: none;
+  background: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  border-right: 1px solid #eee;
+  transition: all 0.2s;
+  color: #555;
+}
+
+.filterBox button:last-child {
+  border-right: none;
+}
+
+.filterBox button:hover {
+  background: #f8f9fa;
+}
+
+.activeBtn {
+  background: #e8f5e9 !important; /* Màu nền khi active */
+  color: #2e7d32 !important;      /* Màu chữ khi active */
+  font-weight: 600;
+}
+
+/* Style cho Growth Badge (KPI Card) */
+.growthBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+.growthUp {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.growthDown {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.growthLabel {
+  font-weight: 400;
+  color: #666;
+  margin-left: 2px;
+}

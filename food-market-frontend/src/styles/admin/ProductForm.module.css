@@ -1,84 +1,314 @@
+/* src/styles/admin/ProductForm.module.css */
+
+/* Form Layout */
 .formGrid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 24px;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
 }
 
 .mainContent {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .sidebarContent {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
+/* Card */
 .card {
-  background: #fff;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+.card h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #333;
+}
+
+/* Form Group */
 .formGroup {
-  margin-bottom: 16px;
+    margin-bottom: 16px;
+}
+
+.formGroup:last-child {
+    margin-bottom: 0;
 }
 
 .formGroup label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 8px;
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 6px;
 }
 
 .formGroup input,
 .formGroup textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-family: inherit;
 }
 
+.formGroup input:focus,
+.formGroup textarea:focus {
+    outline: none;
+    border-color: #1976d2;
+}
+
+.formGroup textarea {
+    resize: vertical;
+}
+
+/* Inline Group */
 .inlineGroup {
-  display: flex;
-  gap: 16px;
-}
-.inlineGroup > .formGroup {
-  flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
 }
 
+/* Error Message */
 .error {
-  color: #d93025;
-  font-size: 0.875rem;
-  margin-top: 4px;
+    display: block;
+    color: #d32f2f;
+    font-size: 0.8rem;
+    margin-top: 4px;
 }
 
-.submitBar {
-  grid-column: 1 / -1; /* Trải dài hết */
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding-top: 16px;
+/* Dropzone */
+.dropzone {
+    border: 2px dashed #ddd;
+    border-radius: 8px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: #fafafa;
 }
 
-.saveButton {
-  background-color: #007bff;
-  color: white;
+.dropzone:hover {
+    border-color: #1976d2;
+    background: #f5f9ff;
 }
 
+.dropzoneActive {
+    border-color: #1976d2;
+    background: #e3f2fd;
+}
+
+.dropzoneIcon {
+    width: 40px;
+    height: 40px;
+    color: #999;
+    margin-bottom: 10px;
+}
+
+.dropzoneText {
+    font-size: 0.95rem;
+    color: #555;
+    margin-bottom: 4px;
+}
+
+.dropzoneSubtext {
+    font-size: 0.8rem;
+    color: #999;
+}
+
+/* Image Grid */
+.imageGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.imageItem {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.imageItem img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.removeBtn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(211, 47, 47, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.removeBtn:hover {
+    background: #d32f2f;
+    transform: scale(1.1);
+}
+
+/* Select with Button */
 .selectWithButton {
-  display: flex;
-  gap: 8px;
+    display: flex;
+    gap: 8px;
 }
 
 .reactSelect {
-  flex: 1;
+    flex: 1;
 }
 
 .quickAddButton {
-  width: 40px;
-  height: 38px; /* Cùng chiều cao với react-select */
-  flex-shrink: 0;
+    width: 36px;
+    height: 38px;
+    background: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.quickAddButton:hover {
+    background: #1565c0;
+}
+
+/* Submit Bar */
+.submitBar {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 16px 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.submitBar button {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.submitBar button[type="button"] {
+    background: #f5f5f5;
+    color: #555;
+}
+
+.submitBar button[type="button"]:hover {
+    background: #e0e0e0;
+}
+
+.saveButton {
+    background: #2e7d32 !important;
+    color: white !important;
+}
+
+.saveButton:hover {
+    background: #246126 !important;
+}
+
+.saveButton:disabled {
+    background: #aaa !important;
+    cursor: not-allowed;
+}
+
+/* Modal */
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modalContent {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.modalImage {
+    max-width: 100%;
+    max-height: 80vh;
+    border-radius: 6px;
+}
+
+.closeModalBtn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(211, 47, 47, 0.9);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.closeModalBtn:hover {
+    background: #d32f2f;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .formGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .submitBar {
+        grid-column: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .inlineGroup {
+        grid-template-columns: 1fr;
+    }
+
+    .imageGrid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
 }

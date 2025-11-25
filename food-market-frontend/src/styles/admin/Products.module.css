@@ -1,0 +1,393 @@
+/* src/styles/admin/Products.module.css */
+
+/* Container */
+.productsContainer {
+    padding: 20px;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a1a1a;
+}
+
+.headerActions {
+    display: flex;
+    gap: 10px;
+}
+
+.refreshButton,
+.addButton {
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+    text-decoration: none;
+}
+
+.refreshButton {
+    background: white;
+    color: #555;
+    border: 1px solid #ddd;
+}
+
+.refreshButton:hover {
+    background: #f8f9fa;
+}
+
+.addButton {
+    background: #2e7d32;
+    color: white;
+}
+
+.addButton:hover {
+    background: #246126;
+}
+
+/* Stats Cards - smaller size */
+.statsContainer {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.statCard {
+    background: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.statIcon {
+    padding: 8px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.statContent {
+    flex: 1;
+}
+
+.statValue {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #212529;
+}
+
+.statLabel {
+    font-size: 0.8rem;
+    color: #6c757d;
+    margin-top: 2px;
+}
+
+/* Stat Card Colors */
+.primary .statIcon {
+    background-color: #e3f2fd;
+    color: #1976d2;
+}
+
+.warning .statIcon {
+    background-color: #fff3e0;
+    color: #f57c00;
+}
+
+.danger .statIcon {
+    background-color: #ffebee;
+    color: #d32f2f;
+}
+
+/* Search Bar */
+.searchBar {
+    background: white;
+    padding: 12px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-bottom: 16px;
+}
+
+.searchForm {
+    display: flex;
+    gap: 10px;
+}
+
+.searchInput {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: #1976d2;
+}
+
+.searchButton {
+    padding: 8px 16px;
+    background: #1976d2;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+}
+
+.searchButton:hover {
+    background: #1565c0;
+}
+
+/* Table Container - main focus */
+.tableContainer {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+}
+
+.tableWrapper {
+    overflow-x: auto;
+}
+
+.productsTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.productsTable thead {
+    background: #f8f9fa;
+}
+
+.productsTable th {
+    text-align: left;
+    color: #6c757d;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.productsTable td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #f1f1f1;
+    font-size: 0.85rem;
+    vertical-align: middle;
+}
+
+.productsTable tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* Table Cells */
+.idBadge {
+    background: #e3f2fd;
+    color: #1976d2;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.productImage {
+    width: 36px;
+    height: 36px;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+.noImage {
+    width: 36px;
+    height: 36px;
+    border-radius: 4px;
+    background: #eee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    color: #999;
+}
+
+.productName {
+    font-weight: 500;
+    color: #333;
+}
+
+.deletedLabel {
+    color: #d32f2f;
+    font-size: 0.75rem;
+    font-style: italic;
+    margin-left: 4px;
+}
+
+.deletedRow {
+    opacity: 0.6;
+    text-decoration: line-through;
+}
+
+.categoryBadge {
+    background: #f3e5f5;
+    color: #7b1fa2;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+}
+
+.priceCell {
+    font-weight: 600;
+    color: #2e7d32;
+}
+
+/* Stock Status */
+.inStock {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.lowStock {
+    background: #fff3e0;
+    color: #f57c00;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.outOfStock {
+    background: #ffebee;
+    color: #d32f2f;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+/* Actions */
+.actions {
+    display: flex;
+    gap: 6px;
+}
+
+.editButton,
+.deleteButton {
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.editButton {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.editButton:hover {
+    background: #bbdefb;
+}
+
+.deleteButton {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.deleteButton:hover {
+    background: #ffcdd2;
+}
+
+/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 16px;
+    margin-top: 16px;
+    padding: 12px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.pageButton {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.pageButton:hover:not(:disabled) {
+    background: #f8f9fa;
+}
+
+.pageButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pageInfo {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+/* Center text for loading/empty states */
+.centerText {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .statsContainer {
+        grid-template-columns: 1fr;
+    }
+
+    .searchForm {
+        flex-direction: column;
+    }
+
+    .actions {
+        flex-direction: column;
+    }
+}

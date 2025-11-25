@@ -2,7 +2,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import GoogleMapsLoader from "@/components/Address/GoogleMapsLoader";
 // 1. Import AuthProvider
 import { AuthProvider } from "@/context/AuthContext"; 
 // (Next.js tự hiểu @/ là thư mục src/)
