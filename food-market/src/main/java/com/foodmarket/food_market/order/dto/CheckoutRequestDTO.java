@@ -13,4 +13,6 @@ public class CheckoutRequestDTO {
     private String paymentMethod; // "COD" hoặc "VNPAY"
 
     private String deliveryTimeslot; // "08:00 - 10:00"
+
+    private String note;
 }

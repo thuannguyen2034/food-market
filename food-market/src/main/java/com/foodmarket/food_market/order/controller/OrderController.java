@@ -1,5 +1,6 @@
 package com.foodmarket.food_market.order.controller;
 
+import com.foodmarket.food_market.order.dto.CancelOrderRequestDTO;
 import com.foodmarket.food_market.order.dto.CheckoutRequestDTO;
 import com.foodmarket.food_market.order.dto.OrderResponseDTO;
 import com.foodmarket.food_market.order.service.OrderService;
@@ -55,5 +56,16 @@ public class OrderController {
     ) {
         User user = (User) authentication.getPrincipal();
         return ResponseEntity.ok(orderService.getOrderDetails(user.getUserId(), orderId));
+    }
+
+    @PostMapping("/{orderId}/cancel")
+    public ResponseEntity<Void> cancelOrder(
+            Authentication authentication,
+            @PathVariable UUID orderId,
+            @RequestBody CancelOrderRequestDTO request // DTO chứa String reason
+    ) {
+        User user = (User) authentication.getPrincipal();
+        orderService.cancelOrder(user.getUserId(), orderId, request.getReason());
+        return ResponseEntity.ok().build();
     }
 }

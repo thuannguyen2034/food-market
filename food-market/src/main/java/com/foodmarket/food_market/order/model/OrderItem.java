@@ -39,4 +39,13 @@ public class OrderItem {
 
     @Column(name = "price_at_purchase", nullable = false, precision = 10, scale = 2)
     private BigDecimal priceAtPurchase; // Chụp nhanh giá bán
+
+    @Column(name = "product_id_snapshot", nullable = false)
+    private Long productIdSnapshot;
+
+    @Column(name = "product_name_snapshot", nullable = false)
+    private String productNameSnapshot;
+
+    @Column(name = "product_thumbnail_snapshot")
+    private String productThumbnailSnapshot;
 }

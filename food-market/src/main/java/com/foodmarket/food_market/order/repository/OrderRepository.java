@@ -1,8 +1,9 @@
 package com.foodmarket.food_market.order.repository;
 
-import com.foodmarket.food_market.admin.dashboard.projectionDto.DailyRevenueStat;
-import com.foodmarket.food_market.admin.dashboard.projectionDto.OrderStatusStat;
-import com.foodmarket.food_market.admin.dashboard.projectionDto.TopProductStat;
+import com.foodmarket.food_market.admin.dashboard.dto.projection.DailyRevenueStat;
+import com.foodmarket.food_market.admin.dashboard.dto.projection.HourlyRevenueStat;
+import com.foodmarket.food_market.admin.dashboard.dto.projection.OrderStatusStat;
+import com.foodmarket.food_market.admin.dashboard.dto.projection.TopProductStat;
 import com.foodmarket.food_market.order.model.Order;
 import com.foodmarket.food_market.order.model.enums.OrderStatus;
 import org.springframework.data.domain.Pageable;
@@ -13,8 +14,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -29,14 +31,14 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
     @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o " +
             "WHERE o.createdAt BETWEEN :start AND :end " +
             "AND o.status IN :statusList")
-    BigDecimal sumRevenueBetween(@Param("start") LocalDateTime start,
-                                 @Param("end") LocalDateTime end,
-                                 @Param("statusList") List<OrderStatus> statusList);
+    BigDecimal sumRevenueBetween(@Param("start") OffsetDateTime start,
+                                 @Param("end") OffsetDateTime end,
+                                 @Param("statusList") Set<OrderStatus> statusList);
 
     // Đếm số đơn hàng trong khoảng thời gian (Card Tổng số đơn)
     @Query("SELECT COUNT(o) FROM Order o WHERE o.createdAt BETWEEN :start AND :end")
-    long countOrdersBetween(@Param("start") LocalDateTime start,
-                            @Param("end") LocalDateTime end);
+    long countOrdersBetween(@Param("start") OffsetDateTime start,
+                            @Param("end") OffsetDateTime end);
 
 
     // ----------------------------------------------------------
@@ -47,16 +49,30 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
     // Lưu ý: Dùng Native Query để GROUP BY DATE dễ dàng hơn (Ví dụ cho MySQL/Postgres)
     // Chúng ta sẽ lấy luôn 14 ngày (7 ngày này + 7 ngày trước) một thể để Java tách ra.
     @Query(value = """
-        SELECT DATE(o.created_at) as date, SUM(o.total_amount) as total 
+        SELECT CAST(o.created_at AS DATE) as date, COALESCE(SUM(o.total_amount), 0) as totalRevenue 
         FROM orders o 
-        WHERE o.created_at >= :startDate 
-          AND o.status IN :statusList
-        GROUP BY DATE(o.created_at) 
-        ORDER BY DATE(o.created_at) ASC
+        WHERE o.created_at >= :startDate    
+          AND o.created_at <= :endDate       
+          AND o.status IN :statusList 
+        GROUP BY CAST(o.created_at AS DATE)
+        ORDER BY CAST(o.created_at AS DATE) ASC
         """, nativeQuery = true)
-    List<DailyRevenueStat> getDailyRevenueStats(@Param("startDate") LocalDateTime startDate,
-                                                @Param("statusList") List<String> statusList);
+    List<DailyRevenueStat> getDailyRevenueStats(@Param("startDate") OffsetDateTime startDate,
+                                                @Param("endDate") OffsetDateTime endDate,
+                                                @Param("statusList") Set<String> statusList);
 
+    @Query(value = """
+        SELECT EXTRACT(HOUR FROM created_at) as hour, COALESCE(SUM(o.total_amount), 0) as totalRevenue 
+        FROM orders o 
+        WHERE o.created_at >= :startDate    
+          AND o.created_at <= :endDate       
+          AND o.status IN :statusList 
+        GROUP BY EXTRACT(HOUR FROM created_at)
+        ORDER BY hour ASC
+        """,nativeQuery = true)
+    List<HourlyRevenueStat> getHourlyRevenueStats(@Param("startDate") OffsetDateTime startDate,
+                                                  @Param("endDate") OffsetDateTime endDate,
+                                                  @Param("statusList") Set<String> statusList);
 
     // ----------------------------------------------------------
     // 3. BIỂU ĐỒ TRÒN: TỶ LỆ TRẠNG THÁI
@@ -71,7 +87,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
     // ----------------------------------------------------------
     // Lấy top đơn cũ nhất đang chờ xử lý
     @Query("SELECT o FROM Order o WHERE o.status IN :urgentStatuses ORDER BY o.createdAt ASC")
-    List<Order> findUrgentOrders(@Param("urgentStatuses") List<OrderStatus> urgentStatuses,
+    List<Order> findUrgentOrders(@Param("urgentStatuses") Set<OrderStatus> urgentStatuses,
                                  Pageable pageable);
 
 
@@ -92,9 +108,9 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
         GROUP BY p.id, p.name 
         ORDER BY totalSold DESC
         """)
-    List<TopProductStat> findTopSellingProducts(@Param("start") LocalDateTime start,
-                                                @Param("end") LocalDateTime end,
-                                                @Param("statusList") List<OrderStatus> statusList,
+    List<TopProductStat> findTopSellingProducts(@Param("start") OffsetDateTime start,
+                                                @Param("end") OffsetDateTime end,
+                                                @Param("statusList") Set<OrderStatus> statusList,
                                                 Pageable pageable);
 
 }

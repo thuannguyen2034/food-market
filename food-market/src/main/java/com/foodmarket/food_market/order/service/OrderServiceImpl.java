@@ -1,8 +1,11 @@
 package com.foodmarket.food_market.order.service;
 
-import com.foodmarket.food_market.admin.dashboard.projectionDto.DailyRevenueStat;
-import com.foodmarket.food_market.admin.dashboard.projectionDto.OrderStatusStat;
-import com.foodmarket.food_market.admin.dashboard.projectionDto.TopProductStat;
+import com.foodmarket.food_market.admin.dashboard.dto.projection.DailyRevenueStat;
+import com.foodmarket.food_market.admin.dashboard.dto.projection.HourlyRevenueStat;
+import com.foodmarket.food_market.admin.dashboard.dto.projection.OrderStatusStat;
+import com.foodmarket.food_market.admin.dashboard.dto.projection.TopProductStat;
+import com.foodmarket.food_market.admin.dashboard.dto.response.ChartDataDTO;
+import com.foodmarket.food_market.admin.dashboard.dto.response.DashboardSummaryDTO;
 import com.foodmarket.food_market.cart.model.Cart;
 import com.foodmarket.food_market.cart.model.CartItem;
 import com.foodmarket.food_market.cart.repository.CartRepository;
@@ -14,11 +17,13 @@ import com.foodmarket.food_market.order.dto.OrderResponseDTO;
 import com.foodmarket.food_market.order.event.OrderStatusChangedEvent;
 import com.foodmarket.food_market.order.model.Order;
 import com.foodmarket.food_market.order.model.OrderItem;
+import com.foodmarket.food_market.order.model.enums.PaymentStatus;
 import com.foodmarket.food_market.order.repository.OrderSpecification;
 import com.foodmarket.food_market.payment.dto.PaymentCreationRequestDTO;
 import com.foodmarket.food_market.order.model.enums.OrderStatus;
 import com.foodmarket.food_market.order.repository.OrderItemRepository;
 import com.foodmarket.food_market.order.repository.OrderRepository;
+import com.foodmarket.food_market.payment.model.Payment;
 import com.foodmarket.food_market.payment.service.PaymentService;
 import com.foodmarket.food_market.product.dto.ProductResponseDTO;
 import com.foodmarket.food_market.product.service.ProductService;
@@ -32,11 +37,15 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional; // <-- Rất quan trọng
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.math.RoundingMode;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -75,7 +84,7 @@ public class OrderServiceImpl implements OrderService {
         UserAddress address = userAddressRepository.findByIdAndUser_UserId(request.getAddressId(), userId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy địa chỉ hoặc địa chỉ không thuộc về bạn."));
         String addressSnapshot = address.getProvince(); // (Giả sử có hàm này)
-
+        String phoneRecipientSnapshot = address.getRecipientPhone();
         // 4. Lấy Map giá
         Map<Long, ProductResponseDTO> priceMap = getPriceMap(cart.getItems());
 
@@ -125,7 +134,9 @@ public class OrderServiceImpl implements OrderService {
         newOrder.setTotalAmount(totalAmount);
         newOrder.setStatus(OrderStatus.PENDING);
         newOrder.setDeliveryAddressSnapshot(addressSnapshot);
+        newOrder.setDeliveryPhoneSnapshot(phoneRecipientSnapshot);
         newOrder.setDeliveryTimeslot(request.getDeliveryTimeslot());
+        newOrder.setNote(request.getNote());
         Order savedOrder = orderRepository.save(newOrder);
 
         // 7. Gán OrderItems vào Order
@@ -198,6 +209,65 @@ public class OrderServiceImpl implements OrderService {
         eventPublisher.publishEvent(new OrderStatusChangedEvent(order, newStatus));
     }
 
+
+    @Override
+    @Transactional
+    public void cancelOrder(UUID userId, UUID orderId, String reason) {
+        // 1. Tìm đơn hàng
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Đơn hàng không tồn tại"));
+
+        // 2. Check quyền chủ sở hữu
+        if (!order.getUser().getUserId().equals(userId)) {
+            throw new AccessDeniedException("Bạn không có quyền hủy đơn hàng này");
+        }
+
+        // 3. VALIDATE 1: Check trạng thái đơn hàng
+        // Chỉ cho phép hủy nếu chưa đóng gói xong
+        List<OrderStatus> allowCancelStatuses = List.of(OrderStatus.PENDING, OrderStatus.CONFIRMED);
+        if (!allowCancelStatuses.contains(order.getStatus())) {
+            throw new IllegalStateException("Không thể hủy đơn hàng đang ở trạng thái: " + order.getStatus());
+        }
+
+        // 4. VALIDATE 2: Check trạng thái thanh toán
+        // Nếu đã thanh toán Online rồi thì chặn, yêu cầu gọi Admin
+        // (Vì đồ án chưa làm luồng Refund tự động)
+        Payment successPayment = order.getSuccessfulPayment();
+        if (successPayment != null) {
+            throw new IllegalStateException("Đơn hàng đã thanh toán Online. Vui lòng liên hệ CSKH để hủy và hoàn tiền.");
+        }
+
+        // 5. --- QUAN TRỌNG: HOÀN KHO (RESTORE STOCK) ---
+        // Phải trả lại số lượng cho đúng cái lô hàng (Batch) đã trừ
+        for (OrderItem item : order.getItems()) {
+            inventoryService.restoreStock(
+                    item.getInventoryBatch().getBatchId(), // Lấy ID lô hàng từ OrderItem
+                    item.getQuantity()
+            );
+        }
+
+        // 6. Cập nhật trạng thái Order
+        order.setStatus(OrderStatus.CANCELLED);
+
+        // Lưu lý do hủy vào ghi chú
+        String oldNote = order.getNote() == null ? "" : order.getNote();
+        order.setNote(oldNote + " [Đã hủy bởi khách: " + reason + "]");
+
+        // 7. Cập nhật trạng thái Payment (nếu đang Pending)
+        // Nếu có payment đang treo, set nó thành FAILED/CANCELLED luôn
+        Payment currentPayment = order.getPayment();
+
+        if (currentPayment != null && currentPayment.getStatus() == PaymentStatus.PENDING) {
+            // Nếu đang chờ thanh toán mà khách hủy đơn -> Hủy luôn giao dịch thanh toán
+            currentPayment.setStatus(PaymentStatus.FAILED);
+        }
+
+        orderRepository.save(order);
+
+        // 8. (Option) Bắn event thông báo cho Admin biết
+        // eventPublisher.publishEvent(new OrderCancelledEvent(order));
+    }
+
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponseDTO> getAllOrders(OrderFilterDTO filterDTO, Pageable pageable) {
@@ -208,30 +278,133 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public BigDecimal totalRevenueInAPeriod(LocalDateTime startDate, LocalDateTime endDate) {
-        List<OrderStatus> statusList = List.of(
-                OrderStatus.CONFIRMED,
-                OrderStatus.DELIVERED,
-                OrderStatus.PROCESSING,
-                OrderStatus.OUT_FOR_DELIVERY
-        );
-        return orderRepository.sumRevenueBetween(startDate, endDate, statusList);
+    public BigDecimal totalRevenueInAPeriod(OffsetDateTime startDate, OffsetDateTime endDate) {
+        return orderRepository.sumRevenueBetween(startDate, endDate, OrderStatus.ACTIVE_STATUSES);
     }
 
     @Override
-    public long countOrderInAPeriod(LocalDateTime startDate, LocalDateTime endDate) {
+    public long countOrderInAPeriod(OffsetDateTime startDate, OffsetDateTime endDate) {
         return orderRepository.countOrdersBetween(startDate, endDate);
     }
 
     @Override
-    public List<DailyRevenueStat> getDailyRevenueStats(LocalDateTime startDate) {
-        List<String> statusList = List.of(
-                OrderStatus.CONFIRMED.name(),
-                OrderStatus.DELIVERED.name(),
-                OrderStatus.PROCESSING.name(),
-                OrderStatus.OUT_FOR_DELIVERY.name()
-        );
-        return orderRepository.getDailyRevenueStats(startDate,statusList);
+    public DashboardSummaryDTO getDashboardSummary(OffsetDateTime start, OffsetDateTime end) {
+        // 1. Tính toán khoảng thời gian (duration)
+        // VD: start=22/11, end=22/11 -> days = 0 -> duration = 1 ngày
+        long daysDiff = ChronoUnit.DAYS.between(start, end);
+        long duration = daysDiff + 1; // Cộng 1 để bao gồm cả ngày bắt đầu
+
+        // 2. Tính kỳ trước (Previous Period)
+        OffsetDateTime prevStart = start.minusDays(duration);
+        OffsetDateTime prevEnd = end.minusDays(duration);
+
+        // 3. Query DB (Giả sử Repo đã có hàm sumRevenue và countOrders nhận OffsetDateTime)
+        BigDecimal currentRev = orderRepository.sumRevenueBetween(start, end, OrderStatus.ACTIVE_STATUSES);
+        BigDecimal prevRev = orderRepository.sumRevenueBetween(prevStart, prevEnd, OrderStatus.ACTIVE_STATUSES);
+
+        long currentOrd = orderRepository.countOrdersBetween(start, end);
+        long prevOrd = orderRepository.countOrdersBetween(prevStart, prevEnd);
+
+        // Xử lý null nếu DB trả về null
+        if (currentRev == null) currentRev = BigDecimal.ZERO;
+        if (prevRev == null) prevRev = BigDecimal.ZERO;
+
+        return DashboardSummaryDTO.builder()
+                .currentRevenue(currentRev)
+                .previousRevenue(prevRev)
+                .revenueGrowth(calculateGrowth(currentRev, prevRev))
+                .currentOrders(currentOrd)
+                .previousOrders(prevOrd)
+                .ordersGrowth(calculateGrowth(BigDecimal.valueOf(currentOrd), BigDecimal.valueOf(prevOrd)))
+                .build();
+    }
+
+    @Override
+    public List<ChartDataDTO> getComparisonChart(OffsetDateTime start, OffsetDateTime end) {
+        long daysDiff = ChronoUnit.DAYS.between(start, end);
+
+        // LOGIC QUYẾT ĐỊNH CHIẾN LƯỢC
+        if (daysDiff == 0) {
+            // ==> CHẾ ĐỘ 1 NGÀY: Xử lý theo GIỜ (0h - 23h)
+            return getHourlyChartData(start, end);
+        } else {
+            // ==> CHẾ ĐỘ NHIỀU NGÀY: Xử lý theo NGÀY (Logic cũ của bạn)
+            return getDailyChartData(start, end, daysDiff);
+        }
+    }
+
+    public List<ChartDataDTO> getDailyChartData(OffsetDateTime start, OffsetDateTime end, long daysDiff) {
+        long duration = daysDiff + 1;
+
+        OffsetDateTime prevStart = start.minusDays(duration);
+
+        // Lấy Raw Data từ DB (List các ngày có doanh thu)
+        // Giả sử getDailyStats trả về List<DailyRevenueStat> (interface projection gồm 'date' và 'total')
+        List<DailyRevenueStat> currentStats = orderRepository.getDailyRevenueStats(start, end, OrderStatus.ACTIVE_STATUSES_Strings);
+        List<DailyRevenueStat> prevStats = orderRepository.getDailyRevenueStats(prevStart, start.minusNanos(1),OrderStatus.ACTIVE_STATUSES_Strings);
+        // start.minusNanos(1) để tránh trùng lặp biên
+
+        List<ChartDataDTO> result = new ArrayList<>();
+
+        // Vòng lặp để fill đủ số ngày (tránh trường hợp ngày không có doanh thu bị thiếu)
+        for (int i = 0; i < duration; i++) {
+            OffsetDateTime currDateTarget = start.plusDays(i);
+            OffsetDateTime prevDateTarget = prevStart.plusDays(i);
+
+            BigDecimal currVal = findValueByDate(currentStats, currDateTarget);
+            BigDecimal prevVal = findValueByDate(prevStats, prevDateTarget);
+
+            result.add(ChartDataDTO.builder()
+                    .label(currDateTarget.format(DateTimeFormatter.ofPattern("dd/MM"))) // Label theo kỳ hiện tại
+                    .currentRevenue(currVal)
+                    .previousRevenue(prevVal)
+                    .build());
+        }
+        return result;
+    }
+    private List<ChartDataDTO> getHourlyChartData(OffsetDateTime start, OffsetDateTime end) {
+        // Tính kỳ trước (Lùi lại 1 ngày)
+        OffsetDateTime prevStart = start.minusDays(1);
+        OffsetDateTime prevEnd = end.minusDays(1);
+
+        // Query DB lấy dữ liệu gom nhóm theo giờ
+        List<HourlyRevenueStat> currentStats = orderRepository.getHourlyRevenueStats(start, end,OrderStatus.ACTIVE_STATUSES_Strings);
+        List<HourlyRevenueStat> prevStats = orderRepository.getHourlyRevenueStats(prevStart, prevEnd, OrderStatus.ACTIVE_STATUSES_Strings);
+
+        List<ChartDataDTO> result = new ArrayList<>();
+
+        // Loop cứng từ 0 đến 23 giờ
+        for (int hour = 0; hour < 24; hour++) {
+            int currentHour = hour;
+
+            // Tìm doanh thu trong list (hoặc = 0)
+            BigDecimal currVal = currentStats.stream()
+                    .filter(s -> s.getHour() == currentHour)
+                    .findFirst()
+                    .map(HourlyRevenueStat::getTotalRevenue)
+                    .orElse(BigDecimal.ZERO);
+
+            BigDecimal prevVal = prevStats.stream()
+                    .filter(s -> s.getHour() == currentHour)
+                    .findFirst()
+                    .map(HourlyRevenueStat::getTotalRevenue)
+                    .orElse(BigDecimal.ZERO);
+
+            // Tạo Label theo giờ (Ví dụ: "08:00")
+            String label = String.format("%02d:00", currentHour);
+
+            result.add(ChartDataDTO.builder()
+                    .label(label)
+                    .currentRevenue(currVal)
+                    .previousRevenue(prevVal)
+                    .build());
+        }
+        return result;
+    }
+    @Override
+    public List<DailyRevenueStat> getDailyRevenueStats(OffsetDateTime startDate) {
+//        return orderRepository.getDailyRevenueStats(startDate,statusList);
+        return null;
     }
 
     @Override
@@ -240,24 +413,47 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<Order> findUrgentOrders( Pageable pageable) {
-        List<OrderStatus> urgentStatuses = List.of(
-                OrderStatus.CONFIRMED,
-                OrderStatus.PENDING,
-                OrderStatus.PROCESSING,
-                OrderStatus.OUT_FOR_DELIVERY
-        );
-        return orderRepository.findUrgentOrders(urgentStatuses, pageable);
+    public List<Order> findUrgentOrders(Pageable pageable) {
+        return orderRepository.findUrgentOrders(OrderStatus.URGENT_STATUSES, pageable);
     }
 
     @Override
-    public List<TopProductStat> findTopSellingProducts(LocalDateTime startDate, LocalDateTime endDate, Pageable pageable) {
-        List<OrderStatus> statusList = List.of(
-                OrderStatus.CONFIRMED,
-                OrderStatus.DELIVERED,
-                OrderStatus.PROCESSING,
-                OrderStatus.OUT_FOR_DELIVERY
-        );
-        return orderRepository.findTopSellingProducts(startDate, endDate, statusList, pageable);
+    public List<TopProductStat> findTopSellingProducts(OffsetDateTime startDate, OffsetDateTime endDate, Pageable pageable) {
+        return orderRepository.findTopSellingProducts(startDate, endDate, OrderStatus.ACTIVE_STATUSES, pageable);
+    }
+
+    @Override
+    public OrderResponseDTO getAdminOrderDetails(UUID orderId) {
+        Optional<Order> order = orderRepository.findById(orderId);
+        if (order.isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy order");
+        }
+        return OrderResponseDTO.fromEntity(order.get());
+    }
+
+    /**
+     * Helper
+     */
+
+// Helper tính % tăng trưởng
+    private Double calculateGrowth(BigDecimal current, BigDecimal previous) {
+        if (previous.compareTo(BigDecimal.ZERO) == 0) {
+            return current.compareTo(BigDecimal.ZERO) > 0 ? 100.0 : 0.0;
+        }
+        // (Current - Prev) / Prev * 100
+        return current.subtract(previous)
+                .divide(previous, 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .doubleValue();
+    }
+
+    // Helper tìm giá trị trong list DB trả về (convert OffsetDateTime sang LocalDate để so sánh cho dễ)
+    private BigDecimal findValueByDate(List<DailyRevenueStat> stats, OffsetDateTime targetDate) {
+        return stats.stream()
+                .filter(s -> s.getDate().isEqual(targetDate.toLocalDate())) // Giả sử projection trả về LocalDate
+                .findFirst()
+                .map(DailyRevenueStat::getTotalRevenue)
+                .orElse(BigDecimal.ZERO);
     }
 }
+

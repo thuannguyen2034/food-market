@@ -3,6 +3,7 @@ package com.foodmarket.food_market.admin.controller;
 import com.foodmarket.food_market.order.dto.OrderFilterDTO;
 import com.foodmarket.food_market.order.dto.OrderResponseDTO;
 import com.foodmarket.food_market.order.dto.UpdateOrderStatusDTO;
+import com.foodmarket.food_market.order.model.Order;
 import com.foodmarket.food_market.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -13,7 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/admin/orders")
@@ -29,6 +32,20 @@ public class AdminOrderController {
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return ResponseEntity.ok(orderService.getAllOrders(filterDTO, pageable));
+    }
+    @GetMapping("/urgent")
+    public ResponseEntity<List<OrderResponseDTO>> getUrgentOrders(
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.ASC) Pageable pageable
+    ) {
+        List<Order> urgentOrders = orderService.findUrgentOrders(pageable);
+        List<OrderResponseDTO> response = urgentOrders.stream()
+                .map(OrderResponseDTO::fromEntity)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(response);
+    }
+    @GetMapping("/{orderId}")
+    public ResponseEntity<OrderResponseDTO> getOrderDetails(@PathVariable UUID orderId) {
+        return ResponseEntity.ok(orderService.getAdminOrderDetails(orderId));
     }
     /**
      * API Cốt lõi: Cập nhật trạng thái đơn hàng

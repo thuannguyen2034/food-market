@@ -5,6 +5,7 @@ import com.foodmarket.food_market.order.model.enums.OrderStatus;
 import lombok.Getter;
 
 @Getter
+
 public class OrderStatusChangedEvent {
     private final Order order;
     private final OrderStatus newStatus;

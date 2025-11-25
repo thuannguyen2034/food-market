@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -19,7 +20,10 @@ public class OrderResponseDTO {
     private OrderStatus status;
     private BigDecimal totalAmount;
     private String deliveryAddress;
+    private String deliveryPhone;
     private OffsetDateTime createdAt;
+    private String deliveryTimeSlot;
+    private String note;
     private List<OrderItemResponseDTO> items;
 
     public static OrderResponseDTO fromEntity(Order order) {
@@ -29,6 +33,8 @@ public class OrderResponseDTO {
                 .totalAmount(order.getTotalAmount())
                 .deliveryAddress(order.getDeliveryAddressSnapshot())
                 .createdAt(order.getCreatedAt())
+                .deliveryTimeSlot(order.getDeliveryTimeslot())
+                .note(order.getNote())
                 .items(order.getItems().stream()
                         .map(OrderItemResponseDTO::fromEntity)
                         .collect(Collectors.toList()))
