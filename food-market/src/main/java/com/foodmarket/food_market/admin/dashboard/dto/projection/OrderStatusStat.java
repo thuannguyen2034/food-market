@@ -1,4 +1,4 @@
-package com.foodmarket.food_market.admin.dashboard.projectionDto;
+package com.foodmarket.food_market.admin.dashboard.dto.projection;
 
 import com.foodmarket.food_market.order.model.enums.OrderStatus;
 
