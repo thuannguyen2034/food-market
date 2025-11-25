@@ -38,7 +38,7 @@ public class AdminServiceImpl implements AdminService {
             spec = spec.and((root, query, cb) -> cb.or(
                     cb.like(cb.lower(root.get("fullName")), likeKey),
                     cb.like(cb.lower(root.get("email")), likeKey),
-                    cb.like(cb.lower(root.get("phoneNumber")), likeKey)
+                    cb.like(cb.lower(root.get("phone")), likeKey)
             ));
         }
 

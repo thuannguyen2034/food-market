@@ -17,6 +17,9 @@ public interface CategoryService {
      */
     List<CategoryResponseDTO> getAllCategoriesFlat();
 
+    List<CategoryResponseDTO> getSameRootCategories(String categorySlug);
+
+    List<CategoryResponseDTO> getSearchCategories(String keyword);
     /**
      * (Admin) Tạo danh mục mới.
      */

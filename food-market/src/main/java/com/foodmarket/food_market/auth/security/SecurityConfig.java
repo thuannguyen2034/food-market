@@ -41,7 +41,9 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/auth/**", // Toàn bộ API xác thực
                                 "/v3/api-docs/**", // Swagger/OpenAPI docs
-                                "/swagger-ui/**"   // Swagger UI
+                                "/swagger-ui/**",   // Swagger UI
+                                "/api/v1/products/**", // Public product endpoints (search, details, hints)
+                                "/api/v1/categories/**" // Public category endpoints
                         ).permitAll()
 
                         // 2.2. Tất cả các request khác đều BẮT BUỘC phải xác thực

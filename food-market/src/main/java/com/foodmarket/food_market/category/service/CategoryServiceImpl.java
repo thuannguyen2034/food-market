@@ -2,7 +2,6 @@ package com.foodmarket.food_market.category.service;
 
 import com.foodmarket.food_market.category.dto.CategoryResponseDTO; // <-- Cập nhật
 import com.foodmarket.food_market.category.dto.CategorySaveRequestDTO; // <-- Cập nhật
-// import com.foodmarket.food_market.category.mapper.CategoryMapper; // <-- ĐÃ XÓA
 import com.foodmarket.food_market.category.model.Category;
 import com.foodmarket.food_market.category.repository.CategoryRepository;
 import com.foodmarket.food_market.shared.service.ImageService;
@@ -34,7 +33,7 @@ public class CategoryServiceImpl implements CategoryService {
 
         // 2. Chuyển đổi tất cả sang DTO dùng hàm static và đưa vào Map
         Map<Long, CategoryResponseDTO> dtoMap = allCategories.stream()
-                .map(CategoryResponseDTO::fromEntity) // <-- THAY ĐỔI CHÍNH
+                .map(CategoryResponseDTO::fromEntity)
                 .collect(Collectors.toMap(CategoryResponseDTO::getId, dto -> dto));
 
         // 3. Xây dựng cây (logic không đổi)
@@ -56,10 +55,28 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional(readOnly = true)
     public List<CategoryResponseDTO> getAllCategoriesFlat() {
         return categoryRepository.findAll().stream()
-                .map(CategoryResponseDTO::fromEntity) // <-- THAY ĐỔI CHÍNH
+                .map(CategoryResponseDTO::fromEntity)
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<CategoryResponseDTO> getSameRootCategories(String categorySlug) {
+        Optional<Category> category = categoryRepository.findBySlug(categorySlug);
+        if (category.isEmpty()) {
+            throw new EntityNotFoundException("Category not found");
+        }
+        return categoryRepository.getCategoriesByParentId(category.get().getParent().getId())
+                .stream()
+                .map(CategoryResponseDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
+
+
+    public List<CategoryResponseDTO> getSearchCategories(String keyword) {
+        return categoryRepository.searchByKeyword(keyword).stream()
+                .map(CategoryResponseDTO::fromEntity)
+                .collect(Collectors.toList());
+    }
     @Override
     @Transactional
     public CategoryResponseDTO createCategory(CategorySaveRequestDTO request) {

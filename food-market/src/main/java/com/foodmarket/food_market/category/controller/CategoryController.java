@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -18,7 +19,20 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @GetMapping
-    public ResponseEntity<List<CategoryResponseDTO>> getCategoryTree() { // <-- Cập nhật
+    public ResponseEntity<List<CategoryResponseDTO>> getCategoryTree() {
         return ResponseEntity.ok(categoryService.getCategoryTree());
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<CategoryResponseDTO>> getSearch(@RequestParam String keyword) {
+        // Gọi service trả về các Keyword gợi ý
+        return ResponseEntity.ok(categoryService.getSearchCategories(keyword));
+    }
+
+    @GetMapping("/same-root")
+    public ResponseEntity<List<CategoryResponseDTO>> getSameRootCategory(
+            @RequestParam String categorySlug
+    ) {
+        return ResponseEntity.ok(categoryService.getSameRootCategories(categorySlug));
     }
 }
