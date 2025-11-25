@@ -6,7 +6,6 @@ import { ReactNode } from 'react';
 
 // --- Components (bạn sẽ tạo các component này) ---
 import AdminSidebar from '@/components/Admin/AdminSidebar';
-// import AdminHeader from '@/components/Admin/AdminHeader';
 // --- CSS ---
 import styles from '@/styles/admin/AdminLayout.module.css';
 

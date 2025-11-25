@@ -1,15 +1,16 @@
 'use client';
 
 import ProductForm from '@/components/Admin/ProductForm';
-import styles from '@/styles/admin/ProductFormPage.module.css';
+import styles from '@/styles/admin/Products.module.css';
+import { Plus } from 'lucide-react';
 
 export default function NewProductPage() {
   return (
     <div className={styles.formPageContainer}>
-      <h1>Tạo sản phẩm mới</h1>
-      {/* Render component form, không truyền `initialData` 
-        để nó biết đây là form tạo mới 
-      */}
+      <div className={styles.formPageHeader}>
+        <h1><Plus className="inline-icon" size={32} style={{ marginBottom: -6, marginRight: 10 }} /> Tạo sản phẩm mới</h1>
+        <p className={styles.formPageSubtitle}>Thêm sản phẩm mới vào kho</p>
+      </div>
       <ProductForm />
     </div>
   );
