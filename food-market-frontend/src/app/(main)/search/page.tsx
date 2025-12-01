@@ -2,8 +2,9 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+// Đã xóa import Link vì ProductCard tự xử lý link
 import { CategoryResponse, ProductResponse, PageResponse } from '@/types/product';
+import ProductCard from '@/components/ProductCard'; // 1. Import Component
 import styles from './SearchPage.module.css';
 
 export default function SearchPage() {
@@ -20,6 +21,7 @@ export default function SearchPage() {
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
 
+    // Fetch Categories
     useEffect(() => {
         if (!searchQuery) {
             setCategories([]);
@@ -45,12 +47,14 @@ export default function SearchPage() {
         };
     }, [searchQuery]);
 
+    // Reset list when filters change
     useEffect(() => {
         setPage(0);
         setProducts([]);
         setHasMore(true);
     }, [searchQuery, selectedCategory, sortBy]);
 
+    // Fetch Products
     const fetchProducts = useCallback(
         async (pageNum: number, append = false) => {
             setLoading(true);
@@ -87,6 +91,7 @@ export default function SearchPage() {
     useEffect(() => {
         fetchProducts(page, page > 0);
     }, [fetchProducts, page]);
+
     const updateUrl = (newQ?: string | null, newCategory?: string | null, newSort?: string | null) => {
         const params = new URLSearchParams();
         const q = newQ !== undefined ? newQ : searchQuery;
@@ -99,14 +104,11 @@ export default function SearchPage() {
 
         const qs = params.toString();
         const newUrl = qs ? `/search?${qs}` : '/search';
-        // use replace to avoid pushing many history entries when user toggles filters
         router.replace(newUrl, { scroll: false });
     };
 
     const handleCategoryFilter = (categorySlug: string | null) => {
-        // update URL; this will trigger effects to reset page & fetch
         updateUrl(undefined, categorySlug, undefined);
-        // page reset will be handled by reset effect
     };
 
     const handleSortChange = (newSort: string) => {
@@ -115,8 +117,7 @@ export default function SearchPage() {
 
     const handleLoadMore = () => setPage(prev => prev + 1);
 
-    const formatPrice = (price: number) =>
-        new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
+    // Đã xóa hàm formatPrice vì ProductCard tự xử lý
 
     return (
         <div className={styles.container}>
@@ -167,20 +168,13 @@ export default function SearchPage() {
                 <>
                     <div className={styles.productsGrid}>
                         {products.map(product => (
-                            <Link key={product.id} href={`/products/${product.slug}`} className={styles.productCard}>
-                                {product.images[0] && <img src={product.images[0].imageUrl} alt={product.name} className={styles.productImage} />}
-                                <h3>{product.name}</h3>
-                                <p>{product.category.name}</p>
-                                <div className={styles.priceRow}>
-                                    <span className={styles.finalPrice}>{formatPrice(product.finalPrice)}</span>
-                                    {product.discountPercentage > 0 && (
-                                        <>
-                                            <span className={styles.basePrice}>{formatPrice(product.basePrice)}</span>
-                                            <span className={styles.discount}>-{product.discountPercentage}%</span>
-                                        </>
-                                    )}
-                                </div>
-                            </Link>
+                            // 2. Thay thế toàn bộ thẻ Link thủ công bằng ProductCard
+                            <ProductCard 
+                                key={product.id} 
+                                product={product} 
+                                // Có thể truyền categorySlug nếu muốn cố định URL theo filter hiện tại,
+                                // nhưng để null thì ProductCard sẽ dùng slug gốc của sản phẩm (tốt hơn).
+                            />
                         ))}
                     </div>
 

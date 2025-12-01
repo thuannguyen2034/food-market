@@ -2,6 +2,7 @@ package com.foodmarket.food_market.order.dto;
 
 import com.foodmarket.food_market.order.model.Order;
 import com.foodmarket.food_market.order.model.OrderItem;
+import com.foodmarket.food_market.order.model.enums.DeliveryTimeSlot;
 import com.foodmarket.food_market.order.model.enums.OrderStatus;
 import lombok.Builder;
 import lombok.Data;
@@ -22,7 +23,7 @@ public class OrderResponseDTO {
     private String deliveryAddress;
     private String deliveryPhone;
     private OffsetDateTime createdAt;
-    private String deliveryTimeSlot;
+    private DeliveryTimeSlot deliveryTimeSlot;
     private String note;
     private List<OrderItemResponseDTO> items;
 
@@ -32,6 +33,7 @@ public class OrderResponseDTO {
                 .status(order.getStatus())
                 .totalAmount(order.getTotalAmount())
                 .deliveryAddress(order.getDeliveryAddressSnapshot())
+                .deliveryPhone(order.getDeliveryPhoneSnapshot())
                 .createdAt(order.getCreatedAt())
                 .deliveryTimeSlot(order.getDeliveryTimeslot())
                 .note(order.getNote())

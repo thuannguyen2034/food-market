@@ -17,15 +17,11 @@ public class OrderFilterDTO {
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate dateTo;
 
-    // Lọc theo trạng thái (List để chọn nhiều status cùng lúc)
     private List<OrderStatus> statuses;
 
-    // Lọc đơn hàng có chứa các sản phẩm này (Ví dụ: Lọc đơn có bán "Sầu riêng")
     private List<Long> productIds;
 
-    // Lọc theo thông tin khách hàng (Tên, SĐT, Email) hoặc Mã đơn hàng
     private String keyword;
 
-    // Lọc chính xác ID khách hàng (nếu bấm từ trang User Details)
     private UUID userId;
 }

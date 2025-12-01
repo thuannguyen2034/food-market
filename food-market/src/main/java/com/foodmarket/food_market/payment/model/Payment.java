@@ -1,6 +1,7 @@
 package com.foodmarket.food_market.payment.model;
 
 import com.foodmarket.food_market.order.model.Order;
+import com.foodmarket.food_market.order.model.enums.PaymentMethod;
 import com.foodmarket.food_market.order.model.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -27,7 +28,7 @@ public class Payment {
     private Order order;
 
     @Column(name = "method", nullable = false, length = 50)
-    private String method; // Ví dụ: "COD", "VNPAY"
+    private PaymentMethod method; // Ví dụ: "COD", "VNPAY"
 
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal amount;

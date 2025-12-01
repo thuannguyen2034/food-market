@@ -1,5 +1,6 @@
 package com.foodmarket.food_market.order.model;
 
+import com.foodmarket.food_market.order.model.enums.DeliveryTimeSlot;
 import com.foodmarket.food_market.order.model.enums.OrderStatus;
 import com.foodmarket.food_market.order.model.enums.PaymentStatus;
 import com.foodmarket.food_market.payment.model.Payment;
@@ -48,8 +49,9 @@ public class Order {
     @Column(name = "delivery_recipient_name_snapshot")
     private String deliveryRecipientNameSnapshot;
 
-    @Column(name = "delivery_timeslot", length = 100)
-    private String deliveryTimeslot;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "delivery_timeslot", length = 20)
+    private DeliveryTimeSlot deliveryTimeslot;
 
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;

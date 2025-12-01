@@ -1,4 +1,3 @@
-// Tên file: /hooks/useUpdateUser.ts
 'use client';
 
 import { useState } from 'react';
@@ -33,7 +32,6 @@ export const useUpdateUser = () => {
 
     try {
       // --- Bước 1: Cập nhật thông tin (luôn chạy) ---
-      // Endpoint giả định, bạn cần thay bằng endpoint backend của mình
       const infoResponse = await authedFetch('/api/v1/users/profile/update-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

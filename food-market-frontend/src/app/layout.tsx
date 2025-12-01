@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 // 1. Import AuthProvider
 import { AuthProvider } from "@/context/AuthContext"; 
+import { CartProvider } from "@/context/CartContext";
 // (Next.js tự hiểu @/ là thư mục src/)
 import Navbar from "@/components/Navbar";
 const inter = Inter({ subsets: ["latin"] });
@@ -24,9 +25,11 @@ export default function RootLayout({
       <body className={inter.className}>
         {/* 2. Bọc {children} bằng <AuthProvider> */}
         <AuthProvider>
+          <CartProvider>
           <Navbar />
           <Toaster />
           {children}
+          </CartProvider>
         </AuthProvider>
       </body>
     </html>

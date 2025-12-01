@@ -3,17 +3,21 @@ package com.foodmarket.food_market.order.controller;
 import com.foodmarket.food_market.order.dto.CancelOrderRequestDTO;
 import com.foodmarket.food_market.order.dto.CheckoutRequestDTO;
 import com.foodmarket.food_market.order.dto.OrderResponseDTO;
+import com.foodmarket.food_market.order.model.enums.OrderStatus;
 import com.foodmarket.food_market.order.service.OrderService;
 import com.foodmarket.food_market.user.model.entity.User;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -41,9 +45,12 @@ public class OrderController {
      * API Lấy lịch sử đơn hàng
      */
     @GetMapping
-    public ResponseEntity<List<OrderResponseDTO>> getMyOrderHistory(Authentication authentication) {
+    public ResponseEntity<Page<OrderResponseDTO>> getMyOrderHistory(
+            Authentication authentication,
+            @RequestParam(required = false) OrderStatus status,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         User user = (User) authentication.getPrincipal();
-        return ResponseEntity.ok(orderService.getOrderHistory(user.getUserId()));
+        return ResponseEntity.ok(orderService.getOrderHistory(user.getUserId(), status, pageable));
     }
 
     /**

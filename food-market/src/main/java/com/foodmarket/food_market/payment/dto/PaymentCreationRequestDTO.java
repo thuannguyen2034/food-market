@@ -1,6 +1,7 @@
 package com.foodmarket.food_market.payment.dto;
 
 import com.foodmarket.food_market.order.model.Order;
+import com.foodmarket.food_market.order.model.enums.PaymentMethod;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -14,10 +15,9 @@ import java.math.BigDecimal;
 @AllArgsConstructor // Tạo constructor cho tiện
 public class PaymentCreationRequestDTO {
 
-    // Gửi luôn đối tượng Order (hoặc chỉ OrderId nếu muốn)
     private Order order;
 
-    private String paymentMethod; // "COD", "VNPAY", "MOMO"
+    private PaymentMethod paymentMethod; // "COD", "VNPAY", "MOMO"
 
     private BigDecimal totalAmount;
 }

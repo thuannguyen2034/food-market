@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { CategoryResponse, ProductResponse, PageResponse } from '@/types/product';
+import ProductCard from '@/components/ProductCard';
+import { ProductResponse, CategoryResponse, PageResponse } from '@/types/product';
 import styles from './CategoryPage.module.css';
 
 export default function CategoryPage() {
     const params = useParams();
-    const router = useRouter();
     const categorySlug = params.category as string;
 
     const [currentCategory, setCurrentCategory] = useState<CategoryResponse | null>(null);
@@ -83,13 +83,6 @@ export default function CategoryPage() {
         setPage(prev => prev + 1);
     };
 
-    const formatPrice = (price: number) => {
-        return new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-        }).format(price);
-    };
-
     return (
         <div className={styles.container}>
             {/* Category Header */}
@@ -140,22 +133,11 @@ export default function CategoryPage() {
                 <>
                     <div className={styles.productsGrid}>
                         {products.map(product => (
-                            <Link key={product.id} href={`/products/${product.slug}`} className={styles.productCard}>
-                                {product.images[0] && (
-                                    <img src={product.images[0].imageUrl} alt={product.name} className={styles.productImage} />
-                                )}
-                                <h3>{product.name}</h3>
-                                <p className={styles.categoryName}>{product.category.name}</p>
-                                <div className={styles.priceRow}>
-                                    <span className={styles.finalPrice}>{formatPrice(product.finalPrice)}</span>
-                                    {product.discountPercentage > 0 && (
-                                        <>
-                                            <span className={styles.basePrice}>{formatPrice(product.basePrice)}</span>
-                                            <span className={styles.discount}>-{product.discountPercentage}%</span>
-                                        </>
-                                    )}
-                                </div>
-                            </Link>
+                            <ProductCard
+                                key={product.id}
+                                product={product}
+                                categorySlug={categorySlug}
+                            />
                         ))}
                     </div>
 

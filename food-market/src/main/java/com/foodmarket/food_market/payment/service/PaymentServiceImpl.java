@@ -41,17 +41,11 @@ public class PaymentServiceImpl implements PaymentService {
      */
     @Override
     public void createPendingPayment(PaymentCreationRequestDTO request) {
-
-        // Logic nghiệp vụ thanh toán (nếu có)
-        PaymentStatus initialStatus;
-        // Chờ thanh toán online
-        initialStatus = PaymentStatus.PENDING; // Chờ thu tiền
-
         Payment newPayment = new Payment();
         newPayment.setOrder(request.getOrder());
         newPayment.setAmount(request.getTotalAmount());
         newPayment.setMethod(request.getPaymentMethod());
-        newPayment.setStatus(initialStatus);
+        newPayment.setStatus(PaymentStatus.PENDING);
 
         paymentRepository.save(newPayment);
         log.info("Đã tạo thanh toán PENDING cho Order ID: {}", request.getOrder().getId());
@@ -167,7 +161,7 @@ public class PaymentServiceImpl implements PaymentService {
         } else {
             // Thanh toán thất bại
             log.warn("VNPay IPN: Thanh toán thất bại cho đơn hàng {}. ResponseCode: {}", orderIdStr, responseCode);
-            payment.setStatus(PaymentStatus.FAILED);
+            payment.setStatus(PaymentStatus.CANCEL);
             paymentRepository.save(payment);
 
             // Không cần cập nhật Order, vẫn là PENDING
@@ -190,10 +184,6 @@ public class PaymentServiceImpl implements PaymentService {
 
     // Hàm tiện ích encode URL
     private String encodeValue(String value) {
-        try {
-            return URLEncoder.encode(value, StandardCharsets.US_ASCII.toString());
-        } catch (UnsupportedEncodingException e) {
-            return "";
-        }
+        return URLEncoder.encode(value, StandardCharsets.US_ASCII);
     }
 }

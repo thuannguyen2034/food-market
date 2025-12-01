@@ -113,7 +113,10 @@ public class OrderSpecification {
             // Join Order -> User để tìm tên/email
             Join<Order, User> userJoin = root.join("user", JoinType.LEFT);
 
-            Predicate searchOrderId = cb.like(cb.lower(root.get("id").as(String.class)), likePattern);
+            Predicate searchOrderId = cb.like(
+                    cb.concat(root.get("id").as(String.class), cb.literal("")),
+                    likePattern
+            );
             Predicate searchName = cb.like(cb.lower(userJoin.get("fullName")), likePattern);
             Predicate searchEmail = cb.like(cb.lower(userJoin.get("email")), likePattern);
 

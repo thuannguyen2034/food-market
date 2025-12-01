@@ -26,7 +26,7 @@ public interface OrderService {
     OrderResponseDTO placeOrder(UUID userId, CheckoutRequestDTO request);
 
     /** Lấy lịch sử đơn hàng */
-    List<OrderResponseDTO> getOrderHistory(UUID userId);
+    Page<OrderResponseDTO> getOrderHistory(UUID userId, OrderStatus status, Pageable pageable);
 
     /** Lấy chi tiết 1 đơn hàng */
     OrderResponseDTO getOrderDetails(UUID userId, UUID orderId);

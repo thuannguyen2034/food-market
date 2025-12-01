@@ -11,12 +11,10 @@ export default function UserDashboardLayout({
   return (
     <div className={styles.pageBackground}>
         <div className={styles.dashboard}>
-          {/* CỘT BÊN TRÁI: SIDEBAR ĐIỀU HƯỚNG */}
           <div className={styles.sidebar}>
             <UserSidebar />
           </div>
 
-          {/* CỘT BÊN PHẢI: NỘI DUNG TRANG CON */}
           <div className={styles.content}>
             {children}
           </div>
