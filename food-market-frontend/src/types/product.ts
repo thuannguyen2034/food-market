@@ -9,6 +9,7 @@ export interface ProductImage {
 export interface CategorySummary {
     id: number;
     name: string;
+    slug: string;
 }
 
 export interface TagDTO {
@@ -21,15 +22,28 @@ export interface ProductResponse {
     id: number;
     name: string;
     description: string;
+    specifications?: Record<string, string>; // Map<String, String> from backend
     images: ProductImage[];
     unit: string;
     basePrice: number;
     finalPrice: number;
-    discountPercentage: number;
     slug: string;
     stockQuantity: number;
     category: CategorySummary;
     tags: TagDTO[];
+    averageRating?: number; // Product rating
+}
+
+// Review interface
+export interface ReviewResponse {
+    id: number;
+    userId: string;
+    userName: string;
+    productId: number;
+    productName: string;
+    rating: number;
+    comment: string;
+    createdAt: string;
 }
 
 export interface CategoryResponse {

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { useAuth } from '@/context/AuthContext';
 import { useDropzone } from 'react-dropzone';
-import { Upload, X, Plus, Trash2 } from 'lucide-react'; // Thêm icon
+import { Upload, X, Plus, Trash2, Tag } from 'lucide-react'; // Thêm icon Tag
 import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import CategoryFormModal from './CategoryFormModal';
@@ -14,7 +14,7 @@ import styles from '@/styles/admin/ProductForm.module.css';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
 
-// Dynamic import để tắt Server-Side Rendering (SSR) cho editor
+// Dynamic import để tắt SSR cho editor
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
 // --- Types ---
@@ -28,10 +28,14 @@ export type AdminProductResponse = {
   id: number;
   name: string;
   description: string;
-  specifications: Record<string, string>; // Map từ Backend trả về
+  specifications: Record<string, string>;
   images: ProductImage[];
   unit: string;
   basePrice: number;
+  // --- Fields mới từ DTO ---
+  salePrice?: number;
+  onSale?: boolean;
+  // -------------------------
   stockQuantity: number;
   category: { id: number; name: string };
   tags: { id: number; name: string }[];
@@ -42,10 +46,13 @@ type ProductSaveInputs = {
   name: string;
   description: string;
   basePrice: number;
+  // --- Fields mới ---
+  salePrice: number;
+  isOnSale: boolean;
+  // -----------------
   unit: string;
   categoryId: number | null;
   tags: string[];
-  // specfications sẽ được xử lý state riêng rồi merge vào khi submit
 };
 
 interface ProductFormProps {
@@ -54,9 +61,8 @@ interface ProductFormProps {
 
 type SelectOption = { value: any; label: string };
 
-// Type cho state specifications ở frontend
 type SpecItem = {
-  id: number; // Id tạm để làm key cho list react
+  id: number;
   key: string;
   value: string;
 };
@@ -81,7 +87,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   const [newImages, setNewImages] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
 
-  // --- State quản lý Specifications (Thông số kỹ thuật)
+  // State specifications
   const [specs, setSpecs] = useState<SpecItem[]>([]);
 
   const {
@@ -90,17 +96,24 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     control,
     setValue,
     reset,
+    watch, // Dùng watch để theo dõi giá trị realtime
     formState: { errors },
   } = useForm<ProductSaveInputs>({
     defaultValues: {
       name: '',
       description: '',
       basePrice: 0,
+      salePrice: 0,
+      isOnSale: false,
       unit: '',
       categoryId: null,
       tags: [],
     },
   });
+
+  // Theo dõi giá trị để xử lý logic UI
+  const isOnSale = watch('isOnSale');
+  const basePrice = watch('basePrice');
 
   // --- 1. Fetch Meta Data ---
   useEffect(() => {
@@ -131,15 +144,18 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     if (initialData) {
       reset({
         name: initialData.name,
-        description: initialData.description || '', // Default empty string nếu null
+        description: initialData.description || '',
         basePrice: initialData.basePrice,
+        // Map data khuyến mãi
+        salePrice: initialData.salePrice || 0,
+        isOnSale: initialData.onSale || false,
+        
         unit: initialData.unit,
         categoryId: initialData.category.id,
         tags: initialData.tags.map(t => t.name),
       });
       setExistingImages(initialData.images || []);
 
-      // Convert Map<String, String> từ Backend sang mảng SpecItem để hiển thị
       if (initialData.specifications) {
         const specList = Object.entries(initialData.specifications).map(([key, value], index) => ({
           id: Date.now() + index,
@@ -153,21 +169,20 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     }
   }, [initialData, reset]);
 
+  // Handlers cho Specifications
   const addSpecRow = () => {
     setSpecs(prev => [...prev, { id: Date.now(), key: '', value: '' }]);
   };
-
   const removeSpecRow = (idToRemove: number) => {
     setSpecs(prev => prev.filter(item => item.id !== idToRemove));
   };
-
   const updateSpec = (id: number, field: 'key' | 'value', newValue: string) => {
     setSpecs(prev => prev.map(item =>
       item.id === id ? { ...item, [field]: newValue } : item
     ));
   };
 
-  // --- 4. Dropzone Handler ---
+  // Handlers cho Images
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const validFiles = acceptedFiles.filter(file => file.type.startsWith('image/'));
     if (validFiles.length > 0) {
@@ -195,12 +210,9 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     setDeletedImageIds(prev => [...prev, imageId]);
   };
 
-  // Cleanup preview URLs
   useEffect(() => {
     return () => {
-      newImagePreviews.forEach(url => {
-        try { URL.revokeObjectURL(url); } catch (e) { }
-      });
+      newImagePreviews.forEach(url => { try { URL.revokeObjectURL(url); } catch (e) { } });
     };
   }, []);
 
@@ -216,8 +228,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     try {
       const formData = new FormData();
 
-      // Convert mảng SpecItem -> Map/Object cho Backend
-      // Lọc bỏ những dòng chưa nhập key để tránh lỗi
       const specsObject = specs.reduce((acc, item) => {
         if (item.key.trim()) {
           acc[item.key.trim()] = item.value.trim();
@@ -227,12 +237,16 @@ export default function ProductForm({ initialData }: ProductFormProps) {
 
       const productDTO = {
         name: data.name,
-        description: data.description, // HTML content
+        description: data.description,
         basePrice: data.basePrice,
+        // Gửi thông tin khuyến mãi
+        salePrice: data.isOnSale ? data.salePrice : null, // Nếu tắt thì gửi null hoặc 0
+        isOnSale: data.isOnSale,
+        
         unit: data.unit,
         categoryId: data.categoryId,
         tags: data.tags,
-        specifications: specsObject, // Field mới
+        specifications: specsObject,
         deletedImageIds: deletedImageIds
       };
 
@@ -276,7 +290,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     }
   };
 
-  // Cấu hình Toolbar cho Quill
   const quillModules = useMemo(() => ({
     toolbar: [
       [{ 'header': [1, 2, 3, false] }],
@@ -304,7 +317,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
               {errors.name && <span className={styles.error}>{errors.name.message}</span>}
             </div>
 
-            {/* --- RICH TEXT EDITOR --- */}
             <div className={styles.formGroup}>
               <label htmlFor="description">Mô tả chi tiết</label>
               <div className={styles.richTextContainer}>
@@ -318,7 +330,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                       onChange={field.onChange}
                       modules={quillModules}
                       className={styles.quillEditor}
-                      placeholder="Viết mô tả sản phẩm, chèn hình ảnh, format văn bản..."
+                      placeholder="Viết mô tả sản phẩm..."
                     />
                   )}
                 />
@@ -326,7 +338,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             </div>
           </div>
 
-          {/* --- SPECIFICATIONS SECTION (New) --- */}
           <div className={styles.card}>
             <div className={styles.cardHeaderWithAction}>
               <h3>Thông số kỹ thuật</h3>
@@ -334,12 +345,10 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 <Plus size={16} /> Thêm dòng
               </button>
             </div>
-
             <div className={styles.specificationsContainer}>
               {specs.length === 0 && (
                 <p className={styles.emptyText}>Chưa có thông số nào. Nhấn "Thêm dòng" để tạo.</p>
               )}
-
               {specs.map((item) => (
                 <div key={item.id} className={styles.specRow}>
                   <input
@@ -354,72 +363,35 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     onChange={(e) => updateSpec(item.id, 'value', e.target.value)}
                     className={styles.specInputValue}
                   />
-                  <button
-                    type="button"
-                    onClick={() => removeSpecRow(item.id)}
-                    className={styles.removeSpecBtn}
-                    title="Xóa dòng này"
-                  >
+                  <button type="button" onClick={() => removeSpecRow(item.id)} className={styles.removeSpecBtn}>
                     <Trash2 size={16} />
                   </button>
                 </div>
               ))}
             </div>
-            <div className={styles.noteText}>
-              * Điền tên thuộc tính và giá trị tương ứng. Các dòng trống Key sẽ tự động bị bỏ qua khi lưu.
-            </div>
           </div>
 
           <div className={styles.card}>
             <h3>Hình ảnh sản phẩm</h3>
-            {/* Dropzone giữ nguyên */}
-            <div
-              {...getRootProps()}
-              className={`${styles.dropzone} ${isDragActive ? styles.dropzoneActive : ''}`}
-            >
+            <div {...getRootProps()} className={`${styles.dropzone} ${isDragActive ? styles.dropzoneActive : ''}`}>
               <input {...getInputProps()} />
               <Upload className={styles.dropzoneIcon} />
-              {isDragActive ? (
-                <p className={styles.dropzoneText}>Thả ảnh vào đây...</p>
-              ) : (
-                <>
-                  <p className={styles.dropzoneText}>Kéo thả ảnh vào đây, hoặc click để chọn</p>
-                  <p className={styles.dropzoneSubtext}>Hỗ trợ: JPG, PNG, WEBP</p>
-                </>
-              )}
+              <p className={styles.dropzoneText}>Kéo thả ảnh vào đây, hoặc click để chọn</p>
             </div>
-
-            {/* Image Grid giữ nguyên */}
             {(existingImages.length > 0 || newImages.length > 0) && (
               <div className={styles.imageGrid}>
                 {existingImages.map((img) => (
                   <div key={`old-${img.id}`} className={styles.imageItem}>
-                    <img
-                      src={img.imageUrl}
-                      alt="product"
-                      onClick={() => setPreviewImage(img.imageUrl)}
-                    />
-                    <button
-                      type="button"
-                      className={styles.removeBtn}
-                      onClick={(e) => { e.stopPropagation(); removeExistingImage(img.id); }}
-                    >
+                    <img src={img.imageUrl} alt="product" onClick={() => setPreviewImage(img.imageUrl)} />
+                    <button type="button" className={styles.removeBtn} onClick={(e) => { e.stopPropagation(); removeExistingImage(img.id); }}>
                       <X size={16} />
                     </button>
                   </div>
                 ))}
                 {newImages.map((file, index) => (
                   <div key={`new-${index}`} className={styles.imageItem}>
-                    <img
-                      src={newImagePreviews[index]}
-                      alt="preview"
-                      onClick={() => setPreviewImage(newImagePreviews[index])}
-                    />
-                    <button
-                      type="button"
-                      className={styles.removeBtn}
-                      onClick={(e) => { e.stopPropagation(); removeNewImage(index); }}
-                    >
+                    <img src={newImagePreviews[index]} alt="preview" onClick={() => setPreviewImage(newImagePreviews[index])} />
+                    <button type="button" className={styles.removeBtn} onClick={(e) => { e.stopPropagation(); removeNewImage(index); }}>
                       <X size={16} />
                     </button>
                   </div>
@@ -429,38 +401,84 @@ export default function ProductForm({ initialData }: ProductFormProps) {
           </div>
         </div>
 
-        {/* Right Column (Giữ nguyên logic cũ, chỉ map lại layout) */}
+        {/* Right Column */}
         <div className={styles.sidebarContent}>
+          {/* --- CẬP NHẬT PHẦN GIÁ --- */}
           <div className={styles.card}>
             <h3>Giá & Đơn vị</h3>
-            <div className={styles.inlineGroup}>
-              <div className={styles.formGroup}>
-                <label htmlFor="basePrice">Giá gốc (VNĐ) <span style={{ color: '#dc3545' }}>*</span></label>
-                <input
-                  id="basePrice"
-                  type="number"
-                  placeholder="0"
-                  {...register('basePrice', { required: 'Giá là bắt buộc', min: 0, valueAsNumber: true })}
-                />
-                {errors.basePrice && <span className={styles.error}>{errors.basePrice.message}</span>}
-              </div>
+            
+            {/* Giá gốc */}
+            <div className={styles.formGroup}>
+              <label htmlFor="basePrice">Giá gốc (VNĐ) <span style={{ color: '#dc3545' }}>*</span></label>
+              <input
+                id="basePrice"
+                type="number"
+                placeholder="0"
+                className={styles.inputLarge}
+                {...register('basePrice', { required: 'Giá là bắt buộc', min: 0, valueAsNumber: true })}
+              />
+              {errors.basePrice && <span className={styles.error}>{errors.basePrice.message}</span>}
+            </div>
 
-              <div className={styles.formGroup}>
-                <label htmlFor="unit">Đơn vị <span style={{ color: '#dc3545' }}>*</span></label>
+            {/* Checkbox Bật khuyến mãi */}
+            <div className={styles.formGroup}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}>
                 <input
-                  id="unit"
-                  placeholder="kg, bó, hộp..."
-                  {...register('unit', { required: 'Đơn vị là bắt buộc' })}
+                  type="checkbox"
+                  id="isOnSale"
+                  style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                  {...register('isOnSale')}
                 />
-                {errors.unit && <span className={styles.error}>{errors.unit.message}</span>}
+                <label htmlFor="isOnSale" style={{ cursor: 'pointer', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '5px' }}>
+                  <Tag size={16} color={isOnSale ? "#dc3545" : "#666"} />
+                  Bật chương trình giảm giá
+                </label>
               </div>
             </div>
+
+            {/* Giá khuyến mãi (Hiện khi isOnSale = true) */}
+            {isOnSale && (
+              <div className={`${styles.formGroup} ${styles.fadeIn}`}>
+                <label htmlFor="salePrice" style={{ color: '#dc3545' }}>Giá khuyến mãi (VNĐ)</label>
+                <input
+                  id="salePrice"
+                  type="number"
+                  placeholder="0"
+                  className={styles.inputLarge}
+                  style={{ borderColor: '#dc3545' }}
+                  {...register('salePrice', { 
+                    required: isOnSale ? 'Vui lòng nhập giá giảm' : false,
+                    min: { value: 0, message: 'Giá không được âm' },
+                    valueAsNumber: true,
+                    validate: (value) => {
+                      if (isOnSale && value >= basePrice) {
+                        return 'Giá giảm phải nhỏ hơn giá gốc';
+                      }
+                      return true;
+                    }
+                  })}
+                />
+                {errors.salePrice && <span className={styles.error}>{errors.salePrice.message}</span>}
+              </div>
+            )}
+
+            <div className={styles.formGroup} style={{ marginTop: '15px' }}>
+              <label htmlFor="unit">Đơn vị tính <span style={{ color: '#dc3545' }}>*</span></label>
+              <input
+                id="unit"
+                placeholder="kg, bó, hộp..."
+                {...register('unit', { required: 'Đơn vị là bắt buộc' })}
+              />
+              {errors.unit && <span className={styles.error}>{errors.unit.message}</span>}
+            </div>
+
             {isEditMode && initialData && (
               <div className={styles.stockInfo}>
-                <strong>Tồn kho:</strong> {initialData.stockQuantity} {initialData.unit}
+                <strong>Tồn kho hiện tại:</strong> {initialData.stockQuantity} {initialData.unit}
               </div>
             )}
           </div>
+          {/* ------------------------- */}
 
           <div className={styles.card}>
             <h3>Phân loại</h3>
@@ -481,19 +499,13 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     />
                   )}
                 />
-                <button
-                  type="button"
-                  onClick={() => setIsCategoryModalOpen(true)}
-                  className={styles.quickAddButton}
-                >
-                  +
-                </button>
+                <button type="button" onClick={() => setIsCategoryModalOpen(true)} className={styles.quickAddButton}>+</button>
               </div>
               {errors.categoryId && <span className={styles.error}>{errors.categoryId.message}</span>}
             </div>
 
             <div className={styles.formGroup}>
-              <label>Tags</label>
+              <label>Tags (Thẻ)</label>
               <Controller
                 name="tags"
                 control={control}
@@ -513,16 +525,13 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         </div>
 
         <div className={styles.submitBar}>
-          <button type="button" onClick={() => router.back()} className={styles.cancelButton}>
-            Hủy bỏ
-          </button>
+          <button type="button" onClick={() => router.back()} className={styles.cancelButton}>Hủy bỏ</button>
           <button type="submit" disabled={loading} className={styles.saveButton}>
             {loading ? 'Đang xử lý...' : (isEditMode ? 'Lưu thay đổi' : 'Tạo sản phẩm')}
           </button>
         </div>
       </form>
 
-      {/* Preview Modal - Giữ nguyên */}
       {previewImage && (
         <div className={styles.modalOverlay} onClick={() => setPreviewImage(null)}>
           <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
@@ -533,10 +542,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       )}
 
       {isCategoryModalOpen && (
-        <CategoryFormModal
-          onClose={() => setIsCategoryModalOpen(false)}
-          onSave={handleCategorySave}
-        />
+        <CategoryFormModal onClose={() => setIsCategoryModalOpen(false)} onSave={handleCategorySave} />
       )}
     </>
   );
