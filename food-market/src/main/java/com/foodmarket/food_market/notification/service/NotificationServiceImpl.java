@@ -53,7 +53,6 @@ public class NotificationServiceImpl implements NotificationService {
      */
     @Override
     public void createNotification(UUID userId, String message, NotificationType type, String linkTo) {
-        // Tải User (dạng tham chiếu) để tránh query DB
         User userRef = userRepository.getReferenceById(userId);
 
         Notification notification = new Notification();
@@ -65,8 +64,5 @@ public class NotificationServiceImpl implements NotificationService {
 
         notificationRepository.save(notification);
         log.info("Đã lưu thông báo {} cho user {}", type, userId);
-
-        // (Sau này, chúng ta sẽ gọi logic đẩy FCM/Firebase từ đây)
-        // pushNotificationService.sendPush(userId, message, linkTo);
     }
 }

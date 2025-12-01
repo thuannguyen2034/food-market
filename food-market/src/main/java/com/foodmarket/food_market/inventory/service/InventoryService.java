@@ -1,10 +1,8 @@
 package com.foodmarket.food_market.inventory.service;
 
 import com.foodmarket.food_market.inventory.dto.*;
-import com.foodmarket.food_market.inventory.model.InventoryBatch;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;

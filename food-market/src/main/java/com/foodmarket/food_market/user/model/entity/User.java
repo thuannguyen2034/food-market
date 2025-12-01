@@ -49,11 +49,7 @@ public class User implements UserDetails { // Implement UserDetails
 
     @Column(name = "avatar_url", length = 255)
     private String avatarUrl;
-    // --- Các hàm nghiệp vụ của Rich Domain Model (sẽ thêm sau) ---
-    // public void changePassword(String newHashedPassword) { ... }
-    // public void updateProfile(String newName, String newPhone) { ... }
 
-    // --- Triển khai các phương thức của UserDetails (Bắt buộc cho Spring Security) ---
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -63,13 +59,11 @@ public class User implements UserDetails { // Implement UserDetails
 
     @Override
     public String getPassword() {
-        // Trả về mật khẩu đã hash
         return this.passwordHash;
     }
 
     @Override
     public String getUsername() {
-        // Chúng ta dùng email để đăng nhập, nên username chính là email
         return this.email;
     }
 

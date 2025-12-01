@@ -6,11 +6,16 @@ import com.foodmarket.food_market.order.model.Order;
 import com.foodmarket.food_market.order.model.enums.OrderStatus;
 import com.foodmarket.food_market.payment.event.PaymentSuccessfulEvent;
 import com.foodmarket.food_market.order.event.OrderStatusChangedEvent;
+import com.foodmarket.food_market.user.repository.UserRepository;
+import com.pusher.rest.Pusher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 @RequiredArgsConstructor
@@ -18,7 +23,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 public class NotificationEventListener {
 
     private final NotificationService notificationService;
-
+    private final Pusher pusher;
     /**
      * Lắng nghe sự kiện PaymentSuccessfulEvent
      * CHỈ CHẠY SAU KHI TRANSACTION GỐC (của PaymentService) ĐÃ COMMIT THÀNH CÔNG.
@@ -50,6 +55,7 @@ public class NotificationEventListener {
             // (Trong Giai đoạn 3, chúng ta sẽ dùng Dead Letter Queue (DLQ) ở đây)
         }
     }
+
     /**
      * (MỚI) Lắng nghe sự kiện thay đổi trạng thái Order
      */
@@ -78,16 +84,16 @@ public class NotificationEventListener {
                         NotificationType.ORDER,
                         "/orders/" + order.getId()
                 );
+                try {
+                    String channelName = "user-" + order.getUser().getUserId();
+                    Map<String, String> pushData = new HashMap<>();
+                    pushData.put("message", message);
+                    pushData.put("link", "/orders/" + order.getId());
 
-                // 2. Đẩy WebSocket (cho "bản đồ" fake)
-                // Chúng ta sẽ đẩy 1 object JSON chứa trạng thái mới
-                String webSocketMessage = String.format("{\"status\": \"%s\", \"message\": \"%s\"}", status, message);
-
-                // messagingTemplate.convertAndSend(
-                //     "/topic/tracking/" + order.getId(),
-                //     webSocketMessage
-                // );
-                log.info("FAKE PUSH WebSocket: {}", webSocketMessage); // (Tạm thời log ra)
+                    pusher.trigger(channelName, "notification-event", pushData);
+                } catch (Exception ex) {
+                    log.error("Lỗi gửi Pusher: " + ex.getMessage());
+                }
             }
 
         } catch (Exception e) {

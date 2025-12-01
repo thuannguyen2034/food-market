@@ -1,11 +1,8 @@
 package com.foodmarket.food_market.inventory.repository;
 
 import com.foodmarket.food_market.inventory.model.InventoryBatch;
-import com.foodmarket.food_market.product.model.Product;
-import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -34,4 +31,7 @@ public interface InventoryBatchRepository extends JpaRepository<InventoryBatch, 
             "WHERE b.expirationDate <= :thresholdDate " +
             "AND b.currentQuantity > 0")
     long countExpiringBatches(@Param("thresholdDate") LocalDate thresholdDate);
+
+    @Query("SELECT COALESCE(SUM(b.currentQuantity), 0)  FROM InventoryBatch b WHERE b.productId = :productId")
+    long findCurrentProductQuantity(@Param("productId") Long productId);
 }

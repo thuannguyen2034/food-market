@@ -79,7 +79,6 @@ public class AdminInventoryController {
             @RequestBody InventoryDestroyRequestDTO requestDTO) {
 
         UUID currentAdminId = getCurrentUserId();
-        // Service nhận String userId, ta convert UUID sang String
         inventoryService.destroyBatch(batchId, requestDTO.getReason(), currentAdminId.toString());
         return ResponseEntity.ok().build();
     }

@@ -23,6 +23,7 @@ public class TopProductResponseDTO {
         return TopProductResponseDTO.builder()
                 .productId(stat.getProductId())
                 .productName(stat.getProductName())
+                .productImage(stat.getProductImages().getFirst().getImageUrl())
                 .totalSold(stat.getTotalSold())
                 .totalRevenue(stat.getTotalRevenue())
                 .build();

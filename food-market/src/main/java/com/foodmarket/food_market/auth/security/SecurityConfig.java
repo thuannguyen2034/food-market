@@ -43,7 +43,8 @@ public class SecurityConfig {
                                 "/v3/api-docs/**", // Swagger/OpenAPI docs
                                 "/swagger-ui/**",   // Swagger UI
                                 "/api/v1/products/**", // Public product endpoints (search, details, hints)
-                                "/api/v1/categories/**" // Public category endpoints
+                                "/api/v1/categories/**", // Public category endpoints
+                                "/api/v1/reviews/**"
                         ).permitAll()
 
                         // 2.2. Tất cả các request khác đều BẮT BUỘC phải xác thực

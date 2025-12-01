@@ -20,16 +20,11 @@ public class InventoryBatch {
     @Column(name = "batch_id")
     private Long batchId;
 
-    /**
-     * Chỉ lưu ID của sản phẩm, không dùng @ManyToOne.
-     * Đây là triết lý Modular Monolith để giảm khớp nối (decoupling)
-     * giữa module Inventory và module Product/Catalog.
-     */
     @Column(name = "product_id", nullable = false)
     private Long productId;
 
     @Column(name = "batch_code")
-    private String batchCode; // Mã lô hàng nội bộ hoặc của nhà cung cấp
+    private String batchCode;
 
     @CreationTimestamp
     @Column(name = "received_date", nullable = false, updatable = false)
