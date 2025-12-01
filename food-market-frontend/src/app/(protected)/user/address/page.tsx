@@ -1,11 +1,12 @@
-// app/(protected)/user/address/page.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Plus } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import AddressModal from '@/components/Address/AddressModal';
 import AddressCard from '@/components/Address/AddressCard';
 import toast from 'react-hot-toast';
+import styles from './AddressPage.module.css';
 
 export interface UserAddress {
   id: number;
@@ -26,7 +27,6 @@ export default function AddressPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAddress, setSelectedAddress] = useState<UserAddress | null>(null);
 
-  // Fetch danh sách địa chỉ
   useEffect(() => {
     const fetchAddresses = async () => {
       try {
@@ -81,13 +81,11 @@ export default function AddressPage() {
 
   const onModalSave = (savedAddress: UserAddress) => {
     if (selectedAddress) {
-      // Cập nhật
       setAddresses(prev =>
         prev.map(addr => (addr.id === savedAddress.id ? savedAddress : addr))
       );
       toast.success('Cập nhật địa chỉ thành công');
     } else {
-      // Thêm mới
       setAddresses(prev => [savedAddress, ...prev]);
       toast.success('Thêm địa chỉ mới thành công');
     }
@@ -95,17 +93,20 @@ export default function AddressPage() {
   };
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+    <div className={styles.container}>
+      <div className={styles.header}>
         <h1>Địa chỉ của tôi</h1>
-        <button onClick={handleAddNew}>
-          + Thêm địa chỉ mới
+        <button onClick={handleAddNew} className={styles.addBtn}>
+          <Plus size={18} />
+          Thêm địa chỉ mới
         </button>
       </div>
 
-      <div>
-        {isLoading && <p>Đang tải...</p>}
-        {!isLoading && addresses.length === 0 && <p>Bạn chưa có địa chỉ nào.</p>}
+      <div className={styles.content}>
+        {isLoading && <p className={styles.message}>Đang tải...</p>}
+        {!isLoading && addresses.length === 0 && (
+          <p className={styles.message}>Bạn chưa có địa chỉ nào.</p>
+        )}
 
         {addresses.map(address => (
           <AddressCard

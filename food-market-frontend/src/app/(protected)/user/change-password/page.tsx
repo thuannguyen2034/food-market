@@ -1,10 +1,11 @@
-// app/(protected)/user/change-password/page.tsx
 'use client';
 
 import { useState } from 'react';
+import { Eye, EyeOff, Lock, Shield, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import styles from './ChangePassword.module.css';
 
 export default function ChangePasswordPage() {
   const { authedFetch } = useAuth();
@@ -13,7 +14,7 @@ export default function ChangePasswordPage() {
   const [formData, setFormData] = useState({
     oldPassword: '',
     newPassword: '',
-    confirmPassword: '', // để kiểm tra phía client
+    confirmPassword: '',
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +38,6 @@ export default function ChangePasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Kiểm tra client trước
     if (formData.newPassword !== formData.confirmPassword) {
       toast.error('Mật khẩu mới và xác nhận không khớp!');
       return;
@@ -64,26 +64,22 @@ export default function ChangePasswordPage() {
 
       if (!res.ok) {
         const error = await res.json();
-        // Xử lý các lỗi phổ biến từ backend
         if (res.status === 400) {
-            toast.error(error.message || 'Yêu cầu không hợp lệ. Vui lòng thử lại sau.');
+          toast.error(error.message || 'Yêu cầu không hợp lệ. Vui lòng thử lại sau.');
         } else {
           toast.error('Đổi mật khẩu thất bại. Vui lòng thử lại.');
         }
         return;
       }
 
-      // Thành công
       toast.success('Đổi mật khẩu thành công! Vui lòng đăng nhập lại để tiếp tục.', {
         duration: 5000,
       });
 
-      // Reset form
       setFormData({ oldPassword: '', newPassword: '', confirmPassword: '' });
 
-      // Tùy chọn: Đăng xuất tự động sau 3s
       setTimeout(() => {
-        router.push('/logout'); // hoặc gọi hàm logout từ AuthContext
+        router.push('/logout');
       }, 3000);
 
     } catch (error) {
@@ -94,135 +90,97 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div style={{ maxWidth: '500px', margin: '0 auto', padding: '2rem 1rem' }}>
-      <h1 style={{ textAlign: 'center', marginBottom: '2rem', fontSize: '24px' }}>
-        Đổi mật khẩu
-      </h1>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <Shield size={32} className={styles.headerIcon} />
+        <h1>Đổi mật khẩu</h1>
+        <p>Để bảo mật tài khoản, vui lòng không chia sẻ mật khẩu cho người khác</p>
+      </div>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-        {/* Mật khẩu cũ */}
-        <div>
-          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+      <form onSubmit={handleSubmit} className={styles.form}>
+        <div className={styles.field}>
+          <label>
+            <Lock size={16} />
             Mật khẩu hiện tại
           </label>
-          <div style={{ position: 'relative' }}>
+          <div className={styles.inputWrapper}>
             <input
               type={showPassword.old ? 'text' : 'password'}
               name="oldPassword"
               value={formData.oldPassword}
               onChange={handleChange}
               required
-              style={{ width: '100%', padding: '12px 40px 12px 12px', borderRadius: '8px', border: '1px solid #ddd' }}
               placeholder="Nhập mật khẩu cũ"
             />
             <button
               type="button"
               onClick={() => toggleShowPassword('old')}
-              style={{
-                position: 'absolute',
-                right: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '18px',
-              }}
+              className={styles.toggleBtn}
             >
-              {showPassword.old ? 'Hide' : 'Show'}
+              {showPassword.old ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
         </div>
 
-        {/* Mật khẩu mới */}
-        <div>
-          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+        <div className={styles.field}>
+          <label>
+            <Lock size={16} />
             Mật khẩu mới
           </label>
-          <div style={{ position: 'relative' }}>
+          <div className={styles.inputWrapper}>
             <input
               type={showPassword.new ? 'text' : 'password'}
               name="newPassword"
               value={formData.newPassword}
               onChange={handleChange}
               required
-              style={{ width: '100%', padding: '12px 40px 12px 12px', borderRadius: '8px', border: '1px solid #ddd' }}
               placeholder="Ít nhất 6 ký tự"
             />
             <button
               type="button"
               onClick={() => toggleShowPassword('new')}
-              style={{
-                position: 'absolute',
-                right: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '18px',
-              }}
+              className={styles.toggleBtn}
             >
-              {showPassword.new ? 'Hide' : 'Show'}
+              {showPassword.new ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
         </div>
 
-        {/* Xác nhận mật khẩu mới */}
-        <div>
-          <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+        <div className={styles.field}>
+          <label>
+            <Lock size={16} />
             Nhập lại mật khẩu mới
           </label>
-          <div style={{ position: 'relative' }}>
+          <div className={styles.inputWrapper}>
             <input
               type={showPassword.confirm ? 'text' : 'password'}
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
               required
-              style={{ width: '100%', padding: '12px 40px 12px 12px', borderRadius: '8px', border: '1px solid #ddd' }}
               placeholder="Nhập lại mật khẩu mới"
             />
             <button
               type="button"
               onClick={() => toggleShowPassword('confirm')}
-              style={{
-                position: 'absolute',
-                right: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                fontSize: '18px',
-              }}
+              className={styles.toggleBtn}
             >
-              {showPassword.confirm ? 'Hide' : 'Show'}
+              {showPassword.confirm ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
         </div>
 
-        {/* Nút submit */}
         <button
           type="submit"
           disabled={isLoading}
-          style={{
-            marginTop: '1rem',
-            padding: '14px',
-            background: isLoading ? '#ccc' : '#ee4d2d',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            cursor: isLoading ? 'not-allowed' : 'pointer',
-          }}
+          className={styles.submitBtn}
         >
           {isLoading ? 'Đang xử lý...' : 'Xác nhận đổi mật khẩu'}
         </button>
       </form>
 
-      <div style={{ marginTop: '2rem', textAlign: 'center', color: '#666', fontSize: '14px' }}>
+      <div className={styles.notice}>
+        <AlertCircle size={16} />
         <p>Sau khi đổi mật khẩu, bạn sẽ được đăng xuất tự động để bảo mật.</p>
       </div>
     </div>
