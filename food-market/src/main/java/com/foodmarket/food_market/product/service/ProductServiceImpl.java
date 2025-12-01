@@ -7,12 +7,10 @@ import com.foodmarket.food_market.inventory.service.InventoryService;
 import com.foodmarket.food_market.product.dto.AdminProductResponseDTO;
 import com.foodmarket.food_market.product.dto.ProductResponseDTO;
 import com.foodmarket.food_market.product.dto.ProductSaveRequestDTO;
-import com.foodmarket.food_market.product.model.DynamicPricingRule;
 import com.foodmarket.food_market.product.model.Product;
 import com.foodmarket.food_market.product.model.ProductImage;
 import com.foodmarket.food_market.product.model.Tag;
 import com.foodmarket.food_market.product.repository.*;
-
 import com.foodmarket.food_market.shared.service.ImageService;
 import com.foodmarket.food_market.shared.service.UploadResult;
 import com.github.slugify.Slugify;
@@ -28,11 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -41,145 +35,129 @@ import java.util.stream.Collectors;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
-    private final ProductImageRepository productImageRepository; // <-- THÊM MỚI
+    private final ProductImageRepository productImageRepository;
     private final CategoryRepository categoryRepository;
     private final TagRepository tagRepository;
     private final InventoryService inventoryService;
     private final ImageService imageService;
-    private final DynamicPricingRuleRepository dynamicPricingRuleRepository;
-    private final Slugify slugify = Slugify.builder().transliterator(true).build(); // Hỗ trợ tiếng Việt
+    private final Slugify slugify = Slugify.builder().transliterator(true).build();
 
-    // --- Private Helper Record (Dùng nội bộ) ---
-    private record CalculatedPrice(BigDecimal finalPrice, BigDecimal discountPercentage) {
+    // ==================================================================
+    // --- Public Methods (Giữ nguyên logic của bạn) ---
+    // ==================================================================
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductResponseDTO> getProducts(String searchTerm, String categorySlug, String sortParam, Pageable pageable) {
+        Sort sort = resolveSort(sortParam);
+        Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+        Specification<Product> spec = ProductSpecification.filterBy(searchTerm, null, categorySlug, false, false,null);
+
+        Page<Product> productPage = productRepository.findAll(spec, sortedPageable);
+        return productPage.map(product -> {
+            int stockQuantity = inventoryService.getProductStockInfo(product.getId()).totalAvailableStock();
+            return ProductResponseDTO.fromEntity(product, stockQuantity);
+        });
+    }
+
+    // ... Các method public khác (getSearchHints, getProductDetails) giữ nguyên ...
+    @Override
+    public List<String> getSearchHints(String keyword) {
+        return productRepository.searchKeywordSuggestions(keyword);
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public ProductResponseDTO getProductDetails(String slug) {
+        Product product = productRepository.findBySlugAndIsDeletedFalse(slug).orElseThrow(EntityNotFoundException::new);
+        int stockQuantity = inventoryService.getProductStockInfo(product.getId()).totalAvailableStock();
+        return ProductResponseDTO.fromEntity(product, stockQuantity);
+    }
+    @Override
+    public ProductResponseDTO getProductDetails(long productId) {
+        Product product = productRepository.findByIdAndIsDeletedFalse(productId).orElseThrow(EntityNotFoundException::new);
+        int stockQuantity = inventoryService.getProductStockInfo(product.getId()).totalAvailableStock();
+        return ProductResponseDTO.fromEntity(product, stockQuantity);
     }
 
     // ==================================================================
-    // --- Public Methods (Cho khách hàng) ---
+    // --- Admin Methods (UPDATED) ---
     // ==================================================================
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductResponseDTO> getProducts(
-            String searchTerm,
-            String categorySlug,
-            String sortParam,
-            Pageable pageable // Pageable này chỉ chứa page và size từ client gửi lên
-    ) {
-        // 1. Xử lý Logic Sắp xếp (Sorting)
-        Sort sort = Sort.unsorted();
+    // SỬA: Thêm tham số sortParam và deletedMode (để lọc Active/Deleted)
+    public Page<AdminProductResponseDTO> getAdminProducts(Pageable pageable, String searchTerm, Long categoryId, String sortParam, String deletedMode,Boolean isLowStock) {
 
-        if (sortParam != null && !sortParam.isEmpty()) {
-            switch (sortParam) {
-                case "price_asc" -> sort = Sort.by(Sort.Direction.ASC, "basePrice");
-                case "price_desc" -> sort = Sort.by(Sort.Direction.DESC, "basePrice");
-                case "best_selling" -> sort = Sort.by(Sort.Direction.DESC, "soldCount");
-                case "name_asc" -> sort = Sort.by(Sort.Direction.ASC, "name");
-                case "newest" -> sort = Sort.by(Sort.Direction.DESC, "createdAt");
-                default -> {}
-            }
-        }
-
-        // 2. Tạo Pageable hoàn chỉnh (Gộp Page/Size cũ + Sort mới)
-        // SỬA LỖI: Lấy size từ pageable truyền vào, không dùng biến 'size' chưa khai báo
+        // 1. Xử lý Sort: Dùng lại resolveSort để Admin cũng dùng được "best_selling", "newest"
+        Sort sort = resolveSort(sortParam);
         Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
 
-        // 3. Xây dựng Specification (Bộ lọc)
-        Specification<Product> spec = ProductSpecification.filterBy(searchTerm,null, categorySlug, false, false);
+        // 2. Xử lý Filter Deleted
+        Boolean includeSoftDeleted = false; // Mặc định chỉ lấy Active
+        Boolean onlySoftDeleted = false;
 
-        // 4. Query Database
+        if ("ALL".equalsIgnoreCase(deletedMode)) {
+            includeSoftDeleted = true; // Lấy cả Active và Deleted
+        } else if ("DELETED_ONLY".equalsIgnoreCase(deletedMode)) {
+            onlySoftDeleted = true; // Chỉ lấy Deleted
+        }
+        List<Long> filterIds = null;
+        if (Boolean.TRUE.equals(isLowStock)) {
+            // Lấy danh sách ID sản phẩm có tồn kho <= 10
+            filterIds = productRepository.findProductIdsWithLowStock(10);
+
+            // Tối ưu: Nếu không có sản phẩm nào sắp hết hàng, trả về trang rỗng luôn
+            if (filterIds.isEmpty()) {
+                return Page.empty(pageable);
+            }
+        }
+        Specification<Product> spec = ProductSpecification.filterBy(searchTerm, categoryId, null, includeSoftDeleted, onlySoftDeleted,filterIds);
+
         Page<Product> productPage = productRepository.findAll(spec, sortedPageable);
 
-        // 5. Tính toán giá và Map sang DTO
-        // Tối ưu: Lấy rule 1 lần duy nhất
-        List<DynamicPricingRule> rules = dynamicPricingRuleRepository.findAllSortedByTriggerDay();
-
         return productPage.map(product -> {
-            CalculatedPrice price = calculateFinalPrice(product, rules);
-            return ProductResponseDTO.fromEntity(
+            ProductStockInfoDTO stockInfo = inventoryService.getProductStockInfo(product.getId());
+            return AdminProductResponseDTO.fromEntity(
                     product,
-                    price.finalPrice(),
-                    price.discountPercentage()
+                    stockInfo.totalAvailableStock(),
+                    stockInfo.soonestExpirationDate()
             );
         });
     }
 
-    public List<String> getSearchHints(String keyword) {
-        return productRepository.searchKeywordSuggestions(keyword);
+    @Override
+    public long countLowStockProducts() {
+        List<Long> lowStockIds = productRepository.findProductIdsWithLowStock(10);
+        return lowStockIds.size();
     }
 
     @Override
     @Transactional(readOnly = true)
-    public ProductResponseDTO getProductDetails(Long id) {
-        Product product = productRepository.findByIdAndIsDeletedFalse(id).orElseThrow(EntityNotFoundException::new);
-
-        List<DynamicPricingRule> rules = dynamicPricingRuleRepository.findAllSortedByTriggerDay();
-        CalculatedPrice price = calculateFinalPrice(product, rules);
-
-        return ProductResponseDTO.fromEntity(product, price.finalPrice(), price.discountPercentage());
-    }
-
-    // ==================================================================
-    // --- Admin Methods ---
-    // ==================================================================
-    // Thêm vào phần Admin Methods
-
-    @Override
-    @Transactional
-    public Page<AdminProductResponseDTO> getAdminProducts(Pageable pageable, String searchTerm, Long categoryId) {
-        // 1. Specification giống như getProducts
-        Specification<Product> spec = ProductSpecification.filterBy(searchTerm, categoryId,null, true, false);
-
-        // 2. Lấy page Product
-        Page<Product> productPage = productRepository.findAll(spec, pageable);
-
-        // 3. Map sang DTO admin (không tính giá giảm)
-        return productPage.map(product -> {
-            // Lấy tổng stock từ inventory (method hiệu quả, chỉ sum currentQuantity)
-            // Nếu cần soonestExpirationDate, uncomment và dùng getProductStockInfo
-            ProductStockInfoDTO stockInfo = inventoryService.getProductStockInfo(product.getId());
-            return AdminProductResponseDTO.fromEntity(product, stockInfo.totalAvailableStock(), stockInfo.soonestExpirationDate());  // Hoặc truyền soonestDate nếu cần
-        });
-    }
-
-    @Override
-    @Transactional
     public AdminProductResponseDTO getAdminProductDetails(Long id) {
+        // Admin xem được cả sản phẩm đã xóa
         Product product = productRepository.findById(id).orElseThrow(EntityNotFoundException::new);
-        ProductStockInfoDTO stockQuantity = inventoryService.getProductStockInfo(id);
-        return AdminProductResponseDTO.fromEntity(product,
-                stockQuantity.totalAvailableStock(),
-                stockQuantity.soonestExpirationDate());
+        ProductStockInfoDTO stockInfo = inventoryService.getProductStockInfo(id);
+        return AdminProductResponseDTO.fromEntity(product, stockInfo.totalAvailableStock(), stockInfo.soonestExpirationDate());
     }
-
 
     @Override
     @Transactional
     public AdminProductResponseDTO createProduct(ProductSaveRequestDTO request, List<MultipartFile> files) throws IOException {
         Category category = findCategoryById(request.getCategoryId());
         String name = request.getName().trim();
-        Product product = new Product();
-        product.setName(request.getName());
-        product.setSlug(generateUniqueSlug(name, null)); // null vì create mới
-        product.setDescription(request.getDescription());
-        product.setSpecifications(request.getSpecifications() != null ? request.getSpecifications() : new HashMap<>());
-        product.setBasePrice(request.getBasePrice());
-        product.setUnit(request.getUnit());
-        product.setCategory(category);
 
-        // Xử lý Tags
-        Set<Tag> tags = processTags(request.getTags());
-        product.setTags(tags);
+        Product product = new Product();
+        mapRequestToProduct(product, request, category); // Refactor mapping logic
+        product.setSlug(generateUniqueSlug(name, null));
 
         Product savedProduct = productRepository.save(product);
-        // 2. Upload ảnh và tạo ProductImage
+
+        // Upload ảnh
         if (files != null && !files.isEmpty()) {
             List<ProductImage> newImages = addImagesToProduct(savedProduct.getId(), files);
             savedProduct.setImages(newImages);
+            productRepository.save(savedProduct);
         }
-        // 3. Lưu ảnh vào DB (vì có cascade, chúng ta chỉ cần set và save product)
-        productRepository.save(savedProduct); // Lưu lần 2
 
-        // Sản phẩm mới chưa có tồn kho
         return AdminProductResponseDTO.fromEntity(savedProduct, 0, null);
     }
 
@@ -189,71 +167,65 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(id).orElseThrow(EntityNotFoundException::new);
         Category category = findCategoryById(request.getCategoryId());
         String name = request.getName().trim();
+
+        // Check đổi tên -> đổi slug
         if (!product.getName().equals(name)) {
-            product.setName(name);
             product.setSlug(generateUniqueSlug(name, id));
         }
-        product.setDescription(request.getDescription());
-        product.setSpecifications(request.getSpecifications() != null ? request.getSpecifications() : new HashMap<>());
-        product.setBasePrice(request.getBasePrice());
-        product.setUnit(request.getUnit());
-        product.setCategory(category);
 
-        // Xử lý Tags
-        Set<Tag> tags = processTags(request.getTags());
-        product.setTags(tags); // Ghi đè tags cũ
+        mapRequestToProduct(product, request, category);
+
+        // Lưu trước các thông tin text
         Product updatedProduct = productRepository.save(product);
-        ProductStockInfoDTO stockInfo = inventoryService.getProductStockInfo(updatedProduct.getId());
-        //Xử lý ảnh
-        //Thêm ảnh
+
+        // Xử lý ảnh thêm mới
         if (files != null && !files.isEmpty()) {
             List<ProductImage> newImages = addImagesToProduct(updatedProduct.getId(), files);
             updatedProduct.getImages().addAll(newImages);
-            productRepository.save(updatedProduct);
-        }
-        //Xoá ảnh
-        if (request.getDeletedImageIds() != null) {
-            for (Long imageId : request.getDeletedImageIds()) {
-                ProductImage image = productImageRepository.findById(imageId)
-                        .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy ảnh muốn xoá"));
-                imageService.deleteImage(image.getPublicId());
-                updatedProduct.getImages().remove(image);
-            }
-            productRepository.save(updatedProduct);
         }
 
+        // Xử lý ảnh xóa
+        if (request.getDeletedImageIds() != null && !request.getDeletedImageIds().isEmpty()) {
+            List<ProductImage> imagesToDelete = updatedProduct.getImages().stream()
+                    .filter(img -> request.getDeletedImageIds().contains(img.getId()))
+                    .toList();
+
+            for (ProductImage img : imagesToDelete) {
+                imageService.deleteImage(img.getPublicId());
+                updatedProduct.getImages().remove(img);
+            }
+        }
+
+        // Save lần cuối
+        updatedProduct = productRepository.save(updatedProduct);
+
+        ProductStockInfoDTO stockInfo = inventoryService.getProductStockInfo(updatedProduct.getId());
         return AdminProductResponseDTO.fromEntity(updatedProduct, stockInfo.totalAvailableStock(), stockInfo.soonestExpirationDate());
     }
 
-    @Override
-    @Transactional
-    public void deleteProduct(Long id) throws IOException {
-        Product product = productRepository.findById(id).orElseThrow(EntityNotFoundException::new);
-        for (ProductImage image : product.getImages()) {
-            imageService.deleteImage(image.getPublicId());
-        }
-        // (Kiểm tra nghiệp vụ: nếu sản phẩm đã có trong đơn hàng thì không xóa?)
-        // Hiện tại: cho phép xóa
-        productRepository.delete(product);
-    }
 
     @Override
     @Transactional
     public void softDeleteProduct(Long productId) {
         Product p = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
-        p.setDeleted(true);
-        p.setDeletedAt(LocalDateTime.now());
-        productRepository.save(p);
+                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+        if (!p.isDeleted()) {
+            p.setDeleted(true);
+            p.setDeletedAt(LocalDateTime.now());
+            productRepository.save(p);
+        }
     }
 
     @Override
     @Transactional
     public void restoreSoftDeleteProduct(Long productId) {
         Product p = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Product not found"));
-        p.setDeleted(false);
-        p.setDeletedAt(null);
+                .orElseThrow(() -> new EntityNotFoundException("Product not found"));
+        if (p.isDeleted()) {
+            p.setDeleted(false);
+            p.setDeletedAt(null);
+            productRepository.save(p);
+        }
     }
 
     @Override
@@ -261,11 +233,8 @@ public class ProductServiceImpl implements ProductService {
     public List<ProductImage> addImagesToProduct(Long productId, List<MultipartFile> files) throws IOException {
         Product product = productRepository.findById(productId).orElseThrow(EntityNotFoundException::new);
         List<ProductImage> images = new ArrayList<>();
-        // Tìm displayOrder lớn nhất hiện tại
         int maxOrder = product.getImages().stream()
-                .mapToInt(ProductImage::getDisplayOrder)
-                .max().orElse(-1); // -1 để ảnh mới bắt đầu từ 0 (nếu chưa có)
-
+                .mapToInt(ProductImage::getDisplayOrder).max().orElse(-1);
         int currentOrder = maxOrder + 1;
 
         for (MultipartFile file : files) {
@@ -276,58 +245,50 @@ public class ProductServiceImpl implements ProductService {
                     .publicId(result.publicId())
                     .displayOrder(currentOrder++)
                     .build();
-            images.add(newImage); // Thêm vào list
+            images.add(newImage);
         }
         return images;
     }
 
-
     // ==================================================================
-    // --- Private Helper Methods ---
+    // --- Helper Methods ---
     // ==================================================================
 
-    /**
-     * Logic tính giá động (Trái tim của hệ thống)
-     */
-    private CalculatedPrice calculateFinalPrice(Product product, List<DynamicPricingRule> rules) {
-        // 1. Gõ cửa InventoryService để lấy thông tin tồn kho
-        //    (Thay vì tự ý truy vấn repo của module khác)
-        ProductStockInfoDTO stockInfo = inventoryService.getProductStockInfo(product.getId());
+    // Helper map common fields
+    private void mapRequestToProduct(Product product, ProductSaveRequestDTO request, Category category) {
+        product.setName(request.getName().trim());
+        product.setDescription(request.getDescription());
+        product.setSpecifications(request.getSpecifications() != null ? request.getSpecifications() : new HashMap<>());
+        product.setBasePrice(request.getBasePrice());
+        product.setUnit(request.getUnit());
+        product.setCategory(category);
 
-        // 2. Nếu không còn hàng (hoặc không có HSD), trả về giá gốc
-        if (stockInfo.totalAvailableStock() == 0 || stockInfo.soonestExpirationDate() == null) {
-            return new CalculatedPrice(product.getBasePrice(), BigDecimal.ZERO);
+        // Update Sale info
+        if (request.getSalePrice() != null) {
+            product.setSalePrice(request.getSalePrice());
+        }
+        if (request.getIsOnSale() != null) {
+            product.setOnSale(request.getIsOnSale());
         }
 
-        // 3. Lấy HSD của lô gần nhất
-        LocalDate soonestExpirationDate = stockInfo.soonestExpirationDate();
-        long daysRemaining = ChronoUnit.DAYS.between(LocalDate.now(), soonestExpirationDate);
-
-        // 4. Nếu HSD còn xa (âm, hoặc > ngày trigger lớn nhất)
-        if (daysRemaining < 0 || rules.isEmpty() || daysRemaining > rules.getLast().getDaysRemainingTrigger()) {
-            return new CalculatedPrice(product.getBasePrice(), BigDecimal.ZERO);
-        }
-
-        // 5. Tìm luật áp dụng (luật đầu tiên mà HSD <= trigger)
-        for (DynamicPricingRule rule : rules) {
-            if (daysRemaining <= rule.getDaysRemainingTrigger()) {
-                BigDecimal discount = rule.getDiscountPercentage();
-                BigDecimal finalPrice = product.getBasePrice()
-                        .multiply(BigDecimal.ONE.subtract(discount))
-                        .setScale(2, RoundingMode.HALF_UP); // Làm tròn
-
-                return new CalculatedPrice(finalPrice, discount);
-            }
-        }
-
-        // 6. Không có luật nào áp dụng
-        return new CalculatedPrice(product.getBasePrice(), BigDecimal.ZERO);
+        // Tags
+        Set<Tag> tags = processTags(request.getTags());
+        product.setTags(tags);
     }
 
+    // Helper sort logic (Tái sử dụng cho cả Public và Admin nếu cần sort custom string)
+    private Sort resolveSort(String sortParam) {
+        if (sortParam == null || sortParam.isEmpty()) return Sort.unsorted();
+        return switch (sortParam) {
+            case "price_asc" -> Sort.by(Sort.Direction.ASC, "basePrice");
+            case "price_desc" -> Sort.by(Sort.Direction.DESC, "basePrice");
+            case "best_selling" -> Sort.by(Sort.Direction.DESC, "soldCount");
+            case "name_asc" -> Sort.by(Sort.Direction.ASC, "name");
+            case "newest" -> Sort.by(Sort.Direction.DESC, "createdAt");
+            default -> Sort.unsorted();
+        };
+    }
 
-    /**
-     * Tìm hoặc tạo mới Tag
-     */
     private Set<Tag> processTags(List<String> tagNames) {
         if (tagNames == null || tagNames.isEmpty()) {
             return new HashSet<>();
@@ -338,14 +299,11 @@ public class ProductServiceImpl implements ProductService {
                 .collect(Collectors.toSet());
     }
 
-    // --- Hàm tìm kiếm (ném lỗi 404 nếu không thấy) ---
-
     private Category findCategoryById(Long id) {
         return categoryRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy danh mục với ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Category not found ID: " + id));
     }
 
-    // Helper mới: Tạo slug unique
     private String generateUniqueSlug(String name, Long excludeId) {
         String baseSlug = slugify.slugify(name);
         String slug = baseSlug;

@@ -41,14 +41,20 @@ public class Product {
             orphanRemoval = true,
             fetch = FetchType.EAGER
     )
-    @OrderBy("displayOrder ASC") // Luôn sắp xếp ảnh theo thứ tự
+    @OrderBy("displayOrder ASC")
     private List<ProductImage> images = new ArrayList<>();
 
     @Column(name = "base_price", nullable = false, precision = 10, scale = 2)
     private BigDecimal basePrice;
 
+    @Column(name = "sale_price")
+    private BigDecimal salePrice;
+
+    @Column(name = "is_on_sale")
+    private boolean isOnSale = false;
+
     @Column(name = "unit", nullable = false, length = 50)
-    private String unit; // Ví dụ: "kg", "g", "bó", "vỉ"
+    private String unit;
 
     @Column(name = "slug", unique = true, nullable = false)
     private String slug;
@@ -56,12 +62,10 @@ public class Product {
     @Column(name = "sold_count")
     private Integer soldCount = 0;
 
-    // --- Mối quan hệ với Category ---
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    // --- Mối quan hệ với Tags (Many-to-Many) ---
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(
             name = "product_tags",
@@ -80,22 +84,23 @@ public class Product {
     @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
-    // --- Hàm tiện ích (Helper Methods) ---
-    public void addTag(Tag tag) {
-        this.tags.add(tag);
-        tag.getProducts().add(this);
-    }
+    @Column(name = "average_rating")
+    private Double averageRating = 0.0;
 
-    public void removeTag(Tag tag) {
-        this.tags.remove(tag);
-        tag.getProducts().remove(this);
-    }
+    @Column(name = "review_count")
+    private Integer reviewCount = 0;
 
     @PrePersist
     protected void onCreate() {
         if (this.createdAt == null) {
-            // Lấy giờ hiện tại kèm offset (VD: +07:00)
             this.createdAt = OffsetDateTime.now();
         }
+    }
+
+    public BigDecimal getFinalPrice() {
+        if (isOnSale && salePrice != null) {
+            return salePrice;
+        }
+        return basePrice;
     }
 }

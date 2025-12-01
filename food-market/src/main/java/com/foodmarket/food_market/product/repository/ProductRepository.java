@@ -13,20 +13,35 @@ import java.util.Optional;
 
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
-    // JpaSpecificationExecutor sẽ cung cấp các hàm (findAll)
-    // cho phép chúng ta lọc động (dynamic filtering)
     Optional<Product> findBySlug(String slug);
-    Optional<Product> findByIdAndIsDeletedFalse(Long id);
+
+    Optional<Product> findBySlugAndIsDeletedFalse(String slug);
+    Optional<Product> findByIdAndIsDeletedFalse(long productId);
     @Query("select p.name from Product p where p.id = :id")
     String findNameById(@Param("id") Long id);
-    // 1. Tăng số lượng bán (Query Native/JPQL để tối ưu tốc độ)
+
     @Modifying
     @Query("UPDATE Product p SET p.soldCount = COALESCE(p.soldCount, 0) + :qty WHERE p.id = :id")
     void incrementSoldCount(@Param("id") Long id, @Param("qty") Integer qty);
 
-    // 2. Query gợi ý từ khóa (cho cái Dropdown Navbar)
     @Query(value = "SELECT DISTINCT p.name FROM products p " +
             "WHERE unaccent(p.name) ILIKE unaccent(concat('%', :keyword, '%')) " +
             "LIMIT 5", nativeQuery = true)
     List<String> searchKeywordSuggestions(@Param("keyword") String keyword);
+
+    @Modifying
+    @Query("UPDATE Product p SET " +
+            "p.averageRating = ((p.averageRating * p.reviewCount) + :newRating) / (p.reviewCount + 1.0), " +
+            "p.reviewCount = p.reviewCount + 1 " +
+            "WHERE p.id = :productId")
+    void addReviewRating(Long productId, double newRating);
+
+    @Query(value = """
+        SELECT p.product_id 
+        FROM products p 
+        LEFT JOIN inventory_batches ib ON p.product_id = ib.product_id 
+        GROUP BY p.product_id 
+        HAVING COALESCE(SUM(ib.current_quantity), 0) <= :threshold
+    """, nativeQuery = true)
+    List<Long> findProductIdsWithLowStock(@Param("threshold") int threshold);
 }

@@ -5,6 +5,8 @@ import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.util.List;
+
 public class ProductSpecification {
 
     /**
@@ -19,13 +21,15 @@ public class ProductSpecification {
             Long categoryId,
             String categorySlug,
             Boolean includeSoftDeleted,
-            Boolean onlySoftDeleted
+            Boolean onlySoftDeleted,
+            List<Long> filterIds
     ) {
 
         return Specification.allOf(filterDeleted(includeSoftDeleted, onlySoftDeleted))
                 .and(hasSearchTerm(searchTerm))
                 .and(hasCategoryId(categoryId))
-                .and(hasCategory(categorySlug));
+                .and(hasCategory(categorySlug))
+                .and(hasIdsIn(filterIds));
     }
 
     private static Specification<Product> filterDeleted(Boolean includeSoftDeleted, Boolean onlySoftDeleted) {
@@ -71,5 +75,9 @@ public class ProductSpecification {
 
         return (root, query, cb) ->
                 cb.equal(root.get("category").get("slug"), categorySlug);
+    }
+    private static Specification<Product> hasIdsIn(List<Long> ids) {
+        if (ids == null) return null; // Nếu null thì bỏ qua logic này
+        return (root, query, cb) -> root.get("id").in(ids);
     }
 }

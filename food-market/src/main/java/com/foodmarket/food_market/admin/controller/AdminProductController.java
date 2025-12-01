@@ -14,10 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
 import org.springframework.http.MediaType;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.util.List;
 
@@ -32,78 +30,64 @@ public class AdminProductController {
 
     @GetMapping
     public ResponseEntity<Page<AdminProductResponseDTO>> getAdminProducts(
-            @PageableDefault(size = 20) Pageable pageable, // Paging mặc định: page=0, size=20, sort optional
-            @RequestParam(required = false) String searchTerm, // Tìm kiếm theo tên/slug/description
-            @RequestParam(required = false) Long categoryId // Filter theo category
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(required = false) String searchTerm,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String sort, // Dùng custom sort: "newest", "price_asc"...
+            @RequestParam(defaultValue = "ACTIVE_ONLY") String status, // ACTIVE_ONLY, DELETED_ONLY, ALL
+            @RequestParam(required = false) Boolean lowStock
     ) {
-        Page<AdminProductResponseDTO> products = productService.getAdminProducts(pageable, searchTerm, categoryId);
+        // Truyền thẳng sort string và status xuống Service để xử lý tập trung
+        Page<AdminProductResponseDTO> products = productService.getAdminProducts(pageable, searchTerm, categoryId, sort, status,lowStock);
         return ResponseEntity.ok(products);
     }
 
-    // API MỚI: Lấy chi tiết một sản phẩm cho admin
+    // ... (Các endpoint khác giữ nguyên) ...
     @GetMapping("/{id}")
     public ResponseEntity<AdminProductResponseDTO> getAdminProductDetails(@PathVariable Long id) {
-        AdminProductResponseDTO product = productService.getAdminProductDetails(id);
-        return ResponseEntity.ok(product);
+        return ResponseEntity.ok(productService.getAdminProductDetails(id));
     }
 
-    /**
-     * API Tạo sản phẩm MỚI
-     * Dùng multipart/form-data
-     * Frontend gửi:
-     * 1. Part "product": là 1 JSON string của ProductSaveRequestDTO
-     * 2. Part "images": là 1 mảng các file
-     */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<AdminProductResponseDTO> createProduct(
             @RequestPart("product") @Valid ProductSaveRequestDTO request,
             @RequestPart(value = "images", required = false) List<MultipartFile> images
     ) throws IOException {
-
-        AdminProductResponseDTO createdProduct = productService.createProduct(request, images);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
+        return ResponseEntity.status(HttpStatus.CREATED).body(productService.createProduct(request, images));
     }
 
-    /**
-     * API Cập nhật THÔNG TIN (Text) của sản phẩm
-     * API này KHÔNG cập nhật ảnh.
-     */
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<AdminProductResponseDTO> updateProductInfo(
             @PathVariable Long id,
             @RequestPart("product") @Valid ProductSaveRequestDTO request,
             @RequestPart(value = "images", required = false) List<MultipartFile> images
     ) throws IOException {
-
-        AdminProductResponseDTO updatedProduct = productService.updateProduct(id, request, images);
-        return ResponseEntity.ok(updatedProduct);
+        return ResponseEntity.ok(productService.updateProduct(id, request, images));
     }
 
-    /**
-     * API Xóa hoàn toàn 1 sản phẩm (và tất cả ảnh của nó)
-     */
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) throws IOException {
-        productService.deleteProduct(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @PutMapping("/soft-delete/{id}")
-    public ResponseEntity<Void> softDeleteProduct(@PathVariable Long id) throws IOException {
+    public ResponseEntity<Void> softDeleteProduct(@PathVariable Long id) {
         productService.softDeleteProduct(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/restore-deleted/{id}")
-    public ResponseEntity<Void> restoreDeletedProduct(@PathVariable Long id) throws IOException {
+    @PutMapping("/{id}/restore")
+    public ResponseEntity<Void> restoreDeletedProduct(@PathVariable Long id) {
         productService.restoreSoftDeleteProduct(id);
         return ResponseEntity.noContent().build();
     }
 
-    //Lấy danh sách các lô hàng của sản phẩm
     @GetMapping("/{productId}/inventory-batches")
-    public ResponseEntity<Page<InventoryBatchDTO>> getBatchesForProduct(@PathVariable Long productId, @PageableDefault(size = 20) Pageable pageable,@RequestParam Boolean includeZeroQuantity) {
-        Page<InventoryBatchDTO> batches =  inventoryService.getBatchesForProduct(productId,includeZeroQuantity,pageable);
-        return ResponseEntity.ok(batches);
+    public ResponseEntity<Page<InventoryBatchDTO>> getBatchesForProduct(
+            @PathVariable Long productId,
+            @PageableDefault(size = 20) Pageable pageable,
+            @RequestParam(defaultValue = "false") Boolean includeZeroQuantity
+    ) {
+        return ResponseEntity.ok(inventoryService.getBatchesForProduct(productId, includeZeroQuantity, pageable));
+    }
+
+    @GetMapping("/count-low-stock")
+    public ResponseEntity<Long> countLowStock() {
+        return ResponseEntity.ok(productService.countLowStockProducts());
     }
 }

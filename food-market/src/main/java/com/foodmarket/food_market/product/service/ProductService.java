@@ -17,23 +17,17 @@ public interface ProductService {
     // --- Public ---
     Page<ProductResponseDTO> getProducts( String searchTerm,String categorySlug ,String sortParam,Pageable pageable);
     List<String> getSearchHints(String keyword);
-    ProductResponseDTO getProductDetails(Long id);
-
+    ProductResponseDTO getProductDetails(String slug);
+    ProductResponseDTO getProductDetails(long productId);
     // ==================================================================
     // --- Admin Methods ---
     // ==================================================================
     // Thêm vào phần Admin Methods
-    Page<AdminProductResponseDTO> getAdminProducts(Pageable pageable, String searchTerm, Long categoryId);
-
-    @Transactional(readOnly = true)
-
-    // --- Admin ---
+    Page<AdminProductResponseDTO> getAdminProducts(Pageable pageable, String searchTerm, Long categoryId, String sortParam, String deletedMode,Boolean isLowStock);
+    long countLowStockProducts();
     AdminProductResponseDTO createProduct(ProductSaveRequestDTO request, List<MultipartFile> files) throws IOException;
 
     AdminProductResponseDTO updateProduct(Long id, ProductSaveRequestDTO request, List<MultipartFile> files) throws IOException;
-
-    void deleteProduct(Long id) throws IOException;
-
 
     void softDeleteProduct(Long productId);
 

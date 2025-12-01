@@ -42,8 +42,8 @@ public class ProductController {
     /**
      * API Public: Lấy chi tiết 1 sản phẩm (với giá đã tính)
      */
-    @GetMapping("/{id}")
-    public ResponseEntity<ProductResponseDTO> getProductDetails(@PathVariable Long id) {
-        return ResponseEntity.ok(productService.getProductDetails(id));
+    @GetMapping("/{slug}")
+    public ResponseEntity<ProductResponseDTO> getProductDetails(@PathVariable String slug) {
+        return ResponseEntity.ok(productService.getProductDetails(slug));
     }
 }
