@@ -35,10 +35,10 @@ public class AdminProductController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String sort, // Dùng custom sort: "newest", "price_asc"...
             @RequestParam(defaultValue = "ACTIVE_ONLY") String status, // ACTIVE_ONLY, DELETED_ONLY, ALL
-            @RequestParam(required = false) Boolean lowStock
+            @RequestParam(required = false) Boolean lowStock,
+            @RequestParam(required = false) Boolean isOnSale
     ) {
-        // Truyền thẳng sort string và status xuống Service để xử lý tập trung
-        Page<AdminProductResponseDTO> products = productService.getAdminProducts(pageable, searchTerm, categoryId, sort, status,lowStock);
+        Page<AdminProductResponseDTO> products = productService.getAdminProducts(pageable, searchTerm, categoryId, sort, status,lowStock,isOnSale);
         return ResponseEntity.ok(products);
     }
 

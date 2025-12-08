@@ -1,6 +1,8 @@
 package com.foodmarket.food_market.product.repository;
 
+import com.foodmarket.food_market.category.model.Category;
 import com.foodmarket.food_market.product.model.Product;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Modifying;
@@ -16,7 +18,6 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     Optional<Product> findBySlug(String slug);
 
     Optional<Product> findBySlugAndIsDeletedFalse(String slug);
-    Optional<Product> findByIdAndIsDeletedFalse(long productId);
     @Query("select p.name from Product p where p.id = :id")
     String findNameById(@Param("id") Long id);
 
@@ -44,4 +45,15 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
         HAVING COALESCE(SUM(ib.current_quantity), 0) <= :threshold
     """, nativeQuery = true)
     List<Long> findProductIdsWithLowStock(@Param("threshold") int threshold);
+
+    // 1. Lấy sản phẩm đang Sale (Flash Sale)
+    @Query("SELECT p FROM Product p WHERE p.isOnSale = true AND p.isDeleted = false ORDER BY p.soldCount DESC")
+    List<Product> findOnSaleProducts(Pageable pageable);
+
+    @Query("SELECT p FROM Product p " +
+            "JOIN p.category c " +
+            "WHERE c.parent.id = :rootId " +
+            "AND p.isDeleted = false " +
+            "ORDER BY p.soldCount DESC")
+    List<Product> findTopProductsByRootCategoryId(@Param("rootId") Long rootId, Pageable pageable);
 }

@@ -17,28 +17,27 @@ import java.util.List;
 public class ProductController {
 
     private final ProductService productService;
+
     /**
      * API Public: Lấy danh sách sản phẩm (có phân trang, tìm kiếm, lọc)
-     *
-     * Ví dụ: /api/v1/products?page=0&size=10&sort=name,asc&search=Thịt&category=5
      */
     @GetMapping
     public ResponseEntity<Page<ProductResponseDTO>> getProducts(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String categorySlug,
             @RequestParam(required = false) String sort,
+            @RequestParam(required = false) Boolean isOnSale,
             @PageableDefault(size = 20) Pageable pageable
     ) {
-        // Truyền đúng thứ tự tham số
-        Page<ProductResponseDTO> productPage = productService.getProducts(search, categorySlug, sort, pageable);
+        Page<ProductResponseDTO> productPage = productService.getProducts(search, categorySlug, sort, pageable, isOnSale);
         return ResponseEntity.ok(productPage);
     }
 
     @GetMapping("/search/hints")
     public ResponseEntity<List<String>> getSearchHints(@RequestParam String keyword) {
-        // Gọi service trả về các Keyword gợi ý
         return ResponseEntity.ok(productService.getSearchHints(keyword));
     }
+
     /**
      * API Public: Lấy chi tiết 1 sản phẩm (với giá đã tính)
      */
@@ -46,4 +45,5 @@ public class ProductController {
     public ResponseEntity<ProductResponseDTO> getProductDetails(@PathVariable String slug) {
         return ResponseEntity.ok(productService.getProductDetails(slug));
     }
+
 }

@@ -15,15 +15,13 @@ import java.util.List;
 public interface ProductService {
 
     // --- Public ---
-    Page<ProductResponseDTO> getProducts( String searchTerm,String categorySlug ,String sortParam,Pageable pageable);
+    Page<ProductResponseDTO> getProducts( String searchTerm,String categorySlug ,String sortParam,Pageable pageable,Boolean isOnSale);
     List<String> getSearchHints(String keyword);
     ProductResponseDTO getProductDetails(String slug);
-    ProductResponseDTO getProductDetails(long productId);
     // ==================================================================
     // --- Admin Methods ---
     // ==================================================================
-    // Thêm vào phần Admin Methods
-    Page<AdminProductResponseDTO> getAdminProducts(Pageable pageable, String searchTerm, Long categoryId, String sortParam, String deletedMode,Boolean isLowStock);
+    Page<AdminProductResponseDTO> getAdminProducts(Pageable pageable, String searchTerm, Long categoryId, String sortParam, String deletedMode,Boolean isLowStock, Boolean isOnSale);
     long countLowStockProducts();
     AdminProductResponseDTO createProduct(ProductSaveRequestDTO request, List<MultipartFile> files) throws IOException;
 

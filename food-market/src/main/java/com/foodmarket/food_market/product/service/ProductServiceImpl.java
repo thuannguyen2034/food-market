@@ -42,75 +42,87 @@ public class ProductServiceImpl implements ProductService {
     private final ImageService imageService;
     private final Slugify slugify = Slugify.builder().transliterator(true).build();
 
-    // ==================================================================
-    // --- Public Methods (Giữ nguyên logic của bạn) ---
-    // ==================================================================
     @Override
     @Transactional(readOnly = true)
-    public Page<ProductResponseDTO> getProducts(String searchTerm, String categorySlug, String sortParam, Pageable pageable) {
+    public Page<ProductResponseDTO> getProducts(String searchTerm, String categorySlug, String sortParam, Pageable pageable, Boolean isOnSale) {
+
+        List<Long> categoryIds = null;
+
+        if (categorySlug != null && !categorySlug.isEmpty()) {
+            Category category = categoryRepository.findBySlug(categorySlug)
+                    .orElseThrow(() -> new EntityNotFoundException("Category not found"));
+
+            if (category.getParent() == null) {
+                // CASE ROOT: Lấy ID của chính nó + tất cả category con
+                List<Category> children = categoryRepository.getCategoriesByParentId(category.getId());
+                categoryIds = children.stream().map(Category::getId).collect(Collectors.toList());
+            } else {
+                // CASE SUB: Chỉ lấy đúng ID đó
+                categoryIds = List.of(category.getId());
+            }
+        }
+
         Sort sort = resolveSort(sortParam);
         Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
-        Specification<Product> spec = ProductSpecification.filterBy(searchTerm, null, categorySlug, false, false,null);
+
+        Specification<Product> spec = ProductSpecification.filterBy(searchTerm, categoryIds,  false, false, null, isOnSale);
 
         Page<Product> productPage = productRepository.findAll(spec, sortedPageable);
+
         return productPage.map(product -> {
-            int stockQuantity = inventoryService.getProductStockInfo(product.getId()).totalAvailableStock();
+            int stockQuantity = inventoryService.getStockAvailability(product.getId());
             return ProductResponseDTO.fromEntity(product, stockQuantity);
         });
     }
 
-    // ... Các method public khác (getSearchHints, getProductDetails) giữ nguyên ...
     @Override
     public List<String> getSearchHints(String keyword) {
         return productRepository.searchKeywordSuggestions(keyword);
     }
+
     @Override
     @Transactional(readOnly = true)
     public ProductResponseDTO getProductDetails(String slug) {
         Product product = productRepository.findBySlugAndIsDeletedFalse(slug).orElseThrow(EntityNotFoundException::new);
-        int stockQuantity = inventoryService.getProductStockInfo(product.getId()).totalAvailableStock();
-        return ProductResponseDTO.fromEntity(product, stockQuantity);
-    }
-    @Override
-    public ProductResponseDTO getProductDetails(long productId) {
-        Product product = productRepository.findByIdAndIsDeletedFalse(productId).orElseThrow(EntityNotFoundException::new);
-        int stockQuantity = inventoryService.getProductStockInfo(product.getId()).totalAvailableStock();
+        int stockQuantity = inventoryService.getStockAvailability(product.getId());
         return ProductResponseDTO.fromEntity(product, stockQuantity);
     }
 
     // ==================================================================
-    // --- Admin Methods (UPDATED) ---
+    // --- Admin Methods ---
     // ==================================================================
 
     @Override
     @Transactional(readOnly = true)
     // SỬA: Thêm tham số sortParam và deletedMode (để lọc Active/Deleted)
-    public Page<AdminProductResponseDTO> getAdminProducts(Pageable pageable, String searchTerm, Long categoryId, String sortParam, String deletedMode,Boolean isLowStock) {
+    public Page<AdminProductResponseDTO> getAdminProducts(Pageable pageable, String searchTerm, Long categoryId, String sortParam, String deletedMode, Boolean isLowStock, Boolean isOnSale) {
 
-        // 1. Xử lý Sort: Dùng lại resolveSort để Admin cũng dùng được "best_selling", "newest"
         Sort sort = resolveSort(sortParam);
         Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
 
-        // 2. Xử lý Filter Deleted
+        // Filter Deleted
         Boolean includeSoftDeleted = false; // Mặc định chỉ lấy Active
         Boolean onlySoftDeleted = false;
 
         if ("ALL".equalsIgnoreCase(deletedMode)) {
-            includeSoftDeleted = true; // Lấy cả Active và Deleted
+            includeSoftDeleted = true;
         } else if ("DELETED_ONLY".equalsIgnoreCase(deletedMode)) {
-            onlySoftDeleted = true; // Chỉ lấy Deleted
+            onlySoftDeleted = true;
         }
         List<Long> filterIds = null;
         if (Boolean.TRUE.equals(isLowStock)) {
-            // Lấy danh sách ID sản phẩm có tồn kho <= 10
             filterIds = productRepository.findProductIdsWithLowStock(10);
 
-            // Tối ưu: Nếu không có sản phẩm nào sắp hết hàng, trả về trang rỗng luôn
+            // Nếu không có sản phẩm nào sắp hết hàng, trả về trang rỗng
             if (filterIds.isEmpty()) {
                 return Page.empty(pageable);
             }
         }
-        Specification<Product> spec = ProductSpecification.filterBy(searchTerm, categoryId, null, includeSoftDeleted, onlySoftDeleted,filterIds);
+        List<Long> categoryIds = new ArrayList<>();
+        if (categoryId != null) {
+            categoryIds.add(categoryId);
+        }
+        Specification<Product> spec = ProductSpecification.filterBy(searchTerm,categoryIds, includeSoftDeleted, onlySoftDeleted, filterIds, isOnSale);
 
         Page<Product> productPage = productRepository.findAll(spec, sortedPageable);
 
@@ -146,7 +158,7 @@ public class ProductServiceImpl implements ProductService {
         String name = request.getName().trim();
 
         Product product = new Product();
-        mapRequestToProduct(product, request, category); // Refactor mapping logic
+        mapRequestToProduct(product, request, category);
         product.setSlug(generateUniqueSlug(name, null));
 
         Product savedProduct = productRepository.save(product);
@@ -254,7 +266,6 @@ public class ProductServiceImpl implements ProductService {
     // --- Helper Methods ---
     // ==================================================================
 
-    // Helper map common fields
     private void mapRequestToProduct(Product product, ProductSaveRequestDTO request, Category category) {
         product.setName(request.getName().trim());
         product.setDescription(request.getDescription());
