@@ -12,14 +12,11 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // Cho phép truy cập từ các địa chỉ IP trong mạng local (192.168.x.x, 10.x.x.x, etc.)
-  // Điều này loại bỏ cảnh báo cross-origin khi truy cập từ thiết bị khác trong cùng mạng
   allowedDevOrigins: [
     'http://192.168.0.100:3000',
     'http://localhost:3000',
     'http://127.0.0.1:3000',
   ],
-  // Thêm dòng này để log lỗi Proxy ra terminal máy tính cho dễ debug
   logging: {
     fetches: {
       fullUrl: true,

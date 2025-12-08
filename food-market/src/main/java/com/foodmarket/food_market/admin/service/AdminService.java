@@ -9,6 +9,6 @@ import java.util.List;
 import java.util.UUID;
 
 public interface AdminService {
-    Page<UserResponseDTO> getUsers(String keyword, Pageable pageable);
+    Page<UserResponseDTO> getUsers(String keyword,String role, Pageable pageable);
     void updateUserRole(UUID userId, Role role);
 }

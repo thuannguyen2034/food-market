@@ -3,6 +3,7 @@
 export enum Role {
     CUSTOMER = 'CUSTOMER',
     ADMIN = 'ADMIN',
+    STAFF = 'STAFF',
 }
 
 export type UserResponseDTO = {
@@ -35,7 +36,7 @@ export type PageResponse<T> = {
     content: T[];
     totalPages: number;
     totalElements: number;
-    number: number; // 0-based page index
+    number: number; 
     size: number;
     first: boolean;
     last: boolean;
@@ -45,5 +46,6 @@ export type UserStats = {
     totalUsers: number;
     totalCustomers: number;
     totalAdmins: number;
+    totalStaffs: number;
     newUsersThisMonth: number;
 };

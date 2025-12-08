@@ -65,4 +65,10 @@ public class NotificationServiceImpl implements NotificationService {
         notificationRepository.save(notification);
         log.info("Đã lưu thông báo {} cho user {}", type, userId);
     }
+
+    @Override
+    @Transactional
+    public void markAllAsRead(UUID userId) {
+        notificationRepository.markAllAsRead(userId);
+    }
 }

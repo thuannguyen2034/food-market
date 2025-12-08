@@ -6,11 +6,13 @@ import com.foodmarket.food_market.order.model.Order;
 import com.foodmarket.food_market.order.model.enums.OrderStatus;
 import com.foodmarket.food_market.payment.event.PaymentSuccessfulEvent;
 import com.foodmarket.food_market.order.event.OrderStatusChangedEvent;
-import com.foodmarket.food_market.user.repository.UserRepository;
 import com.pusher.rest.Pusher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -26,7 +28,6 @@ public class NotificationEventListener {
     private final Pusher pusher;
     /**
      * Lắng nghe sự kiện PaymentSuccessfulEvent
-     * CHỈ CHẠY SAU KHI TRANSACTION GỐC (của PaymentService) ĐÃ COMMIT THÀNH CÔNG.
      */
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handlePaymentSuccess(PaymentSuccessfulEvent event) {
@@ -45,12 +46,10 @@ public class NotificationEventListener {
                     order.getUser().getUserId(),
                     message,
                     NotificationType.PAYMENT,
-                    "/orders/" + order.getId()
+                    "/user/purchase/" + order.getId()
             );
 
         } catch (Exception e) {
-            // Rất quan trọng: Phải bắt lỗi
-            // Nếu không, lỗi ở đây có thể làm app crash mà không ai biết
             log.error("LỖI khi xử lý sự kiện thanh toán thành công: ", e);
             // (Trong Giai đoạn 3, chúng ta sẽ dùng Dead Letter Queue (DLQ) ở đây)
         }
@@ -59,6 +58,8 @@ public class NotificationEventListener {
     /**
      * (MỚI) Lắng nghe sự kiện thay đổi trạng thái Order
      */
+    @Async
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleOrderStatusChange(OrderStatusChangedEvent event) {
         try {
@@ -68,27 +69,24 @@ public class NotificationEventListener {
 
             // Dùng switch để tạo Message (nội dung)
             String message = switch (status) {
-                case CONFIRMED -> "Đơn hàng của bạn đã được xác nhận. Chúng tôi đang chuẩn bị hàng.";
-                case PROCESSING -> "Đơn hàng của bạn đã được đóng gói (đã xuất kho).";
-                case OUT_FOR_DELIVERY -> "Shipper đang trên đường giao hàng cho bạn.";
+                case OUT_FOR_DELIVERY -> "Shipper đang trên đường giao hàng cho bạn. Hãy chú ý điện thoại";
                 case DELIVERED -> "Đơn hàng đã được giao thành công. Cảm ơn bạn!";
                 case CANCELLED -> "Đơn hàng của bạn đã bị hủy.";
                 default -> null; // (PENDING không cần thông báo)
             };
 
             if (message != null) {
-                // 1. Tạo thông báo (cho chuông 🔔)
                 notificationService.createNotification(
                         order.getUser().getUserId(),
                         message,
                         NotificationType.ORDER,
-                        "/orders/" + order.getId()
+                        "/user/purchase/" + order.getId()
                 );
                 try {
                     String channelName = "user-" + order.getUser().getUserId();
                     Map<String, String> pushData = new HashMap<>();
                     pushData.put("message", message);
-                    pushData.put("link", "/orders/" + order.getId());
+                    pushData.put("link", "/user/purchase/" + order.getId());
 
                     pusher.trigger(channelName, "notification-event", pushData);
                 } catch (Exception ex) {

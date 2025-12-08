@@ -39,7 +39,7 @@
 /* --- Footer: Total & Action --- */
 .footer {
   padding: 16px;
-  background-color: #fffefb; /* Nền hơi vàng nhẹ giống Shopee */
+  background-color: #fffefb; 
   border-top: 1px solid #f5f5f5;
   display: flex;
   justify-content: space-between;

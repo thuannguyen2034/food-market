@@ -56,4 +56,11 @@ public class NotificationController {
         long count = notificationService.getUnreadCount(user.getUserId());
         return ResponseEntity.ok(Map.of("count", count));
     }
+
+    @PutMapping("/read-all")
+    public ResponseEntity<Void> markAllAsRead(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        notificationService.markAllAsRead(user.getUserId());
+        return ResponseEntity.ok().build();
+    }
 }

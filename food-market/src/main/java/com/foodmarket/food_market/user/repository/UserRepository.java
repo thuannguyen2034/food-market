@@ -1,6 +1,7 @@
 package com.foodmarket.food_market.user.repository;
 
 import com.foodmarket.food_market.user.model.entity.User;
+import com.foodmarket.food_market.user.model.enums.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -35,4 +36,10 @@ public interface UserRepository extends JpaRepository<User,UUID>, JpaSpecificati
     @Query("SELECT COUNT(u) FROM User u WHERE u.createdAt BETWEEN :start AND :end")
     long countNewUsers(@Param("start") OffsetDateTime start,
                        @Param("end") OffsetDateTime end);
+
+    // Đếm theo Role
+    long countByRole(Role role);
+
+    // Đếm user mới tạo sau thời điểm X
+    long countByCreatedAtAfter(OffsetDateTime date);
 }

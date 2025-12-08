@@ -29,7 +29,7 @@ export default function UserTable({ refreshTrigger, onRefresh }: Props) {
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showRoleModal, setShowRoleModal] = useState(false);
 
-    const pageSize = 10;
+    const pageSize = 15;
 
     const fetchUsers = useCallback(async () => {
         setLoading(true);
@@ -40,22 +40,13 @@ export default function UserTable({ refreshTrigger, onRefresh }: Props) {
             if (searchKeyword) {
                 params.append('keyword', searchKeyword);
             }
-
+            if (roleFilter !== 'ALL') {
+                params.append('role', roleFilter);
+            }
             const response = await authedFetch(`/api/v1/admin/users?${params.toString()}`);
 
             if (response.ok) {
                 let data: PageResponse<UserResponseDTO> = await response.json();
-
-                // Client-side role filtering if needed
-                if (roleFilter !== 'ALL') {
-                    const filteredContent = data.content.filter(user => user.role === roleFilter);
-                    data = {
-                        ...data,
-                        content: filteredContent,
-                        totalElements: filteredContent.length,
-                    };
-                }
-
                 setDataPage(data);
             } else {
                 console.error('Failed to fetch users:', response.status);
@@ -83,7 +74,7 @@ export default function UserTable({ refreshTrigger, onRefresh }: Props) {
 
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setSearchKeyword(searchInput); // Update search keyword only on submit
+        setSearchKeyword(searchInput); 
         setPage(0);
     };
 
@@ -98,7 +89,9 @@ export default function UserTable({ refreshTrigger, onRefresh }: Props) {
     };
 
     const getRoleBadgeClass = (role: Role) => {
-        return role === Role.ADMIN ? styles.adminBadge : styles.customerBadge;
+        if (role === Role.ADMIN) return styles.adminBadge;
+        if (role === Role.STAFF) return styles.staffBadge;
+        return styles.customerBadge;
     };
 
     const renderTableBody = () => {
@@ -199,6 +192,7 @@ export default function UserTable({ refreshTrigger, onRefresh }: Props) {
                         <option value="ALL">Tất cả</option>
                         <option value={Role.CUSTOMER}>Customer</option>
                         <option value={Role.ADMIN}>Admin</option>
+                        <option value={Role.STAFF}>Staff</option>
                     </select>
                 </div>
             </div>

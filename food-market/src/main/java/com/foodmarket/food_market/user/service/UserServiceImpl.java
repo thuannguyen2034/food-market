@@ -1,10 +1,12 @@
 package com.foodmarket.food_market.user.service;
 
+import com.foodmarket.food_market.admin.dashboard.dto.response.UserStatsDTO;
 import com.foodmarket.food_market.shared.service.EmailService;
 import com.foodmarket.food_market.user.dto.ChangePasswordRequestDTO;
 import com.foodmarket.food_market.user.dto.UserInfoUpdateDTO;
 import com.foodmarket.food_market.user.dto.UserResponseDTO;
 import com.foodmarket.food_market.user.model.entity.User;
+import com.foodmarket.food_market.user.model.enums.Role;
 import com.foodmarket.food_market.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -126,5 +128,25 @@ public class UserServiceImpl implements UserService {
         OffsetDateTime twentyFourHoursAgo = now.minusHours(24);
        return userRepository.countNewUsers(twentyFourHoursAgo, now);
     }
+    @Override
+    public UserStatsDTO getUserStats() {
+        // 1. Tính thời điểm đầu tháng này
+        OffsetDateTime startOfMonth = OffsetDateTime.now().withDayOfMonth(1)
+                .withHour(0).withMinute(0).withSecond(0).withNano(0);
 
+        // 2. Gọi Repository đếm (Database count rất nhanh)
+        long totalUsers = userRepository.count();
+        long totalCustomers = userRepository.countByRole(Role.CUSTOMER);
+        long totalAdmins = userRepository.countByRole(Role.ADMIN);
+        long totalStaffs = userRepository.countByRole(Role.STAFF);
+        long newUsers = userRepository.countByCreatedAtAfter(startOfMonth);
+
+        return UserStatsDTO.builder()
+                .totalUsers(totalUsers)
+                .totalCustomers(totalCustomers)
+                .totalAdmins(totalAdmins)
+                .totalStaffs(totalStaffs)
+                .newUsersThisMonth(newUsers)
+                .build();
+    }
 }

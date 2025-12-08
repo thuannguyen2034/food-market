@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/admin/orders")
-@PreAuthorize("hasAnyRole('ADMIN', 'SHIPPER')") // (Shipper cũng dùng)
+@PreAuthorize("hasAnyRole('ADMIN', 'STAFF')") // (Shipper cũng dùng)
 @RequiredArgsConstructor
 public class AdminOrderController {
 
@@ -29,8 +29,8 @@ public class AdminOrderController {
 
     @GetMapping("")
     public ResponseEntity<Page<OrderResponseDTO>> getAllOrders(
-            @ModelAttribute OrderFilterDTO filterDTO, // Hứng params
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @ModelAttribute OrderFilterDTO filterDTO,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.ASC) Pageable pageable
     ) {
         return ResponseEntity.ok(orderService.getAllOrders(filterDTO, pageable));
     }

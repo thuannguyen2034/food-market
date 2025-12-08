@@ -20,11 +20,10 @@ import java.util.List;
 public class ProductEventListener {
 
     private final ProductRepository productRepository;
-    private final OrderItemRepository orderItemRepository; // Cần repo này để lấy list item
-
-    @Async // Chạy ở thread khác để không làm chậm luồng chính
-    @Transactional(propagation = Propagation.REQUIRES_NEW) // Tạo transaction mới hoàn toàn
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT) // Chỉ chạy khi Order đã lưu DB thành công 100%
+    private final OrderItemRepository orderItemRepository;
+    @Async
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void handleOrderStatusChanged(OrderStatusChangedEvent event) {
 
         if (event.getNewStatus() == OrderStatus.CONFIRMED) {

@@ -55,6 +55,7 @@ public class AdminDashboardController {
      * Biểu đồ phân bổ trạng thái đơn hàng (Pie Chart)
      * Endpoint: /api/v1/admin/dashboard/order-status
      */
+    @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     @GetMapping("/order-status")
     public ResponseEntity<List<OrderStatusResponseDTO>> getOrderStatusDistribution() {
         List<OrderStatusStat> orderStatusStats = orderService.countOrdersByStatus();

@@ -19,4 +19,5 @@ public interface NotificationService {
      * Dùng bởi Event Listeners để tạo thông báo
      */
     void createNotification(UUID userId, String message, NotificationType type, String linkTo);
+    void markAllAsRead(UUID userId);
 }

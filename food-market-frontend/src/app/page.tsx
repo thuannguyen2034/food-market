@@ -41,11 +41,8 @@ export default async function HomePage() {
 
   return (
     <main className={styles.container}>
-      
-      {/* 1. Banner Section */}
       <section className={styles.bannerSection}>
         <div className={styles.bannerContainer}>
-          {/* Bạn nhớ copy ảnh banner vào folder public nhé */}
           <img 
             src="/banner.png" 
             alt="BonMi Market - Thực phẩm tươi sạch" 
@@ -54,7 +51,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* 2. Flash Sale Section */}
       {flashSaleProducts && flashSaleProducts.length > 0 && (
         <div className={styles.sectionContainer}>
           <div className={styles.flashSaleWrapper}>
@@ -77,7 +73,7 @@ export default async function HomePage() {
         </div>
       )}
 
-      {/* 3. Category Feeds (Gian hàng) */}
+      {/* Gian hàng */}
       <div className={styles.sectionContainer}>
         {categorySections.map((section) => (
           <div key={section.categoryId} className={styles.categorySection}>

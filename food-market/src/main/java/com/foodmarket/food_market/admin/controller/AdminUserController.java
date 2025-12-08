@@ -1,8 +1,11 @@
 package com.foodmarket.food_market.admin.controller;
 
+import com.foodmarket.food_market.admin.dashboard.dto.response.UserStatsDTO;
 import com.foodmarket.food_market.admin.service.AdminService;
 import com.foodmarket.food_market.user.dto.UpdateRoleRequestDTO;
 import com.foodmarket.food_market.user.dto.UserResponseDTO;
+import com.foodmarket.food_market.user.repository.UserRepository;
+import com.foodmarket.food_market.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -22,7 +25,7 @@ import java.util.UUID;
 public class AdminUserController {
 
     private final AdminService adminService;
-
+    private  final UserService userService;
     /**
      * 1. Lấy danh sách User (Có tìm kiếm & Phân trang)
      * URL: GET /api/v1/admin/users?keyword=nam&page=0&size=10
@@ -30,9 +33,10 @@ public class AdminUserController {
     @GetMapping
     public ResponseEntity<Page<UserResponseDTO>> getUsers(
             @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String role,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        return ResponseEntity.ok(adminService.getUsers(keyword, pageable));
+        return ResponseEntity.ok(adminService.getUsers(keyword,role, pageable));
     }
 
     /**
@@ -47,5 +51,10 @@ public class AdminUserController {
     ) {
         adminService.updateUserRole(userId, request.role());
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<UserStatsDTO> getUserStats() {
+        return ResponseEntity.ok(userService.getUserStats());
     }
 }

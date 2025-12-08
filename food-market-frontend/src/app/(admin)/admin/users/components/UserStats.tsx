@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Users, ShoppingCart, Shield, UserPlus } from 'lucide-react';
+import { Users, ShoppingCart, Shield, UserPlus, Briefcase } from 'lucide-react';
 import styles from '@/styles/admin/Users.module.css';
 
+// Type khớp với DTO Backend trả về
 type StatsData = {
     totalUsers: number;
     totalCustomers: number;
     totalAdmins: number;
+    totalStaffs: number;
     newUsersThisMonth: number;
 };
 
@@ -18,47 +20,28 @@ export default function UserStats() {
         totalUsers: 0,
         totalCustomers: 0,
         totalAdmins: 0,
+        totalStaffs: 0,
         newUsersThisMonth: 0,
     });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchStats();
-    }, []);
-
-    const fetchStats = async () => {
-        try {
-            // Fetch all users to calculate stats
-            const response = await authedFetch('/api/v1/admin/users?size=1000');
-            if (response.ok) {
-                const data = await response.json();
-                const users = data.content || [];
-
-                const totalUsers = users.length;
-                const totalCustomers = users.filter((u: any) => u.role === 'CUSTOMER').length;
-                const totalAdmins = users.filter((u: any) => u.role === 'ADMIN').length;
-
-                // Calculate new users this month
-                const now = new Date();
-                const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-                const newUsersThisMonth = users.filter((u: any) => {
-                    const createdDate = new Date(u.createdAt);
-                    return createdDate >= firstDayOfMonth;
-                }).length;
-
-                setStats({
-                    totalUsers,
-                    totalCustomers,
-                    totalAdmins,
-                    newUsersThisMonth,
-                });
+        const fetchStats = async () => {
+            try {
+                const response = await authedFetch('/api/v1/admin/users/stats');
+                if (response.ok) {
+                    const data = await response.json();
+                    setStats(data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch user stats:', error);
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            console.error('Failed to fetch user stats:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+        };
+
+        fetchStats();
+    }, [authedFetch]);
 
     if (loading) {
         return (
@@ -86,7 +69,15 @@ export default function UserStats() {
                 <div className={styles.statIcon}><ShoppingCart size={24} /></div>
                 <div className={styles.statContent}>
                     <div className={styles.statValue}>{stats.totalCustomers}</div>
-                    <div className={styles.statLabel}>Customers</div>
+                    <div className={styles.statLabel}>Khách hàng</div>
+                </div>
+            </div>
+
+            <div className={`${styles.statCard} ${styles.info}`}>
+                <div className={styles.statIcon}><Briefcase size={24} /></div>
+                <div className={styles.statContent}>
+                    <div className={styles.statValue}>{stats.totalStaffs}</div>
+                    <div className={styles.statLabel}>Nhân viên</div>
                 </div>
             </div>
 
@@ -97,7 +88,7 @@ export default function UserStats() {
                     <div className={styles.statLabel}>Admins</div>
                 </div>
             </div>
-
+            
             <div className={`${styles.statCard} ${styles.warning}`}>
                 <div className={styles.statIcon}><UserPlus size={24} /></div>
                 <div className={styles.statContent}>

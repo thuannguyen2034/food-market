@@ -1,3 +1,4 @@
+//src/app/(admin)/admin/layout.tsx
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
@@ -25,7 +26,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   if (!user) {
     return null;
   }
-  if (user.role !== 'ADMIN') {
+  if (user.role !== 'ADMIN' && user.role !== 'STAFF') {
     return (
       <div className={styles.forbiddenContainer}>
         <h1>Không thấy trang</h1>
@@ -40,6 +41,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
       <AdminSidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
+        user={user}
       />
 
       <div className={styles.mainContent}>
@@ -50,7 +52,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
           >
             <Menu size={24} />
           </button>
-          <span className={styles.mobileLogo}>BonMi Admin</span>
+          <span className={styles.mobileLogo}>{user.role === 'ADMIN' ? 'BonMi Admin' : 'BonMi Nhân viên'}</span>
           <div style={{ width: 24 }}></div>
         </div>
 

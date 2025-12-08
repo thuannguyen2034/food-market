@@ -7,5 +7,5 @@ package com.foodmarket.food_market.user.model.enums;
 public enum Role {
     CUSTOMER, // Khách hàng
     ADMIN,    // Quản trị viên
-    SHIPPER   // Người giao hàng
+    STAFF   // Người giao hàng
 }

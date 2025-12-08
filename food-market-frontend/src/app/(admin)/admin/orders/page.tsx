@@ -15,11 +15,11 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Link from 'next/link';
 import styles from '@/styles/admin/Orders.module.css';
-import { Order, OrderFilter, OrderStatus } from '@/app/type/Order';
+import { OrderDTO, OrderFilter, OrderStatus } from '@/app/type/Order';
 import OrderStatusBadge from './components/OrderStatusBadge';
 
 type PageResponse = {
-    content: Order[];
+    content: OrderDTO[];
     totalPages: number;
     totalElements: number;
     number: number;
@@ -29,7 +29,7 @@ type PageResponse = {
 export default function OrdersPage() {
     const { authedFetch } = useAuth();
     const [loading, setLoading] = useState(true);
-    const [orders, setOrders] = useState<Order[]>([]);
+    const [orders, setOrders] = useState<OrderDTO[]>([]);
     const [pageData, setPageData] = useState<PageResponse | null>(null);
 
     // Stats

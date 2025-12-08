@@ -4,7 +4,8 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search, ShoppingCart, Menu, ChevronDown, Phone, Clock } from 'lucide-react'; // Thêm icon Phone, Clock
+import { Search, ShoppingCart, Menu, ChevronDown, Phone, Clock, Bell } from 'lucide-react';
+import { useNotification } from '@/context/NotificationContext';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { CategoryResponse } from '@/types/product';
@@ -14,7 +15,6 @@ export default function Navbar() {
   const { totalItems } = useCart();
   const router = useRouter();
 
-  // ... (Giữ nguyên các state và logic search/category cũ của bạn) ...
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,7 +24,7 @@ export default function Navbar() {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const categoriesRef = useRef<HTMLDivElement>(null);
-
+  const { unreadCount } = useNotification(); 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -196,6 +196,18 @@ export default function Navbar() {
 
             {/* User & Cart */}
             <div className={styles.navLinks}>
+              {user && (
+                <Link href="/user/notifications" className={styles.cartLink}> {/* Tái sử dụng class cartLink cho nhanh */}
+                  <div className={styles.cartIconWrapper}>
+                    <Bell size={24} />
+                    {unreadCount > 0 && (
+                      <span className={styles.cartBadge}>
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </div>
+                </Link>
+              )}
               {user?.role === 'CUSTOMER' && (<Link href="/cart" className={styles.cartLink}>
                 <div className={styles.cartIconWrapper}>
                   <ShoppingCart size={24} />
@@ -218,13 +230,13 @@ export default function Navbar() {
                   </button>
                   <div className={`${styles.dropdown} ${isDropdownOpen ? styles.open : ''}`}>
                     {user.role === 'ADMIN' ? (
-                       <Link href="/admin/dashboard" className={styles.dropdownItem}>
-                          Trang quản trị
-                       </Link>
+                      <Link href="/admin/dashboard" className={styles.dropdownItem}>
+                        Trang quản trị
+                      </Link>
                     ) : (
-                       <Link href="/user/profile" className={styles.dropdownItem}>
-                          Hồ sơ cá nhân
-                       </Link>
+                      <Link href="/user/profile" className={styles.dropdownItem}>
+                        Hồ sơ cá nhân
+                      </Link>
                     )}
                     <button onClick={handleLogout} className={styles.dropdownButton}>
                       Đăng xuất

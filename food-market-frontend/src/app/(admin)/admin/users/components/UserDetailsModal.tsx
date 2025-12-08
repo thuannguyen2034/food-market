@@ -10,6 +10,11 @@ type Props = {
 };
 
 export default function UserDetailsModal({ user, onClose }: Props) {
+    const getBadgeClass = (role: string) => {
+        if (role === 'ADMIN') return styles.adminBadge;
+        if (role === 'STAFF') return styles.staffBadge;
+        return styles.customerBadge;
+    };
     return (
         <div className={styles.modalOverlay} onClick={onClose}>
             <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
@@ -32,8 +37,7 @@ export default function UserDetailsModal({ user, onClose }: Props) {
                         )}
                         <div className={styles.detailsHeaderInfo}>
                             <h3>{user.fullName}</h3>
-                            <span className={`${styles.roleBadge} ${user.role === 'ADMIN' ? styles.adminBadge : styles.customerBadge
-                                }`}>
+                            <span className={`${styles.roleBadge} ${getBadgeClass(user.role)}`}>
                                 {user.role}
                             </span>
                         </div>

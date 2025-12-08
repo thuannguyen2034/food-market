@@ -90,7 +90,7 @@ public class OrderServiceImpl implements OrderService {
         // 3. Snapshot địa chỉ
         UserAddress address = userAddressRepository.findByIdAndUser_UserId(request.getAddressId(), userId)
                 .orElseThrow(() -> new EntityNotFoundException("Địa chỉ không hợp lệ."));
-        String addressSnapshot = address.getProvince(); // Ví dụ
+        String addressSnapshot = address.getFullAddress();
         String phoneRecipientSnapshot = address.getRecipientPhone();
         String nameRecipientSnapshot = address.getRecipientName();
         BigDecimal totalAmount = BigDecimal.ZERO;
@@ -300,8 +300,9 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponseDTO> getAllOrders(OrderFilterDTO filterDTO, Pageable pageable) {
-        Sort sort = Sort.by("deliveryDate").ascending()
-                .and(Sort.by("deliveryTimeslot").ascending());
+        Sort sort = Sort.by("status").descending()
+                .and(Sort.by("deliveryDate").descending())
+                .and(Sort.by("deliveryTimeslot").descending());
         pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
         Specification<Order> spec = OrderSpecification.filterBy(filterDTO);
         return orderRepository.findAll(spec, pageable)

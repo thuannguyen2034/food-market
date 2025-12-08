@@ -29,18 +29,22 @@ public class AdminServiceImpl implements AdminService {
      */
     @Override
     @Transactional(readOnly = true)
-    public Page<UserResponseDTO> getUsers(String keyword, Pageable pageable) {
+    public Page<UserResponseDTO> getUsers(String keyword, String role, Pageable pageable) {
         Specification<User> spec = Specification.allOf();
 
         if (StringUtils.hasText(keyword)) {
             String likeKey = "%" + keyword.toLowerCase() + "%";
-
             spec = spec.and((root, query, cb) -> cb.or(
                     cb.like(cb.lower(root.get("fullName")), likeKey),
                     cb.like(cb.lower(root.get("email")), likeKey),
                     cb.like(cb.lower(root.get("phone")), likeKey)
             ));
         }
+        if (StringUtils.hasText(role)) {
+    spec = spec.and((root, query, cb) -> 
+        cb.equal(root.get("role"), Role.valueOf(role))
+    );
+}
 
         // Trả về Page để Frontend phân trang (Trang 1, Trang 2...)
         return userRepository.findAll(spec, pageable)
@@ -49,7 +53,7 @@ public class AdminServiceImpl implements AdminService {
 
 
     /**
-     *  TÍNH NĂNG MỚI: Cập nhật Role (Thăng chức/Giáng chức)
+     * TÍNH NĂNG MỚI: Cập nhật Role (Thăng chức/Giáng chức)
      */
     @Override
     @Transactional

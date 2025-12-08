@@ -1,5 +1,6 @@
 package com.foodmarket.food_market.user.service;
 
+import com.foodmarket.food_market.admin.dashboard.dto.response.UserStatsDTO;
 import com.foodmarket.food_market.user.dto.ChangePasswordRequestDTO;
 import com.foodmarket.food_market.user.dto.UserInfoUpdateDTO;
 import com.foodmarket.food_market.user.dto.UserResponseDTO;
@@ -19,4 +20,5 @@ public interface UserService {
     UserResponseDTO updateAvatar(String email, String newAvatarUrl);
     void deleteAvatar(String email);
     long countNewUsersInLastDay();
+    UserStatsDTO getUserStats();
 }

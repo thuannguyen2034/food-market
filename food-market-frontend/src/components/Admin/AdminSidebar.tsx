@@ -3,15 +3,20 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, ShoppingCart, Package, Folder, Tags, Users, Warehouse, ChevronDown, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Folder, Tags, Users, Warehouse, ChevronDown, ChevronRight, MessageCircle } from 'lucide-react';
 import styles from '@/styles/admin/AdminSidebar.module.css';
 interface AdminSidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
+  user?: any;
 }
 // Định nghĩa các link điều hướng
-const navLinks = [
-  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+
+export default function AdminSidebar({ isOpen = false, onClose, user }: AdminSidebarProps) {
+  let navLinks;
+  if(user.role === 'ADMIN') {
+navLinks = [
+  { href: '/admin/dashboard', label: 'Thống kê', icon: LayoutDashboard },
   { href: '/admin/orders', label: 'Đơn hàng', icon: ShoppingCart },
   {
     href: '/admin/products',
@@ -25,12 +30,18 @@ const navLinks = [
     ]
   },
   { href: '/admin/users', label: 'Người dùng', icon: Users },
-];
-
-export default function AdminSidebar({ isOpen = false, onClose }: AdminSidebarProps) {
+  { href: '/admin/chats', label: 'Hội thoại', icon: MessageCircle },
+];}
+else {
+  navLinks = [
+    { href: '/admin/orders', label: 'Đơn hàng', icon: ShoppingCart },
+    {href: '/admin/inventory', label: 'Kho hàng', icon: Warehouse},
+    { href: '/admin/chats', label: 'Hội thoại', icon: MessageCircle },
+  ];
+}
   const pathname = usePathname();
   const [openSubMenus, setOpenSubMenus] = useState<string[]>(['/admin/products']);
-
+  
   const toggleSubMenu = (href: string) => {
     setOpenSubMenus(prev =>
       prev.includes(href)
@@ -46,7 +57,7 @@ export default function AdminSidebar({ isOpen = false, onClose }: AdminSidebarPr
          onClick={onClose} 
        />
     <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
-      <div className={styles.logo}>Admin</div>
+      <div className={styles.logo}>{user.role === 'ADMIN' ? 'BonMi Admin' : 'BonMi Nhân viên'}</div>
       <nav className={styles.nav}>
         <ul>
           {navLinks.map((link) => {
