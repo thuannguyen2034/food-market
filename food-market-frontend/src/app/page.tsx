@@ -1,12 +1,112 @@
 // src/app/page.tsx
-"use client"; // Bắt buộc phải là Client Component vì có tương tác
-import Link from "next/link";
+import Link from 'next/link';
+import { ChevronRight, Zap } from 'lucide-react';
+import ProductCard from '@/components/ProductCard';
+import { HomePageData } from '@/app/type/Home'; // Import type vừa tạo
+import styles from './HomePage.module.css';
 
+// Hàm gọi API (Server Side)
+async function getHomeData(): Promise<HomePageData | null> {
+  // Thay URL này bằng biến môi trường trong thực tế
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1'; 
+  
+  try {
+    const res = await fetch(`${API_URL}/storefront/home`, { 
+      next: { revalidate: 60 } // Cache 60s (ISR)
+    });
 
-export default function HomePage() {
+    if (!res.ok) {
+      console.error('Failed to fetch home data:', res.status);
+      return null;
+    }
+    return res.json();
+  } catch (error) {
+    console.error('Error fetching home data:', error);
+    return null;
+  }
+}
+
+export default async function HomePage() {
+  const data = await getHomeData();
+
+  if (!data) {
+    return (
+      <div className={styles.loadingContainer}>
+        <p>Đang tải dữ liệu hoặc server gặp sự cố...</p>
+      </div>
+    );
+  }
+
+  const { flashSaleProducts, categorySections } = data;
+
   return (
-    <>
-    <Link href="/login">Đăng nhập</Link>
-    </>
+    <main className={styles.container}>
+      
+      {/* 1. Banner Section */}
+      <section className={styles.bannerSection}>
+        <div className={styles.bannerContainer}>
+          {/* Bạn nhớ copy ảnh banner vào folder public nhé */}
+          <img 
+            src="/banner.png" 
+            alt="BonMi Market - Thực phẩm tươi sạch" 
+            className={styles.bannerImage}
+          />
+        </div>
+      </section>
+
+      {/* 2. Flash Sale Section */}
+      {flashSaleProducts && flashSaleProducts.length > 0 && (
+        <div className={styles.sectionContainer}>
+          <div className={styles.flashSaleWrapper}>
+            <div className={styles.sectionHeader}>
+              <div className={styles.flashSaleTitle}>
+                <Zap className={styles.flashIcon} fill="#e72a2a" />
+                FLASH SALE
+              </div>
+              <Link href="/search?isOnSale=true" className={styles.viewAllBtn}>
+                Xem tất cả <ChevronRight size={16} />
+              </Link>
+            </div>
+            
+            <div className={styles.productGrid}>
+              {flashSaleProducts.slice(0, 5).map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 3. Category Feeds (Gian hàng) */}
+      <div className={styles.sectionContainer}>
+        {categorySections.map((section) => (
+          <div key={section.categoryId} className={styles.categorySection}>
+            <div className={styles.sectionHeader}>
+              <h2 className={styles.categoryTitle}>{section.categoryName}</h2>
+              <Link href={`/${section.categorySlug}`} className={styles.viewAllBtn}>
+                Xem thêm <ChevronRight size={16} />
+              </Link>
+            </div>
+
+            <div className={styles.productGrid}>
+              {section.products.length > 0 ? (
+                section.products.slice(0, 10).map((product) => (
+                  <ProductCard 
+                    key={product.id} 
+                    product={product} 
+                    categorySlug={section.categorySlug} // Truyền slug root để link đúng
+                  />
+                ))
+              ) : (
+                <p style={{color: '#999', padding: '20px', textAlign: 'center', gridColumn: '1/-1'}}>
+                  Đang cập nhật sản phẩm...
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+    </main>
   );
 }
