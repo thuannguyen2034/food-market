@@ -32,8 +32,6 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     @Transactional
     public ReviewResponseDTO createReview(UUID userId, CreateReviewRequestDTO request) {
-        // 1. Validate: User có được phép review không? (Đã mua + Đã giao thành công)
-        // Giả sử bạn có Enum OrderStatus.COMPLETED
         boolean canReview = orderRepository.existsByIdAndUser_UserIdAndStatus(
                 request.getOrderId(), userId, OrderStatus.DELIVERED
         );
@@ -68,6 +66,7 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<ReviewResponseDTO> getReviewsByProduct(Long productId, Pageable pageable) {
         return reviewRepository.findByProductId(productId, pageable).map(
                 review -> {

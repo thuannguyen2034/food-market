@@ -28,7 +28,6 @@ public class Review {
     @Column(name = "order_id", nullable = false)
     private UUID orderId;
 
-    // Mapping sang Product để tận dụng Lazy Loading khi cần hiển thị tên sản phẩm
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
