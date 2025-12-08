@@ -19,11 +19,12 @@ public class TopProductResponseDTO {
     private Long totalSold;
     private BigDecimal totalRevenue;
 
-    public static TopProductResponseDTO fromProjection(TopProductStat stat) {
+    public static TopProductResponseDTO fromProjection(TopProductStat stat,String imageUrl) {
+
         return TopProductResponseDTO.builder()
                 .productId(stat.getProductId())
                 .productName(stat.getProductName())
-                .productImage(stat.getProductImages().getFirst().getImageUrl())
+                .productImage(imageUrl)
                 .totalSold(stat.getTotalSold())
                 .totalRevenue(stat.getTotalRevenue())
                 .build();

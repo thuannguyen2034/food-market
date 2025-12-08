@@ -76,10 +76,7 @@ public class AdminDashboardController {
     ) {
         OffsetDateTime start = convertToOffset(startDate);
         OffsetDateTime end = convertToOffset(endDate);
-        List<TopProductStat> topProductStats = orderService.findTopSellingProducts(start, end, pageable);
-        List<TopProductResponseDTO> response = topProductStats.stream()
-                .map(TopProductResponseDTO::fromProjection)
-                .collect(Collectors.toList());
+        List<TopProductResponseDTO> response = orderService.findTopSellingProducts(start, end, pageable);
         return ResponseEntity.ok(response);
     }
 
@@ -90,8 +87,6 @@ public class AdminDashboardController {
 
     private OffsetDateTime convertToOffset(LocalDateTime localDateTime) {
         if (localDateTime == null) return null;
-        // Sử dụng ZoneId của hệ thống hoặc UTC tùy vào cấu hình database của bạn
-        // Ở đây dùng systemDefault() cho an toàn với local dev
         return localDateTime.atZone(ZoneId.systemDefault()).toOffsetDateTime();
     }
 }

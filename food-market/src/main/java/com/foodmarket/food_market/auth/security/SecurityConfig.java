@@ -12,60 +12,75 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
-@EnableWebSecurity // Kích hoạt Spring Security
-@EnableMethodSecurity // Kích hoạt bảo mật ở cấp độ phương thức (vd: @PreAuthorize)
+@EnableWebSecurity
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
-    private final AuthenticationProvider authenticationProvider; // Bean từ ApplicationConfig
+    private final AuthenticationProvider authenticationProvider;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 1. Kích hoạt CORS (để nó đọc CorsConfig của bạn)
-                .cors(withDefaults())
-                // 1. Tắt CSRF (Cross-Site Request Forgery)
-                // Chúng ta an toàn vì chúng ta là stateless JWT
+                // 1. Kích hoạt CORS với cấu hình source bên dưới
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                // 2. Tắt CSRF
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // 2. Định nghĩa các "luật" cho request
+                // 3. Authorize Requests
                 .authorizeHttpRequests(authz -> authz
-                        // Cho phép TẤT CẢ các request pre-flight OPTIONS
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        // 2.1. Cho phép tất cả mọi người truy cập các URL này
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Quan trọng: Cho phép Pre-flight request
                         .requestMatchers(
-                                "/api/v1/auth/**", // Toàn bộ API xác thực
-                                "/v3/api-docs/**", // Swagger/OpenAPI docs
-                                "/swagger-ui/**",   // Swagger UI
-                                "/api/v1/products/**", // Public product endpoints (search, details, hints)
-                                "/api/v1/categories/**", // Public category endpoints
-                                "/api/v1/reviews/**"
+                                "/api/v1/auth/**",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/api/v1/products/**",
+                                "/api/v1/categories/**",
+                                "/api/v1/reviews/**",
+                                "/api/v1/storefront/**"
                         ).permitAll()
-
-                        // 2.2. Tất cả các request khác đều BẮT BUỘC phải xác thực
                         .anyRequest().authenticated()
                 )
 
-
-                // 3. Cấu hình quản lý phiên (Session)
-                // Chúng ta là API stateless, không dùng session
+                // 4. Session Stateless
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                // 4. Cung cấp "nhà cung cấp xác thực"
-                // (Chính là DaoAuthenticationProvider mà ta đã cấu hình)
+                // 5. Auth Provider & Filter
                 .authenticationProvider(authenticationProvider)
-
-                // 5. Thêm "người gác cổng" JWT của chúng ta
-                // Nó phải chạy TRƯỚC filter UsernamePassword... (filter mặc định)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // QUAN TRỌNG: Dùng allowedOriginPatterns("*") thay vì allowedOrigins("*")
+        // để có thể hoạt động được khi allowCredentials(true)
+        // Điều này cho phép Localhost, IP LAN (192.168...), Domain thật, v.v...
+        configuration.setAllowedOriginPatterns(List.of("*"));
+
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "x-auth-token"));
+        configuration.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }
