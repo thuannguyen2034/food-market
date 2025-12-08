@@ -11,12 +11,6 @@ import java.util.Optional;
 
 @Repository // Đánh dấu đây là Repository
 public interface CategoryRepository extends JpaRepository<Category, Long> {
-
-    /**
-     * Tìm tất cả danh mục gốc (không có parent)
-     */
-    List<Category> findByParentIsNull();
-
     /**
      * Lấy tất cả danh mục. Dùng JOIN FETCH
      * để tối ưu, lấy cả parent, tránh lỗi N+1 query
@@ -31,4 +25,5 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
             "WHERE unaccent(c.name) ILIKE unaccent(concat('%', :keyword, '%')) AND c.parent_id IS NOT NULL"
             , nativeQuery = true)
     List<Category> searchByKeyword(@Param("keyword") String keyword);
+    List<Category> findByParentIdIsNull();
 }

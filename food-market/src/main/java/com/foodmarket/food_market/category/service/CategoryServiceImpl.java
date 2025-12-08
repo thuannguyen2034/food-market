@@ -60,13 +60,19 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<CategoryResponseDTO> getSameRootCategories(String categorySlug) {
-        Optional<Category> category = categoryRepository.findBySlug(categorySlug);
-        if (category.isEmpty()) {
-            throw new EntityNotFoundException("Category not found");
+        Category category = categoryRepository.findBySlug(categorySlug)
+                .orElseThrow(() -> new EntityNotFoundException("Category not found"));
+        List<Category> relatedCategories;
+        if (category.getParent() == null) {
+            relatedCategories = categoryRepository.getCategoriesByParentId(category.getId());
+            relatedCategories.add(0, category);
+        } else {
+            relatedCategories = categoryRepository.getCategoriesByParentId(category.getParent().getId());
+            relatedCategories.add(0, category.getParent());
         }
-        return categoryRepository.getCategoriesByParentId(category.get().getParent().getId())
-                .stream()
+        return relatedCategories.stream()
                 .map(CategoryResponseDTO::fromEntity)
                 .collect(Collectors.toList());
     }

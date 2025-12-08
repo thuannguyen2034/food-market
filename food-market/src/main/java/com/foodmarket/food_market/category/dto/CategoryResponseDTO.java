@@ -13,9 +13,8 @@ public class CategoryResponseDTO {
     private Long id;
     private String name;
     private String imageUrl;
-    private Long parentId; // Thêm parentId để client dễ xử lý (nếu cần)
+    private Long parentId;
     private String slug;
-    // Quan trọng: Danh sách đệ quy
     @Builder.Default
     private List<CategoryResponseDTO> children = new ArrayList<>();
 
