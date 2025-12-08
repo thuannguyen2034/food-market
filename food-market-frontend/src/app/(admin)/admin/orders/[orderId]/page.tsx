@@ -16,7 +16,7 @@ import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import Link from 'next/link';
 import styles from '@/styles/admin/Orders.module.css';
-import { Order, OrderStatus, getOrderStatusLabel, getValidNextStatuses } from '@/app/type/Order';
+import { OrderDTO, OrderStatus, getOrderStatusLabel, getValidNextStatuses } from '@/app/type/Order';
 import OrderStatusBadge from '../components/OrderStatusBadge';
 
 export default function OrderDetailPage() {
@@ -26,7 +26,7 @@ export default function OrderDetailPage() {
     const orderId = params.orderId as string;
 
     const [loading, setLoading] = useState(true);
-    const [order, setOrder] = useState<Order | null>(null);
+    const [order, setOrder] = useState<OrderDTO | null>(null);
     const [selectedStatus, setSelectedStatus] = useState<OrderStatus | ''>('');
     const [updating, setUpdating] = useState(false);
 
@@ -39,7 +39,7 @@ export default function OrderDetailPage() {
         try {
             const response = await authedFetch(`/api/v1/admin/orders/${orderId}`);
             if (response.ok) {
-                const data: Order = await response.json();
+                const data: OrderDTO = await response.json();
                 setOrder(data);
                 setSelectedStatus('');
             } else {
@@ -246,11 +246,11 @@ export default function OrderDetailPage() {
                                 <td>
                                     <div className={styles.productCell}>
                                         <img
-                                            src={item.productImageUrl || '/placeholder-food.png'}
-                                            alt={item.productName}
+                                            src={item.productThumbnailSnapshot || '/placeholder-food.png'}
+                                            alt={item.productNameSnapshot}
                                             className={styles.productImg}
                                         />
-                                        <span className={styles.productName}>{item.productName}</span>
+                                        <span className={styles.productName}>{item.productNameSnapshot}</span>
                                     </div>
                                 </td>
                                 <td>{item.quantity}</td>

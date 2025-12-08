@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -53,11 +54,15 @@ public class Order {
     @Column(name = "delivery_timeslot", length = 20)
     private DeliveryTimeSlot deliveryTimeslot;
 
+    @Column(name = "delivery_date", nullable = false)
+    private LocalDate deliveryDate;
+
     @Column(name = "note", columnDefinition = "TEXT")
     private String note;
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
+
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private Set<OrderItem> items = new HashSet<>();

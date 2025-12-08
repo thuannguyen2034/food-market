@@ -117,6 +117,7 @@ public class OrderSpecification {
                     cb.concat(root.get("id").as(String.class), cb.literal("")),
                     likePattern
             );
+            Predicate searchOrderRecipePhone = cb.like(root.get("deliveryPhoneSnapshot").as(String.class), likePattern);
             Predicate searchName = cb.like(cb.lower(userJoin.get("fullName")), likePattern);
             Predicate searchEmail = cb.like(cb.lower(userJoin.get("email")), likePattern);
 

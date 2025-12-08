@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.time.LocalDate;
+
 @Data
 public class CheckoutRequestDTO {
     @NotNull(message = "Address ID không được để trống")
@@ -15,6 +17,7 @@ public class CheckoutRequestDTO {
     private PaymentMethod paymentMethod; // "COD" hoặc "VNPAY"
     @NotNull
     private DeliveryTimeSlot deliveryTimeslot;
-
+    @NotNull(message = "Ngày giao hàng không được để trống")
+    private LocalDate deliveryDate;
     private String note;
 }

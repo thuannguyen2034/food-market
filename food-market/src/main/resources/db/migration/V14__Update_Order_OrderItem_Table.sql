@@ -1,0 +1,5 @@
+ALTER TABLE orders
+    ADD COLUMN delivery_date DATE DEFAULT CURRENT_DATE NOT NULL;
+
+ALTER TABLE order_items
+    ADD COLUMN base_price_at_purchase DECIMAL(10, 2) DEFAULT 0 NOT NULL;

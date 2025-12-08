@@ -9,25 +9,31 @@ export enum OrderStatus {
     CANCELLED = 'CANCELLED'
 }
 
-export type OrderItem = {
+export type OrderItemDTO = {
     id: number;
-    productName: string;
-    productImageUrl: string;
     quantity: number;
+    productIdSnapshot: number;
+    productNameSnapshot: string;
+    productThumbnailSnapshot: string;
     priceAtPurchase: number;
+    basePriceAtPurchase: number;
+    productSlug: string;
+    categorySlug: string;
     batchCode: string;
+    isReviewed: boolean;
 };
 
-export type Order = {
+export type OrderDTO = {
     orderId: string;
     status: OrderStatus;
     totalAmount: number;
     deliveryAddress: string;
     deliveryPhone: string;
+    deliveryDate: string;
     createdAt: string;
     deliveryTimeSlot: string;
     note?: string;
-    items: OrderItem[];
+    items: OrderItemDTO[];
 };
 
 export type OrderFilter = {
@@ -71,3 +77,10 @@ export const getValidNextStatuses = (currentStatus: OrderStatus): OrderStatus[] 
     };
     return transitions[currentStatus] || [];
 };
+export interface PageResponse<T> {
+  content: T[];
+  totalPages: number;
+  totalElements: number;
+  size: number;
+  number: number; // current page index
+}

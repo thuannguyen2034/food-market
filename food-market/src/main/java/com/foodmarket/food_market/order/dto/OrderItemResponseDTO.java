@@ -10,20 +10,29 @@ import java.math.BigDecimal;
 @Builder
 public class OrderItemResponseDTO {
     private Long id;
-    private String productName;
-    private String productImageUrl;
     private int quantity;
+    private Long productIdSnapshot;
+    private String productNameSnapshot;
+    private String productThumbnailSnapshot;
     private BigDecimal priceAtPurchase;
-    private String batchCode; // Cho biết lô hàng
-
-    public static OrderItemResponseDTO fromEntity(OrderItem item) {
+    private BigDecimal basePriceAtPurchase;
+    private String productSlug;
+    private String categorySlug;
+    private String batchCode;
+    private Boolean isReviewed;
+    public static OrderItemResponseDTO fromEntity(OrderItem item, boolean isReviewed) {
         return OrderItemResponseDTO.builder()
                 .id(item.getId())
-                .productName(item.getProduct().getName())
-                .productImageUrl(item.getProduct().getImages().getFirst().getImageUrl())
                 .quantity(item.getQuantity())
+                .productIdSnapshot(item.getProductIdSnapshot())
+                .productNameSnapshot(item.getProductNameSnapshot())
+                .productThumbnailSnapshot(item.getProductThumbnailSnapshot())
                 .priceAtPurchase(item.getPriceAtPurchase())
+                .basePriceAtPurchase(item.getBasePriceAtPurchase())
+                .productSlug(item.getProduct().getSlug())
+                .categorySlug(item.getProduct().getCategory().getSlug())
                 .batchCode(item.getInventoryBatch().getBatchCode())
+                .isReviewed(isReviewed)
                 .build();
     }
 }

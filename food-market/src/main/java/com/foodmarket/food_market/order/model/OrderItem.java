@@ -29,7 +29,6 @@ public class OrderItem {
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
-    // --- CỰC KỲ QUAN TRỌNG: Link đến lô hàng ---
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "inventory_batch_id", nullable = false)
     private InventoryBatch inventoryBatch;
@@ -39,6 +38,9 @@ public class OrderItem {
 
     @Column(name = "price_at_purchase", nullable = false, precision = 10, scale = 2)
     private BigDecimal priceAtPurchase; // Chụp nhanh giá bán
+
+    @Column(name = "base_price_at_purchase", nullable = false, precision = 10, scale = 2)
+    private BigDecimal basePriceAtPurchase;
 
     @Column(name = "product_id_snapshot", nullable = false)
     private Long productIdSnapshot;

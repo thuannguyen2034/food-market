@@ -80,7 +80,6 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
     @Query("""
             SELECT p.id AS productId, 
                    p.name AS productName, 
-                   p.images AS productImages, 
                    SUM(i.quantity) AS totalSold, 
                    SUM(i.quantity * i.priceAtPurchase) AS totalRevenue 
             FROM OrderItem i 
@@ -88,7 +87,7 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
             JOIN i.product p 
             WHERE o.status IN :statusList 
               AND o.createdAt BETWEEN :start AND :end 
-            GROUP BY p.id, p.name ,p.images
+            GROUP BY p.id, p.name
             ORDER BY totalSold DESC
             """)
     List<TopProductStat> findTopSellingProducts(@Param("start") OffsetDateTime start,

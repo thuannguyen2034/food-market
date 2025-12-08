@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -37,10 +38,7 @@ public class AdminOrderController {
     public ResponseEntity<List<OrderResponseDTO>> getUrgentOrders(
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.ASC) Pageable pageable
     ) {
-        List<Order> urgentOrders = orderService.findUrgentOrders(pageable);
-        List<OrderResponseDTO> response = urgentOrders.stream()
-                .map(OrderResponseDTO::fromEntity)
-                .collect(Collectors.toList());
+        List<OrderResponseDTO> response = orderService.findUrgentOrders(pageable);
         return ResponseEntity.ok(response);
     }
     @GetMapping("/{orderId}")

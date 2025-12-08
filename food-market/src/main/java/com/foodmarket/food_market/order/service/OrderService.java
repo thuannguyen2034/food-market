@@ -5,6 +5,7 @@ import com.foodmarket.food_market.admin.dashboard.dto.projection.OrderStatusStat
 import com.foodmarket.food_market.admin.dashboard.dto.projection.TopProductStat;
 import com.foodmarket.food_market.admin.dashboard.dto.response.ChartDataDTO;
 import com.foodmarket.food_market.admin.dashboard.dto.response.DashboardSummaryDTO;
+import com.foodmarket.food_market.admin.dashboard.dto.response.TopProductResponseDTO;
 import com.foodmarket.food_market.order.dto.CheckoutRequestDTO;
 import com.foodmarket.food_market.order.dto.OrderFilterDTO;
 import com.foodmarket.food_market.order.dto.OrderResponseDTO;
@@ -47,8 +48,8 @@ public interface OrderService {
 
     List<DailyRevenueStat> getDailyRevenueStats(OffsetDateTime startDate);
     List<OrderStatusStat> countOrdersByStatus();
-    List<Order> findUrgentOrders(Pageable pageable);
-    List<TopProductStat> findTopSellingProducts(OffsetDateTime startDate, OffsetDateTime endDate,Pageable pageable);
+    List<OrderResponseDTO> findUrgentOrders(Pageable pageable);
+    List<TopProductResponseDTO> findTopSellingProducts(OffsetDateTime startDate, OffsetDateTime endDate, Pageable pageable);
 
     OrderResponseDTO getAdminOrderDetails(UUID orderId);
 }

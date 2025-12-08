@@ -1,0 +1,90 @@
+/* Khung thẻ đơn hàng */
+.card {
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  margin-bottom: 16px;
+  overflow: hidden;
+  border: 1px solid #eee;
+}
+
+/* --- Header: Status & Date --- */
+.header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f5f5f5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.status {
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+/* Màu sắc trạng thái (Phối hợp icon và text) */
+.status_PENDING { color: #ffad0d; } /* Vàng cam */
+.status_CONFIRMED { color: #1890ff; } /* Xanh dương */
+.status_PROCESSING { color: #722ed1; } /* Tím */
+.status_OUT_FOR_DELIVERY { color: #13c2c2; } /* Xanh ngọc */
+.status_DELIVERED { color: #28a745; } /* Xanh lá - Thành công */
+.status_CANCELLED { color: #888; } /* Xám - Hủy */
+
+/* --- Body: List Items --- */
+.body {
+  padding: 0 16px;
+}
+
+/* --- Footer: Total & Action --- */
+.footer {
+  padding: 16px;
+  background-color: #fffefb; /* Nền hơi vàng nhẹ giống Shopee */
+  border-top: 1px solid #f5f5f5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.totalLabel {
+  font-size: 14px;
+  color: #666;
+  margin-right: 8px;
+}
+
+.totalAmount {
+  font-size: 18px;
+  font-weight: 700;
+  color: #e72a2a; /* Giá tiền đỏ */
+}
+
+.detailButton {
+  display: inline-block;
+  padding: 8px 20px;
+  background-color: #e72a2a;
+  color: white;
+  font-size: 14px;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: background 0.2s;
+  font-weight: 500;
+}
+
+.detailButton:hover {
+  background-color: #c91e1e;
+}
+
+/* Responsive Mobile */
+@media (max-width: 480px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  
+  .footer {
+    flex-direction: column;
+    align-items: flex-end; /* Căn phải */
+    gap: 12px;
+  }
+}

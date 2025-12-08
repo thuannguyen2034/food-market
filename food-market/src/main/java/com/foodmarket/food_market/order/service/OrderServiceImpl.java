@@ -6,6 +6,7 @@ import com.foodmarket.food_market.admin.dashboard.dto.projection.OrderStatusStat
 import com.foodmarket.food_market.admin.dashboard.dto.projection.TopProductStat;
 import com.foodmarket.food_market.admin.dashboard.dto.response.ChartDataDTO;
 import com.foodmarket.food_market.admin.dashboard.dto.response.DashboardSummaryDTO;
+import com.foodmarket.food_market.admin.dashboard.dto.response.TopProductResponseDTO;
 import com.foodmarket.food_market.cart.model.Cart;
 import com.foodmarket.food_market.cart.model.CartItem;
 import com.foodmarket.food_market.cart.repository.CartRepository;
@@ -17,6 +18,7 @@ import com.foodmarket.food_market.order.dto.OrderResponseDTO;
 import com.foodmarket.food_market.order.event.OrderStatusChangedEvent;
 import com.foodmarket.food_market.order.model.Order;
 import com.foodmarket.food_market.order.model.OrderItem;
+import com.foodmarket.food_market.order.model.enums.DeliveryTimeSlot;
 import com.foodmarket.food_market.order.model.enums.PaymentStatus;
 import com.foodmarket.food_market.order.repository.OrderSpecification;
 import com.foodmarket.food_market.payment.dto.PaymentCreationRequestDTO;
@@ -25,9 +27,9 @@ import com.foodmarket.food_market.order.repository.OrderItemRepository;
 import com.foodmarket.food_market.order.repository.OrderRepository;
 import com.foodmarket.food_market.payment.model.Payment;
 import com.foodmarket.food_market.payment.service.PaymentService;
-import com.foodmarket.food_market.product.dto.ProductResponseDTO;
 import com.foodmarket.food_market.product.model.Product;
-import com.foodmarket.food_market.product.service.ProductService;
+import com.foodmarket.food_market.product.repository.ProductRepository;
+import com.foodmarket.food_market.review.repository.ReviewRepository;
 import com.foodmarket.food_market.user.model.entity.User;
 import com.foodmarket.food_market.user.model.entity.UserAddress;
 import com.foodmarket.food_market.user.repository.UserAddressRepository;
@@ -36,18 +38,23 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // <-- Rất quan trọng
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -58,9 +65,11 @@ public class OrderServiceImpl implements OrderService {
     private final CartRepository cartRepository;
     private final UserAddressRepository userAddressRepository;
     private final UserRepository userRepository;
+    private final ReviewRepository reviewRepository;
     private final InventoryService inventoryService;
     private final PaymentService paymentService;
-    private final ApplicationEventPublisher eventPublisher; // "Cái loa"
+    private final ApplicationEventPublisher eventPublisher;
+    private final ProductRepository productRepository;
 
     @Override
     @Transactional
@@ -83,35 +92,65 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new EntityNotFoundException("Địa chỉ không hợp lệ."));
         String addressSnapshot = address.getProvince(); // Ví dụ
         String phoneRecipientSnapshot = address.getRecipientPhone();
-
+        String nameRecipientSnapshot = address.getRecipientName();
         BigDecimal totalAmount = BigDecimal.ZERO;
         List<OrderItem> newOrderItems = new ArrayList<>();
+        LocalDate today = LocalDate.now();
+        LocalDate tomorrow = today.plusDays(1);
+        LocalDate requestedDate = request.getDeliveryDate();
+        DeliveryTimeSlot requestedSlot = request.getDeliveryTimeslot();
+
+        // Check ngày hợp lệ
+        if (requestedDate.isBefore(today)) {
+            throw new IllegalArgumentException("Ngày giao hàng không thể ở quá khứ.");
+        }
+        if (requestedDate.isAfter(tomorrow)) {
+            throw new IllegalArgumentException("Chỉ hỗ trợ giao hàng trong hôm nay hoặc ngày mai.");
+        }
+
+        // Check quy tắc giao sau ít nhất 1 tiếng trong hôm nay
+        if (requestedDate.equals(today)) {
+            int currentHour = LocalTime.now().getHour();
+
+            if (currentHour + 1 > requestedSlot.getStartHour()) {
+                throw new IllegalArgumentException("Vui lòng đặt hàng trước khung giờ giao ít nhất 1 tiếng.");
+            }
+        }
+        // 5. Tạo Order (Phần còn lại giữ nguyên)
+        Order newOrder = new Order();
+        newOrder.setUser(user);
+        newOrder.setTotalAmount(totalAmount);
+        newOrder.setStatus(OrderStatus.PENDING);
+        newOrder.setDeliveryAddressSnapshot(addressSnapshot);
+        newOrder.setDeliveryPhoneSnapshot(phoneRecipientSnapshot);
+        newOrder.setDeliveryRecipientNameSnapshot(nameRecipientSnapshot);
+        newOrder.setDeliveryDate(request.getDeliveryDate());
+        newOrder.setDeliveryTimeslot(request.getDeliveryTimeslot());
+        newOrder.setNote(request.getNote());
+        Order savedOrder = orderRepository.save(newOrder);
 
         // 4. LOGIC CỐT LÕI (TỐI ƯU HÓA)
         for (CartItem cartItem : cart.getItems()) {
             Product product = cartItem.getProduct();
 
             // === BƯỚC BẢO VỆ (FINAL CHECK) ===
-            // Trước khi tin tưởng giá trong Cart, hãy so sánh nhẹ một lần cuối.
-            // Nếu user treo màn hình quá lâu, giá product có thể đã đổi.
             BigDecimal currentProductPrice = product.getFinalPrice();
             BigDecimal priceInCart = cartItem.getPrice();
 
             if (priceInCart.compareTo(currentProductPrice) != 0) {
                 // NÉM LỖI ĐỂ UI BẮT
-                // UI sẽ hiện: "Giá sản phẩm đã thay đổi, vui lòng tải lại trang để cập nhật giá mới."
                 throw new IllegalArgumentException("Giá của sản phẩm '" + product.getName() + "' đã thay đổi. Vui lòng tải lại giỏ hàng.");
             }
 
             // === LOGIC CHÍNH: LẤY GIÁ TỪ CART ===
-            // Lúc này ta hoàn toàn tin tưởng priceInCart vì đã qua bước check trên
             int quantityNeeded = cartItem.getQuantity();
-
-            // Gọi Inventory để trừ kho (Logic cũ)
+            // Gọi Inventory để trừ kho
             List<AllocatedBatchDTO> allocations = inventoryService.allocateForOrder(
                     product.getId(),
-                    quantityNeeded
-            );
+                    quantityNeeded,
+                    userId,
+                    savedOrder.getId()
+                    );
 
             for (AllocatedBatchDTO alloc : allocations) {
                 OrderItem newOrderItem = new OrderItem();
@@ -121,29 +160,15 @@ public class OrderServiceImpl implements OrderService {
                 newOrderItem.setProductIdSnapshot(product.getId());
                 newOrderItem.setProductNameSnapshot(product.getName());
                 newOrderItem.setProductThumbnailSnapshot(product.getImages().getFirst().getImageUrl());
-                // QUAN TRỌNG: Lấy giá từ CartItem (đúng ý bạn)
                 newOrderItem.setPriceAtPurchase(priceInCart);
-
+                newOrderItem.setBasePriceAtPurchase(product.getBasePrice());
                 newOrderItems.add(newOrderItem);
-
                 // Tính tổng tiền dựa trên giá Cart
                 totalAmount = totalAmount.add(
                         priceInCart.multiply(BigDecimal.valueOf(alloc.quantityAllocated()))
                 );
             }
         }
-
-        // 5. Tạo Order (Phần còn lại giữ nguyên)
-        Order newOrder = new Order();
-        newOrder.setUser(user);
-        newOrder.setTotalAmount(totalAmount);
-        newOrder.setStatus(OrderStatus.PENDING);
-        newOrder.setDeliveryAddressSnapshot(addressSnapshot);
-        newOrder.setDeliveryPhoneSnapshot(phoneRecipientSnapshot);
-        newOrder.setDeliveryTimeslot(request.getDeliveryTimeslot());
-        newOrder.setNote(request.getNote());
-
-        Order savedOrder = orderRepository.save(newOrder);
 
         // 6. Gán OrderItems vào Order
         for (OrderItem item : newOrderItems) {
@@ -162,9 +187,9 @@ public class OrderServiceImpl implements OrderService {
 
         // 8. Xóa Giỏ hàng
         cart.getItems().clear();
-        cartRepository.save(cart); // OrphanRemoval sẽ tự xóa các CartItem trong DB
+        cartRepository.save(cart);
 
-        return OrderResponseDTO.fromEntity(savedOrder);
+        return OrderResponseDTO.fromEntity(savedOrder, new HashSet<>());
     }
 
     @Override
@@ -176,7 +201,11 @@ public class OrderServiceImpl implements OrderService {
         } else {
             orderPage = orderRepository.findByUser_UserIdOrderByCreatedAtDesc(userId, pageable);
         }
-        return orderPage.map(OrderResponseDTO::fromEntity);
+        return orderPage.map(order -> {
+            List<Long> reviewedProductIds = reviewRepository.findReviewedProductIdsByOrderId(order.getId());
+            Set<Long> reviewedSet = new HashSet<>(reviewedProductIds);
+            return OrderResponseDTO.fromEntity(order, reviewedSet);
+        });
     }
 
     @Override
@@ -189,7 +218,9 @@ public class OrderServiceImpl implements OrderService {
         if (!order.getUser().getUserId().equals(userId)) {
             throw new IllegalArgumentException("Không tìm thấy đơn hàng");
         }
-        return OrderResponseDTO.fromEntity(order);
+        List<Long> reviewedProductIds = reviewRepository.findReviewedProductIdsByOrderId(orderId);
+        Set<Long> reviewedSet = new HashSet<>(reviewedProductIds);
+        return OrderResponseDTO.fromEntity(order, reviewedSet);
     }
 
     //ADMIN METHODS
@@ -229,7 +260,6 @@ public class OrderServiceImpl implements OrderService {
 
         // 4. VALIDATE 2: Check trạng thái thanh toán
         // Nếu đã thanh toán Online rồi thì chặn, yêu cầu gọi Admin
-        // (Vì đồ án chưa làm luồng Refund tự động)
         Payment successPayment = order.getSuccessfulPayment();
         if (successPayment != null) {
             throw new IllegalStateException("Đơn hàng đã thanh toán Online. Vui lòng liên hệ CSKH để hủy và hoàn tiền.");
@@ -240,7 +270,9 @@ public class OrderServiceImpl implements OrderService {
         for (OrderItem item : order.getItems()) {
             inventoryService.restoreStock(
                     item.getInventoryBatch().getBatchId(), // Lấy ID lô hàng từ OrderItem
-                    item.getQuantity()
+                    item.getQuantity(),
+                    userId,
+                    orderId
             );
         }
 
@@ -269,10 +301,12 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponseDTO> getAllOrders(OrderFilterDTO filterDTO, Pageable pageable) {
-        // Gọi hàm lớn, logic bên trong đã được ẩn đi
+        Sort sort = Sort.by("deliveryDate").ascending()
+                .and(Sort.by("deliveryTimeslot").ascending());
+        pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
         Specification<Order> spec = OrderSpecification.filterBy(filterDTO);
         return orderRepository.findAll(spec, pageable)
-                .map(OrderResponseDTO::fromEntity);
+                .map(order -> OrderResponseDTO.fromEntity(order, new HashSet<>()));
     }
 
     @Override
@@ -412,13 +446,20 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<Order> findUrgentOrders(Pageable pageable) {
-        return orderRepository.findUrgentOrders(OrderStatus.URGENT_STATUSES, pageable);
+    @Transactional(readOnly = true)
+    public List<OrderResponseDTO> findUrgentOrders(Pageable pageable) {
+        return orderRepository.findUrgentOrders(OrderStatus.URGENT_STATUSES, pageable).stream()
+                .map(order -> OrderResponseDTO.fromEntity(order, new HashSet<>()))
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<TopProductStat> findTopSellingProducts(OffsetDateTime startDate, OffsetDateTime endDate, Pageable pageable) {
-        return orderRepository.findTopSellingProducts(startDate, endDate, OrderStatus.ACTIVE_STATUSES, pageable);
+    public List<TopProductResponseDTO> findTopSellingProducts(OffsetDateTime startDate, OffsetDateTime endDate, Pageable pageable) {
+        List<TopProductStat> topProductStats = orderRepository.findTopSellingProducts(startDate, endDate, OrderStatus.ACTIVE_STATUSES, pageable);
+        return topProductStats.stream().map(topProductStat -> {
+            String productImageUrl = productRepository.findById(topProductStat.getProductId()).get().getImages().getFirst().getImageUrl();
+            return TopProductResponseDTO.fromProjection(topProductStat, productImageUrl);
+        }).collect(Collectors.toList());
     }
 
     @Override
@@ -428,7 +469,7 @@ public class OrderServiceImpl implements OrderService {
         if (order.isEmpty()) {
             throw new IllegalArgumentException("Không tìm thấy order");
         }
-        return OrderResponseDTO.fromEntity(order.get());
+        return OrderResponseDTO.fromEntity(order.get(), new HashSet<>());
     }
 
     /**
