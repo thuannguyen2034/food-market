@@ -169,7 +169,7 @@ public class OrderServiceImpl implements OrderService {
                 );
             }
         }
-
+        savedOrder.setTotalAmount(totalAmount);
         // 6. Gán OrderItems vào Order
         for (OrderItem item : newOrderItems) {
             item.setOrder(savedOrder);
@@ -251,7 +251,6 @@ public class OrderServiceImpl implements OrderService {
             throw new AccessDeniedException("Bạn không có quyền hủy đơn hàng này");
         }
 
-        // 3. VALIDATE 1: Check trạng thái đơn hàng
         // Chỉ cho phép hủy nếu chưa đóng gói xong
         List<OrderStatus> allowCancelStatuses = List.of(OrderStatus.PENDING, OrderStatus.CONFIRMED);
         if (!allowCancelStatuses.contains(order.getStatus())) {
