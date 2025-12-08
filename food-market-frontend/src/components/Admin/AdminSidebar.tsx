@@ -5,7 +5,10 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutDashboard, ShoppingCart, Package, Folder, Tags, Users, Warehouse, ChevronDown, ChevronRight } from 'lucide-react';
 import styles from '@/styles/admin/AdminSidebar.module.css';
-
+interface AdminSidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
 // Định nghĩa các link điều hướng
 const navLinks = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -24,7 +27,7 @@ const navLinks = [
   { href: '/admin/users', label: 'Người dùng', icon: Users },
 ];
 
-export default function AdminSidebar() {
+export default function AdminSidebar({ isOpen = false, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
   const [openSubMenus, setOpenSubMenus] = useState<string[]>(['/admin/products']);
 
@@ -37,12 +40,17 @@ export default function AdminSidebar() {
   };
 
   return (
-    <aside className={styles.sidebar}>
+    <>
+    <div 
+         className={`${styles.overlay} ${isOpen ? styles.show : ''}`} 
+         onClick={onClose} 
+       />
+    <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
       <div className={styles.logo}>Admin</div>
       <nav className={styles.nav}>
         <ul>
           {navLinks.map((link) => {
-            const isActive = pathname === link.href;
+            const isActive = pathname === link.href || pathname.startsWith(link.href + '/');
             const hasSubItems = link.subItems && link.subItems.length > 0;
             const isSubMenuOpen = hasSubItems && openSubMenus.includes(link.href);
             const Icon = link.icon;
@@ -94,5 +102,6 @@ export default function AdminSidebar() {
         </ul>
       </nav>
     </aside>
+    </>
   );
 }

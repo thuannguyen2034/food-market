@@ -1,86 +1,134 @@
-/* src/app/login/login.module.css */
-
-/* "container" này sẽ chỉ áp dụng cho component login */
+/* Container chính: Căn giữa màn hình, nền xám nhạt */
 .container {
+  min-height: 100vh;
   display: flex;
-  justify-content: center;
   align-items: center;
-  min-height: 80vh;
-  background-color: #f4f4f4;
+  justify-content: center;
+  background-color: #f8f9fa;
+  padding: 20px;
 }
 
-/* Tương tự, "loginForm" này cũng là duy nhất */
+/* Card chứa Form */
 .loginForm {
-  background-color: #ffffff;
-  padding: 2rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: white;
   width: 100%;
-  max-width: 400px;
+  max-width: 450px; /* Rộng hơn Login một chút vì nhiều trường hơn */
+  padding: 32px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border: 1px solid #eee;
 }
 
+/* Tiêu đề */
 .title {
+  margin: 0 0 24px 0;
   text-align: center;
+  font-size: 24px;
   color: #333;
-  margin-bottom: 1.5rem;
+  font-weight: 700;
 }
 
+/* Thông báo lỗi */
+.errorMessage {
+  background-color: #ffebee;
+  color: #c62828;
+  padding: 10px;
+  border-radius: 4px;
+  font-size: 14px;
+  margin-bottom: 20px;
+  text-align: center;
+  border: 1px solid #ffcdd2;
+}
+
+/* Nhóm Input */
 .inputGroup {
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
 }
 
 .label {
   display: block;
-  margin-bottom: 0.5rem;
-  color: #555;
+  margin-bottom: 6px;
+  font-size: 14px;
   font-weight: 600;
+  color: #555;
 }
 
 .input {
   width: 100%;
-  padding: 0.75rem;
+  padding: 10px 12px;
+  font-size: 14px;
   border: 1px solid #ddd;
   border-radius: 4px;
-  box-sizing: border-box; /* Quan trọng để padding không làm vỡ layout */
+  outline: none;
+  transition: all 0.2s ease;
+  background-color: #fff;
 }
 
+/* Hiệu ứng khi bấm vào ô nhập */
+.input:focus {
+  border-color: #e72a2a;
+  box-shadow: 0 0 0 3px rgba(231, 42, 42, 0.1);
+}
+
+.input::placeholder {
+  color: #ccc;
+}
+
+/* Nút Đăng ký */
 .button {
   width: 100%;
-  padding: 0.75rem;
-  background-color: #0070f3; /* Màu xanh đặc trưng của Next.js */
+  padding: 12px;
+  background-color: #e72a2a; /* Màu đỏ thương hiệu */
   color: white;
   border: none;
   border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
+  font-size: 16px;
   font-weight: 600;
+  cursor: pointer;
+  margin-top: 12px;
   transition: background-color 0.2s;
 }
 
-.button:hover {
-  background-color: #005bb5;
+.button:hover:not(:disabled) {
+  background-color: #c91e1e;
 }
 
-.errorMessage {
-  background-color: #fbebee; /* Màu nền đỏ nhạt */
-  color: #c53030; /* Màu chữ đỏ đậm */
-  border: 1px solid #f5c6cb;
-  padding: 0.75rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-  text-align: center;
+.button:disabled {
+  background-color: #fab1b1;
+  cursor: not-allowed;
 }
+
+/* Link chuyển qua trang Login */
 .navigationLink {
+  margin-top: 24px;
   text-align: center;
-  margin-top: 1rem;
+  font-size: 14px;
+  color: #666;
 }
 
 .navigationLink a {
-  color: #0070f3;
-  text-decoration: none;
+  color: #e72a2a;
   font-weight: 600;
+  text-decoration: none;
+  transition: color 0.2s;
 }
 
 .navigationLink a:hover {
   text-decoration: underline;
+  color: #c91e1e;
+}
+
+/* --- Responsive cho điện thoại --- */
+@media (max-width: 480px) {
+  .container {
+    background-color: white; /* Nền trắng hoàn toàn trên mobile */
+    align-items: flex-start;
+    padding-top: 40px;
+  }
+
+  .loginForm {
+    box-shadow: none; /* Bỏ bóng */
+    border: none; /* Bỏ viền */
+    padding: 0;
+  }
 }

@@ -1,178 +1,247 @@
-/* src/styles/admin/ProductForm.module.css */
-
-/* Form Layout */
+/* --- Layout chính --- */
 .formGrid {
     display: grid;
-    grid-template-columns: 2fr 1fr;
-    gap: 20px;
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 20px;
+    grid-template-columns: 1fr 320px;
+    /* Cột trái tự giãn, Cột phải cố định 320px */
+    gap: 24px;
+    padding-bottom: 80px;
+    /* Chừa chỗ cho thanh submit bar */
+    align-items: start;
 }
 
-.mainContent {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.sidebarContent {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-/* Card */
+/* --- Card Styles --- */
 .card {
     background: white;
-    padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: 24px;
+    border: 1px solid #eee;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+    margin-bottom: 24px;
 }
 
 .card h3 {
-    font-size: 1rem;
+    font-size: 16px;
     font-weight: 600;
-    margin-bottom: 16px;
     color: #333;
+    margin: 0 0 20px 0;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f5f5f5;
+    text-transform: uppercase;
 }
 
-/* Form Group */
+.cardHeaderWithAction {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f5f5f5;
+}
+
+.cardHeaderWithAction h3 {
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+/* --- Form Fields --- */
 .formGroup {
-    margin-bottom: 16px;
-}
-
-.formGroup:last-child {
-    margin-bottom: 0;
+    margin-bottom: 20px;
 }
 
 .formGroup label {
     display: block;
-    font-size: 0.9rem;
+    font-size: 14px;
     font-weight: 500;
-    color: #555;
-    margin-bottom: 6px;
+    color: #333;
+    margin-bottom: 8px;
 }
 
-.formGroup input,
-.formGroup textarea {
+.inputLarge {
     width: 100%;
-    padding: 8px 12px;
+    padding: 10px 12px;
     border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    font-family: inherit;
-}
-
-.formGroup input:focus,
-.formGroup textarea:focus {
+    border-radius: 4px;
+    font-size: 14px;
     outline: none;
-    border-color: #1976d2;
+    transition: border-color 0.2s;
 }
 
-.formGroup textarea {
-    resize: vertical;
+.inputLarge:focus {
+    border-color: #e72a2a;
 }
 
-/* Inline Group */
-.inlineGroup {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+.error {
+    color: #dc3545;
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Rich Text Editor Container */
+.richTextContainer {
+    /* Tùy chỉnh đè style của ReactQuill */
+    display: flex;
+    flex-direction: column;
+}
+
+.quillEditor {
+    background: white;
+    height: 300px;
+    /* Chiều cao cố định cho vùng soạn thảo */
+    margin-bottom: 50px;
+    /* Chừa chỗ cho toolbar của quill */
+}
+
+/* --- Specifications Section --- */
+.specificationsContainer {
+    display: flex;
+    flex-direction: column;
     gap: 12px;
 }
 
-/* Error Message */
-.error {
-    display: block;
-    color: #d32f2f;
-    font-size: 0.8rem;
-    margin-top: 4px;
+.specRow {
+    display: flex;
+    gap: 12px;
+    align-items: center;
 }
 
-/* Dropzone */
+.specInputKey {
+    flex: 1;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background: #f9f9f9;
+}
+
+.specInputValue {
+    flex: 2;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.addSpecBtn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: 1px dashed #aaa;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #555;
+}
+
+.addSpecBtn:hover {
+    border-color: #e72a2a;
+    color: #e72a2a;
+}
+
+.removeSpecBtn {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 4px;
+}
+
+.removeSpecBtn:hover {
+    color: #dc3545;
+}
+
+/* --- Image Upload (Dropzone) --- */
 .dropzone {
     border: 2px dashed #ddd;
     border-radius: 8px;
-    padding: 30px;
+    padding: 40px;
     text-align: center;
     cursor: pointer;
+    background-color: #fcfcfc;
     transition: all 0.2s;
-    background: #fafafa;
-}
-
-.dropzone:hover {
-    border-color: #1976d2;
-    background: #f5f9ff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
 }
 
 .dropzoneActive {
-    border-color: #1976d2;
-    background: #e3f2fd;
+    border-color: #e72a2a;
+    background-color: #fff5f5;
 }
 
 .dropzoneIcon {
     width: 40px;
     height: 40px;
     color: #999;
-    margin-bottom: 10px;
 }
 
 .dropzoneText {
-    font-size: 0.95rem;
-    color: #555;
-    margin-bottom: 4px;
+    color: #666;
+    font-size: 14px;
+    margin: 0;
 }
 
-.dropzoneSubtext {
-    font-size: 0.8rem;
-    color: #999;
-}
-
-/* Image Grid */
 .imageGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 12px;
-    margin-top: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
 }
 
 .imageItem {
     position: relative;
-    aspect-ratio: 1;
-    border-radius: 8px;
+    width: 100px;
+    height: 100px;
+    border-radius: 4px;
     overflow: hidden;
-    cursor: pointer;
+    border: 1px solid #eee;
 }
 
 .imageItem img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    cursor: zoom-in;
 }
 
 .removeBtn {
     position: absolute;
     top: 4px;
     right: 4px;
-    background: rgba(211, 47, 47, 0.9);
+    width: 20px;
+    height: 20px;
+    background: rgba(0, 0, 0, 0.6);
     color: white;
-    border: none;
     border-radius: 50%;
-    width: 24px;
-    height: 24px;
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s;
 }
 
 .removeBtn:hover {
-    background: #d32f2f;
-    transform: scale(1.1);
+    background: #dc3545;
 }
 
-/* Select with Button */
+/* --- Sidebar Content --- */
+.sidebarContent {
+    display: flex;
+    flex-direction: column;
+}
+
+.stockInfo {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+    font-size: 13px;
+    color: #555;
+}
+
 .selectWithButton {
     display: flex;
     gap: 8px;
@@ -183,73 +252,96 @@
 }
 
 .quickAddButton {
-    width: 36px;
-    height: 38px;
-    background: #1976d2;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 1.2rem;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.quickAddButton:hover {
-    background: #1565c0;
-}
-
-/* Submit Bar */
-.submitBar {
-    grid-column: 1 / -1;
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    padding: 16px 20px;
+    padding: 0 12px;
+    border: 1px solid #ddd;
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-}
-
-.submitBar button {
-    padding: 10px 24px;
-    border: none;
-    border-radius: 6px;
-    font-size: 0.9rem;
+    border-radius: 4px;
     cursor: pointer;
-    transition: all 0.2s;
-}
-
-.submitBar button[type="button"] {
-    background: #f5f5f5;
+    font-size: 18px;
     color: #555;
 }
 
-.submitBar button[type="button"]:hover {
-    background: #e0e0e0;
+.quickAddButton:hover {
+    border-color: #e72a2a;
+    color: #e72a2a;
+}
+
+/* Animation Fade In for Sale Price */
+.fadeIn {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- Submit Bar (Sticky Bottom) --- */
+.submitBar {
+    position: fixed;
+    bottom: 0;
+    left: 260px;
+    /* Bằng width của AdminSidebar */
+    right: 0;
+    padding: 16px 30px;
+    background: white;
+    border-top: 1px solid #ddd;
+    display: flex;
+    justify-content: flex-end;
+    gap: 16px;
+    z-index: 50;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.cancelButton {
+    padding: 10px 24px;
+    background: white;
+    border: 1px solid #ddd;
+    color: #555;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.cancelButton:hover {
+    background: #f5f5f5;
 }
 
 .saveButton {
-    background: #2e7d32 !important;
-    color: white !important;
+    padding: 10px 32px;
+    background: #e72a2a;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(231, 42, 42, 0.3);
 }
 
 .saveButton:hover {
-    background: #246126 !important;
+    background: #c91e1e;
 }
 
 .saveButton:disabled {
-    background: #aaa !important;
-    cursor: not-allowed;
+    opacity: 0.7;
+    cursor: wait;
 }
 
-/* Modal */
+/* --- Modal Image Preview --- */
 .modalOverlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.8);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -260,55 +352,45 @@
     position: relative;
     max-width: 90%;
     max-height: 90%;
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
 }
 
 .modalImage {
     max-width: 100%;
     max-height: 80vh;
-    border-radius: 6px;
+    border-radius: 4px;
 }
 
 .closeModalBtn {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    background: rgba(211, 47, 47, 0.9);
-    color: white;
+    top: -40px;
+    right: 0;
+    background: none;
     border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    font-size: 1.5rem;
+    color: white;
+    font-size: 30px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
-.closeModalBtn:hover {
-    background: #d32f2f;
-}
-
-/* Responsive */
+/* Responsive Form */
 @media (max-width: 1024px) {
     .formGrid {
         grid-template-columns: 1fr;
     }
 
     .submitBar {
-        grid-column: 1;
+        left: 0;
     }
+
+    /* Sidebar ẩn đi hoặc nhỏ lại trên mobile */
 }
 
 @media (max-width: 768px) {
-    .inlineGroup {
-        grid-template-columns: 1fr;
+    .specRow {
+        flex-direction: column;
+        align-items: stretch;
     }
 
-    .imageGrid {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    .submitBar {
+        padding: 12px 16px;
     }
 }

@@ -24,7 +24,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     const [cartData, setCartData] = useState<CartResponse | null>(null);
     const [cartMap, setCartMap] = useState<CartMap>({});
     const [isLoadingCart, setIsLoadingCart] = useState(false);
-
+    
     // Hàm tiện ích: Xử lý dữ liệu trả về từ API
     const processCartResponse = (data: CartResponse) => {
         setCartData(data);
@@ -64,8 +64,9 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
 
     // Tự động fetch khi user đăng nhập
     useEffect(() => {
+        if(user?.role === 'ADMIN') return;
         fetchCart();
-    }, [fetchCart]);
+    }, [fetchCart, user]);
 
     // 1. Add to Cart
     const addToCart = async (productId: number, quantity: number) => {

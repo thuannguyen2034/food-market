@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 import styles from './CartPage.module.css';
 import { CartItem } from '@/types/cart';
+    import { useRouter } from 'next/navigation';
 
 export default function CartPage() {
     const { cartData, isLoadingCart, updateCartItem, removeCartItem } = useCart();
-
+    const router = useRouter();
     const formatPrice = (price: number) => {
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
@@ -16,7 +17,7 @@ export default function CartPage() {
         }).format(price);
     };
     const handleCheckout = () => {
-           
+           router.push('/checkout');
     }
     if (isLoadingCart) {
         return <div className={styles.container}>Đang tải giỏ hàng...</div>;

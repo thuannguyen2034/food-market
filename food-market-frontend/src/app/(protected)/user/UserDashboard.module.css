@@ -1,50 +1,50 @@
+/* src/app/user/UserDashboard.module.css */
+
 .pageBackground {
-  background: #f5f5f5;
-  min-height: calc(100vh - 80px);
-  padding: 2rem 1rem;
+  background-color: #f5f5f5; /* Nền xám nhạt toàn trang giống Shopee */
+  min-height: 100vh;
+  padding: 20px 0 40px 0;
 }
 
 .dashboard {
   max-width: 1200px;
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 2rem;
+  padding: 0 16px;
+  display: flex;
+  gap: 24px; /* Khoảng cách giữa Sidebar và Content */
+  align-items: flex-start; /* Để sidebar không bị kéo giãn theo chiều cao content */
 }
 
+/* Cột trái: Sidebar */
 .sidebar {
-  background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  height: fit-content;
-  position: sticky;
-  top: 1rem;
+  width: 250px; /* Chiều rộng cố định */
+  flex-shrink: 0;
 }
 
+/* Cột phải: Content chính */
 .content {
+  flex: 1; /* Chiếm hết phần còn lại */
   background: white;
-  border-radius: 8px;
-  padding: 2rem;
-  min-height: 500px;
+  border-radius: 4px; /* Bo góc nhẹ */
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05); /* Bóng mờ rất nhẹ */
+  min-height: 500px; /* Chiều cao tối thiểu cho đẹp */
+  padding: 0; /* Padding sẽ do từng trang con tự xử lý, hoặc có thể set 20px ở đây */
+  overflow: hidden; /* Tránh nội dung con tràn ra ngoài */
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .pageBackground {
-    padding: 1rem 0.5rem;
-  }
-
+/* --- Responsive --- */
+@media (max-width: 900px) {
   .dashboard {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+    flex-direction: column; /* Chuyển thành 1 cột dọc */
+    gap: 16px;
   }
 
   .sidebar {
-    position: static;
-    padding: 1rem;
+    width: 100%; /* Sidebar full width trên mobile */
   }
 
   .content {
-    padding: 1.5rem 1rem;
+    width: 100%;
+    min-height: auto;
   }
 }

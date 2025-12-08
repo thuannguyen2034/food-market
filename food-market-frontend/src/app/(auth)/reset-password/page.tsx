@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 // 1. IMPORT useSearchParams
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import styles from '@/app/(guest)/login/login.module.css';
+import styles from '@/app/(auth)/login/login.module.css';
 
 const API_BASE_URL = '/api/v1';
 

@@ -4,30 +4,27 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Search } from 'lucide-react';
+import { Search, ShoppingCart, Menu, ChevronDown, Phone, Clock } from 'lucide-react'; // Thêm icon Phone, Clock
 import { useAuth } from '@/context/AuthContext';
+import { useCart } from '@/context/CartContext';
 import { CategoryResponse } from '@/types/product';
 import styles from './Navbar.module.css';
-
 export default function Navbar() {
   const { user, isLoading, logout } = useAuth();
+  const { totalItems } = useCart();
   const router = useRouter();
 
-  // User dropdown state
+  // ... (Giữ nguyên các state và logic search/category cũ của bạn) ...
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Search states
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSuggestions, setSearchSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
-
-  // Category states
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
-  const [hoveredCategory, setHoveredCategory] = useState<number | null>(null);
+  const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
+  const categoriesRef = useRef<HTMLDivElement>(null);
 
-  // Fetch categories on mount
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -43,13 +40,11 @@ export default function Navbar() {
     fetchCategories();
   }, []);
 
-  // Debounced search suggestions
   useEffect(() => {
     if (searchQuery.trim().length < 2) {
       setSearchSuggestions([]);
       return;
     }
-
     const timer = setTimeout(async () => {
       try {
         const response = await fetch(
@@ -63,11 +58,9 @@ export default function Navbar() {
         console.error('Failed to fetch search hints:', error);
       }
     }, 300);
-
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Close dropdowns on outside click
   useEffect(() => {
     if (!isDropdownOpen) return;
     function handleClickOutside(event: MouseEvent) {
@@ -89,6 +82,17 @@ export default function Navbar() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showSuggestions]);
+
+  useEffect(() => {
+    if (!isCategoriesOpen) return;
+    function handleClickOutside(event: MouseEvent) {
+      if (categoriesRef.current && !categoriesRef.current.contains(event.target as Node)) {
+        setIsCategoriesOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isCategoriesOpen]);
 
   const handleSearch = (query: string) => {
     if (query.trim()) {
@@ -122,110 +126,159 @@ export default function Navbar() {
 
   return (
     <div className={styles.navbarWrapper}>
-      {/* Top Row: Logo, Search, User Menu */}
-      <nav className={styles.navbar}>
-        <div className={styles.brand}>
-          <Link href="/">Food Market</Link>
-        </div>
-
-        {/* Search Bar */}
-        <div className={styles.searchSection} ref={searchRef}>
-          <div className={styles.searchBar}>
-            <Search size={18} className={styles.searchIcon} />
-            <input
-              type="text"
-              placeholder="Tìm kiếm sản phẩm..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setShowSuggestions(true);
-              }}
-              onKeyDown={handleSearchKeyDown}
-              className={styles.searchInput}
-              autoComplete="off"
-            />
+      {/* 1. Top Bar: Thông tin liên hệ */}
+      <div className={styles.topBar}>
+        <div className={styles.container}>
+          <div className={styles.contactInfo}>
+            <span className={styles.contactItem}>
+              <Phone size={14} /> 0853539203
+            </span>
+            <span className={styles.contactDivider}>|</span>
+            <span className={styles.contactItem}>
+              <Clock size={14} /> Hỗ trợ 24/7
+            </span>
           </div>
-          {showSuggestions && searchSuggestions.length > 0 && (
-            <div className={styles.searchSuggestions}>
-              {searchSuggestions.map((suggestion, index) => (
-                <div
-                  key={index}
-                  className={styles.suggestionItem}
-                  onClick={() => handleSuggestionClick(suggestion)}
-                >
-                  <Search size={14} />
-                  <span>{suggestion}</span>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
+      </div>
 
-        {/* User Menu */}
-        <div className={styles.navLinks}>
-          {isLoading ? (
-            <div>Đang tải...</div>
-          ) : user ? (
-            <div className={styles.userMenu} ref={dropdownRef}>
-              <button
-                className={styles.userButton}
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              >
-                <div className={styles.userAvatar}>{getAvatarInitial()}</div>
-                {user.fullName.split(' ')[0]}
-              </button>
-              <div className={`${styles.dropdown} ${isDropdownOpen ? styles.open : ''}`}>
-                <Link
-                  href="/user/profile"
-                  className={styles.dropdownItem}
-                  onClick={() => setIsDropdownOpen(false)}
+      {/* 2. Main Navbar */}
+      <nav className={styles.navbar}>
+        <div className={styles.container}>
+          <div className={styles.navContent}>
+
+            {/* Logo */}
+            <div className={styles.brand}>
+              <Link href="/">
+                {/* Dùng file ảnh bạn gửi */}
+                <img src="/logoBonMi.png" alt="BonMi Market" className={styles.logo} />
+              </Link>
+            </div>
+
+            {/* Search Bar với Nút Bấm */}
+            <div className={styles.searchSection} ref={searchRef}>
+              <div className={styles.searchBox}>
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm sản phẩm..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onKeyDown={handleSearchKeyDown}
+                  className={styles.searchInput}
+                  autoComplete="off"
+                />
+                <button
+                  className={styles.searchButton}
+                  onClick={() => handleSearch(searchQuery)}
                 >
-                  Hồ sơ cá nhân
-                </Link>
-                <div className={styles.dropdownDivider}></div>
-                <button onClick={handleLogout} className={styles.dropdownButton}>
-                  Đăng xuất
+                  <Search size={18} />
                 </button>
               </div>
+
+              {/* Suggestions Dropdown */}
+              {showSuggestions && searchSuggestions.length > 0 && (
+                <div className={styles.searchSuggestions}>
+                  {searchSuggestions.map((suggestion, index) => (
+                    <div
+                      key={index}
+                      className={styles.suggestionItem}
+                      onClick={() => handleSuggestionClick(suggestion)}
+                    >
+                      <Search size={14} />
+                      <span>{suggestion}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          ) : (
-            <>
-              <Link href="/login" className={styles.navLink}>Đăng nhập</Link>
-              <Link href="/register" className={styles.navLink}>Đăng ký</Link>
-            </>
-          )}
+
+            {/* User & Cart */}
+            <div className={styles.navLinks}>
+              {user?.role === 'CUSTOMER' && (<Link href="/cart" className={styles.cartLink}>
+                <div className={styles.cartIconWrapper}>
+                  <ShoppingCart size={24} />
+                  {totalItems > 0 && (
+                    <span className={styles.cartBadge}>{totalItems > 99 ? '99+' : totalItems}</span>
+                  )}
+                </div>
+              </Link>)}
+
+              {isLoading ? (
+                <div className={styles.loadingAuth}>...</div>
+              ) : user ? (
+                <div className={styles.userMenu} ref={dropdownRef}>
+                  <button
+                    className={styles.userButton}
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  >
+                    <div className={styles.userAvatar}>{getAvatarInitial()}</div>
+                    <span className={styles.userName}>{user.fullName.split(' ')[0]}</span>
+                  </button>
+                  <div className={`${styles.dropdown} ${isDropdownOpen ? styles.open : ''}`}>
+                    {user.role === 'ADMIN' ? (
+                       <Link href="/admin/dashboard" className={styles.dropdownItem}>
+                          Trang quản trị
+                       </Link>
+                    ) : (
+                       <Link href="/user/profile" className={styles.dropdownItem}>
+                          Hồ sơ cá nhân
+                       </Link>
+                    )}
+                    <button onClick={handleLogout} className={styles.dropdownButton}>
+                      Đăng xuất
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className={styles.authLinks}>
+                  <Link href="/login" className={styles.authLink}>Đăng nhập</Link>
+                  <span className={styles.authDivider}>/</span>
+                  <Link href="/register" className={styles.authLink}>Đăng ký</Link>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </nav>
 
-      {/* Bottom Row: Root Categories */}
+      {/* 3. Categories Bar */}
       <div className={styles.categoriesBar}>
-        {categories.map((category) => (
-          <div
-            key={category.id}
-            className={styles.categoryItem}
-            onMouseEnter={() => setHoveredCategory(category.id)}
-            onMouseLeave={() => setHoveredCategory(null)}
-          >
-            <span
-              className={styles.categoryLink}
+        <div className={styles.container}>
+          <div className={styles.categoriesDropdown} ref={categoriesRef}>
+            <button
+              className={styles.categoriesButton}
+              onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
             >
-              {category.name}
-            </span>
-            {category.children.length > 0 && hoveredCategory === category.id && (
-              <div className={styles.subcategoryDropdown}>
-                {category.children.map((subcat) => (
-                  <Link
-                    key={subcat.id}
-                    href={`/${subcat.slug}`}
-                    className={styles.subcategoryLink}
-                  >
-                    {subcat.name}
-                  </Link>
+              <Menu size={20} />
+              <span>DANH MỤC SẢN PHẨM</span>
+              <ChevronDown size={16} style={{ transform: isCategoriesOpen ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
+            </button>
+
+            {isCategoriesOpen && (
+              <div className={styles.categoriesMenu}>
+                {categories.map((category) => (
+                  <div key={category.id} className={styles.categoryGroup}>
+                    <div className={styles.categoryHeader}>{category.name}</div>
+                    <div className={styles.subcategoryList}>
+                      {category.children.map((subcat) => (
+                        <Link
+                          key={subcat.id}
+                          href={`/${subcat.slug}`}
+                          className={styles.subcategoryLink}
+                          onClick={() => setIsCategoriesOpen(false)}
+                        >
+                          {subcat.name}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );

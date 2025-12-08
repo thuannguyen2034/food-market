@@ -1,0 +1,83 @@
+/* Container chính */
+.container {
+  /* Nền đã được set ở layout cha (UserDashboard), ở đây chỉ cần xử lý nội dung */
+  width: 100%;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+
+/* --- Tabs Navigation --- */
+.tabsContainer {
+  background: white;
+  margin-bottom: 16px;
+  position: sticky; /* Dính lên top khi cuộn */
+  top: 0;
+  z-index: 10;
+  border-bottom: 1px solid #e5e5e5;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.tabsList {
+  display: flex;
+  overflow-x: auto; /* Cho phép cuộn ngang trên mobile */
+  white-space: nowrap; /* Không xuống dòng */
+  scrollbar-width: none; /* Ẩn thanh cuộn trên Firefox */
+  -ms-overflow-style: none; /* Ẩn thanh cuộn trên IE/Edge */
+}
+
+/* Ẩn thanh cuộn trên Chrome/Safari */
+.tabsList::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  padding: 14px 20px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 14px;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex-shrink: 0; /* Không bị co lại */
+}
+
+.tab:hover {
+  color: #e72a2a;
+}
+
+.activeTab {
+  color: #e72a2a;
+  border-bottom-color: #e72a2a;
+  font-weight: 600;
+}
+
+/* --- Loading & Empty States --- */
+.loader {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 14px;
+}
+
+.emptyState {
+  background: white;
+  padding: 60px 20px;
+  text-align: center;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #888;
+}
+
+.emptyState p {
+  margin: 0;
+  font-size: 16px;
+}

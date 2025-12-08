@@ -1,121 +1,138 @@
+/* Container chính */
 .profilePage {
-  max-width: 900px;
+  padding: 24px 30px;
+  background-color: white;
+  min-height: 100%; /* Để fill hết chiều cao của content box bên layout */
 }
 
+/* --- Header Section --- */
 .title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 0.5rem;
+  font-size: 20px;
+  font-weight: 500;
+  color: #333;
+  margin: 0 0 4px 0;
 }
 
 .subtitle {
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin: 0 0 1.5rem;
+  font-size: 14px;
+  color: #555;
+  margin: 0;
 }
 
 .divider {
-  border-top: 1px solid #e5e7eb;
-  margin-bottom: 2rem;
+  height: 1px;
+  background-color: #efefef;
+  margin: 16px 0 30px 0;
+  width: 100%;
 }
 
-/* Form Wrapper - Two Columns */
+/* --- Main Form Layout (2 Columns) --- */
 .formWrapper {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 3rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 40px;
 }
 
-/* Left Column - Form Fields */
+/* --- Left Column: Form Fields --- */
 .formFields {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
+  flex: 1; /* Chiếm phần lớn diện tích */
+  padding-right: 40px; /* Tạo khoảng cách với đường kẻ dọc nếu có */
 }
 
 .formRow {
-  display: grid;
-  grid-template-columns: 140px 1fr;
-  gap: 1.5rem;
+  display: flex;
   align-items: center;
+  margin-bottom: 24px;
 }
 
 .label {
-  font-size: 0.875rem;
-  color: #4b5563;
+  width: 120px; /* Chiều rộng cố định cho nhãn để thẳng hàng */
   text-align: right;
-  font-weight: 500;
-}
-
-.fieldValue {
-  font-size: 0.875rem;
-  color: #1f2937;
-  padding: 0.625rem 0;
+  margin-right: 20px;
+  font-size: 14px;
+  color: #555555; /* Màu xám chữ label đặc trưng Shopee */
+  flex-shrink: 0;
 }
 
 .input {
-  width: 100%;
-  padding: 0.625rem 0.875rem;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 0.875rem;
-  transition: border-color 0.2s;
+  flex: 1;
+  max-width: 400px; /* Không cho input dài quá */
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 2px; /* Bo góc rất nhẹ hoặc vuông */
+  font-size: 14px;
+  color: #333;
+  outline: none;
+  transition: all 0.2s;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.02);
 }
 
 .input:focus {
-  outline: none;
-  border-color: #F29AAE;
+  border-color: #777; /* Shopee thường dùng màu tối khi focus, hoặc dùng đỏ brand */
+  border-color: #e72a2a; /* Dùng đỏ brand cho đồng bộ */
+  box-shadow: 0 0 0 1px rgba(231, 42, 42, 0.1);
 }
 
+/* Text hiển thị (Email, Role, Date) - Không sửa được */
+.fieldValue {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+  padding: 10px 0; /* Padding để căn giữa với label */
+}
+
+/* Role user (Tùy chọn style thêm cho đẹp) */
+.fieldValue:has(> .role) {
+   /* Nếu muốn style riêng cho role */
+}
+
+/* Nút Lưu */
 .saveButton {
-  background: #F29AAE;
+  background-color: #e72a2a;
   color: white;
   border: none;
-  padding: 0.625rem 2rem;
   border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.875rem;
+  padding: 10px 24px;
+  font-size: 14px;
   font-weight: 500;
-  transition: background 0.2s;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  min-width: 80px;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.09);
 }
 
-.saveButton:hover {
-  background: #e88aa0;
+.saveButton:hover:not(:disabled) {
+  background-color: #c91e1e;
 }
 
 .saveButton:disabled {
-  opacity: 0.6;
+  background-color: #fab1b1;
   cursor: not-allowed;
 }
 
-/* Right Column - Avatar */
+/* --- Right Column: Avatar Section --- */
 .avatarSection {
+  width: 280px;
+  border-left: 1px solid #efefef;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-top: 2rem;
-  padding-left: 2rem;
-  border-left: 1px solid #e5e7eb;
+  justify-content: center;
+  padding-left: 40px; /* Đẩy nội dung ra xa đường kẻ */
+  padding-top: 20px;
 }
 
 .avatarPreview {
-  width: 120px;
-  height: 120px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
-  background: #f3f4f6;
+  border: 1px solid #e5e5e5;
+  background-color: #f5f5f5;
+  overflow: hidden;
+  margin-bottom: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1.5rem;
-  overflow: hidden;
-  border: 3px solid #e5e7eb;
-}
-
-.avatarPreview span {
-  font-weight: 600;
-  font-size: 3rem;
-  color: #6b7280;
 }
 
 .avatarPreview img {
@@ -124,55 +141,84 @@
   object-fit: cover;
 }
 
+.avatarPreview span {
+  font-size: 40px;
+  color: #ccc;
+  font-weight: 600;
+}
+
+/* Input file ẩn */
 .avatarInput {
   display: none;
 }
 
+/* Nút Chọn Ảnh giả */
 .avatarButton {
   display: inline-block;
-  padding: 0.625rem 1.25rem;
-  border: 1px solid #d1d5db;
-  background: white;
-  color: #374151;
+  background-color: white;
+  border: 1px solid #ddd;
+  color: #555;
+  padding: 8px 20px;
+  font-size: 14px;
   border-radius: 4px;
   cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
   transition: all 0.2s;
+  margin-bottom: 12px;
 }
 
 .avatarButton:hover {
-  background: #f9fafb;
-  border-color: #F29AAE;
+  background-color: #f8f8f8;
+  border-color: #ccc;
 }
 
 .avatarHint {
-  font-size: 0.8125rem;
-  color: #9ca3af;
-  margin-top: 1rem;
+  font-size: 12px;
+  color: #999;
   text-align: center;
   line-height: 1.5;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
+/* --- Responsive (Mobile/Tablet) --- */
+@media (max-width: 900px) {
   .formWrapper {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-  }
-
-  .formRow {
-    grid-template-columns: 1fr;
-    gap: 0.5rem;
-  }
-
-  .label {
-    text-align: left;
+    flex-direction: column-reverse; /* Đảo ngược: Avatar lên trên, Form xuống dưới */
+    gap: 30px;
+    align-items: center; /* Căn giữa */
   }
 
   .avatarSection {
-    padding: 2rem 0 0 0;
+    width: 100%;
     border-left: none;
-    border-top: 1px solid #e5e7eb;
+    padding-left: 0;
+    padding-bottom: 20px;
+    border-bottom: 1px dashed #eee; /* Thay kẻ dọc bằng kẻ ngang */
+  }
+
+  .formFields {
+    width: 100%;
+    padding-right: 0;
+  }
+
+  /* Chuyển Form Row thành dạng dọc (Label trên, Input dưới) để dễ nhập trên mobile */
+  .formRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .label {
+    width: 100%;
+    text-align: left;
+    margin-right: 0;
+  }
+
+  .input {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .saveButton {
+    width: 100%; /* Nút lưu full width trên mobile */
+    margin-top: 10px;
   }
 }

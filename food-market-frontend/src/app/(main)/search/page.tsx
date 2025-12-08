@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { CategoryResponse, ProductResponse, PageResponse } from '@/types/product';
 import ProductCard from '@/components/ProductCard'; // 1. Import Component
 import styles from './SearchPage.module.css';
+import Link from 'next/link';
 
 export default function SearchPage() {
     const searchParams = useSearchParams();
@@ -117,11 +118,15 @@ export default function SearchPage() {
 
     const handleLoadMore = () => setPage(prev => prev + 1);
 
-    // Đã xóa hàm formatPrice vì ProductCard tự xử lý
 
     return (
         <div className={styles.container}>
-            <h1 className={styles.title}>Kết quả tìm kiếm{searchQuery && `: "${searchQuery}"`}</h1>
+            <div className={styles.breadcrumb}>
+                <Link href="/" className={styles.breadcrumbLink}>Trang chủ</Link>
+                <span className={styles.breadcrumbSeparator}>/</span>
+                <span className={styles.breadcrumbCurrent}>Tìm kiếm: "{searchQuery}"</span>
+            </div>
+            <h1 className={styles.title}>Các sản phẩm liên quan đến: "{searchQuery}"</h1>
 
             {/* Matching Categories */}
             {categories.length > 0 && (

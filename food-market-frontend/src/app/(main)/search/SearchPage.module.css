@@ -1,172 +1,208 @@
+/* Container chính: Giới hạn chiều rộng và căn giữa */
 .container {
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 16px;
+  background-color: #f8f9fa; /* Nền xám nhạt để làm nổi bật thẻ sản phẩm trắng */
+  min-height: 100vh;
+}
+/* --- Breadcrumb --- */
+.breadcrumb {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
+.breadcrumbLink {
+  color: #555;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.breadcrumbLink:hover {
+  color: #e72a2a;
+}
+
+.breadcrumbSeparator {
+  margin: 0 8px;
+  color: #ccc;
+}
+
+.breadcrumbCurrent {
+  color: #333;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+/* Tiêu đề trang */
 .title {
-    margin-bottom: 1.5rem;
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 24px;
+  font-weight: 600;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 12px;
 }
 
+/* --- Khu vực Filter Danh mục (Category Chips) --- */
 .section {
-    margin-bottom: 2rem;
+  margin-bottom: 24px;
 }
 
 .sectionTitle {
-    margin-bottom: 1rem;
+  font-size: 16px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 12px;
 }
 
 .categoriesContainer {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
+  display: flex;
+  flex-wrap: wrap; /* Tự động xuống dòng nếu nhiều danh mục */
+  gap: 10px;
 }
 
 .categoryButton {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    border-width: 3px;  
-    background: white;
-    cursor: pointer;
-    width: 100px;
-    height: 100px;
-    justify-content: center;
-    align-items: center;
-    transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 20px; /* Bo tròn kiểu viên thuốc (Chip) */
+  cursor: pointer;
+  font-size: 14px;
+  color: #555;
+  transition: all 0.2s ease;
 }
 
+.categoryButton:hover {
+  border-color: #e72a2a;
+  color: #e72a2a;
+}
+
+/* Trạng thái đang chọn */
 .categoryButton.active {
-    border-color: pink;
+  background-color: #e72a2a;
+  color: white;
+  border-color: #e72a2a;
+  font-weight: 500;
 }
 
 .categoryImage {
-    flex: 1;
-    width: 50px;
-    height: 50px;
-    object-fit: fill;
-    border-radius: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
 }
 
+/* Nút xóa bộ lọc */
 .clearFilterButton {
-    padding: 0.5rem 1rem;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    background: white;
-    cursor: pointer;
+  background: none;
+  border: none;
+  text-decoration: underline;
+  color: #666;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 8px 12px;
 }
 
+.clearFilterButton:hover {
+  color: #e72a2a;
+}
+
+/* --- Khu vực Sắp xếp (Sort Controls) --- */
 .controls {
-    margin-bottom: 2rem;
-    display: flex;
-    gap: 1rem;
-    align-items: center;
+  display: flex;
+  justify-content: flex-end; /* Đẩy sang phải */
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #555;
 }
 
 .controls select {
-    padding: 0.5rem;
-    border: 1px solid #ddd;
-    border-radius: 6px;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  outline: none;
+  background-color: white;
+  cursor: pointer;
+  font-size: 14px;
 }
 
-.loading {
-    text-align: center;
-    padding: 3rem 0;
-    color: #666;
+.controls select:focus {
+  border-color: #e72a2a;
 }
 
-.empty {
-    text-align: center;
-    padding: 3rem 0;
-    color: #666;
-}
-
+/* --- Lưới sản phẩm (Quan trọng nhất) --- */
+/* Copy logic từ CategoryPage để đồng bộ */
 .productsGrid {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 1.5rem;
-    margin-bottom: 2rem;
+  display: grid;
+  /* Tự động tính toán số cột. Min 180px, còn dư thì chia đều */
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
+  gap: 16px;
 }
 
-.productCard {
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    padding: 1rem;
-    text-decoration: none;
-    color: inherit;
-    transition: box-shadow 0.2s;
+/* --- Responsive cho Mobile --- */
+@media (max-width: 480px) {
+  .productsGrid {
+    /* Trên điện thoại bắt buộc hiển thị 2 cột */
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 10px; /* Giảm khoảng cách cho đỡ chật */
+  }
+
+  .container {
+    padding: 16px 8px; /* Giảm lề 2 bên trên mobile */
+  }
+
+  .title {
+    font-size: 20px;
+  }
 }
 
-.productCard:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+/* --- Trạng thái Loading & Empty --- */
+.loading, .empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+  font-size: 16px;
 }
 
-.productImage {
-    width: 100%;
-    height: 180px;
-    object-fit: cover;
-    border-radius: 6px;
-    margin-bottom: 0.75rem;
-}
-
-.productCard h3 {
-    font-size: 1rem;
-    margin-bottom: 0.5rem;
-    font-weight: 600;
-}
-
-.productCard p {
-    font-size: 0.875rem;
-    color: #666;
-    margin-bottom: 0.5rem;
-}
-
-.priceRow {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.finalPrice {
-    font-size: 1.125rem;
-    font-weight: bold;
-    color: #dc2626;
-}
-
-.basePrice {
-    font-size: 0.875rem;
-    color: #9ca3af;
-    text-decoration: line-through;
-}
-
-.discount {
-    font-size: 0.75rem;
-    background: #fee2e2;
-    color: #dc2626;
-    padding: 0.125rem 0.375rem;
-    border-radius: 4px;
-}
-
+/* --- Nút Xem thêm (Load More) --- */
 .loadMore {
-    text-align: center;
+  margin-top: 40px;
+  text-align: center;
+  padding-bottom: 20px;
 }
 
 .loadMoreButton {
-    padding: 0.75rem 2rem;
-    background: #3b82f6;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: 600;
+  padding: 10px 40px;
+  background-color: white;
+  color: #e72a2a;
+  border: 1px solid #e72a2a;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.loadMoreButton:hover:not(:disabled) {
+  background-color: #e72a2a;
+  color: white;
 }
 
 .loadMoreButton:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
+  opacity: 0.6;
+  cursor: wait;
+  background-color: #eee;
+  border-color: #ddd;
+  color: #999;
 }

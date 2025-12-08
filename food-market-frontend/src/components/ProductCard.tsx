@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { ProductResponse } from '@/types/product';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
@@ -15,15 +15,16 @@ interface ProductCardProps {
 
 export default function ProductCard({ product, categorySlug }: ProductCardProps) {
     const router = useRouter();
+    const pathname = usePathname();
     const { user } = useAuth();
     const { cartMap, addToCart, updateCartItem } = useCart();
-    
+
     // State loading cục bộ cho nút bấm để tránh spam
     const [isUpdating, setIsUpdating] = useState(false);
 
     // 1. Tính toán hiển thị giá
     // Discount % = (Base - Final) / Base * 100
-    const discountPercent = product.basePrice > product.finalPrice 
+    const discountPercent = product.basePrice > product.finalPrice
         ? Math.round(((product.basePrice - product.finalPrice) / product.basePrice) * 100)
         : 0;
 
@@ -46,9 +47,10 @@ export default function ProductCard({ product, categorySlug }: ProductCardProps)
 
     // Handler: Thêm mới (khi SL = 0)
     const handleInitialAdd = async (e: React.MouseEvent) => {
-        e.preventDefault(); 
+        e.preventDefault();
         if (!user) {
-            router.push('/login');
+            const returnUrl = encodeURIComponent(pathname);
+            router.push(`/login?returnUrl=${returnUrl}`);
             return;
         }
         if (isUpdating) return;
@@ -75,22 +77,26 @@ export default function ProductCard({ product, categorySlug }: ProductCardProps)
 
     return (
         <div className={styles.card}>
-            {/* Vùng ảnh và thông tin */}
+            {/* Vùng ảnh */}
             <Link href={productUrl} className={styles.cardLink}>
                 <div className={styles.imageContainer}>
-                    {product.images[0] && (
+                    {product.images[0] ? (
                         <img src={product.images[0].imageUrl} alt={product.name} />
+                    ) : (
+                        // Placeholder nếu không có ảnh
+                        <div style={{ width: '100%', height: '100%', background: '#eee', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#999' }}>
+                            No Image
+                        </div>
                     )}
-                    {/* Badge giảm giá */}
+
                     {discountPercent > 0 && (
                         <span className={styles.discountBadge}>-{discountPercent}%</span>
                     )}
                 </div>
-                
+
                 <div className={styles.content}>
-                    <h3 className={styles.name}>{product.name}</h3>
-                    
-                    {/* Hiển thị Giá */}
+                    <h3 className={styles.name} title={product.name}>{product.name}</h3>
+
                     <div className={styles.priceSection}>
                         <div className={styles.finalPrice}>
                             {formatPrice(product.finalPrice)}
@@ -105,56 +111,56 @@ export default function ProductCard({ product, categorySlug }: ProductCardProps)
             </Link>
 
             {/* Vùng nút bấm Action */}
-            <div className={styles.actionArea}>
-                {/* Case 1: Hết hàng */}
-                {product.stockQuantity <= 0 ? (
-                    <button className={styles.outOfStockButton} disabled>
-                        Hết hàng
-                    </button>
-                ) : (
-                    /* Case 2: Còn hàng */
-                    <>
-                        {quantityInCart === 0 ? (
-                            /* 2a. Chưa có trong giỏ -> Nút Thêm */
-                            <button 
-                                className={styles.addToCartButton}
-                                onClick={handleInitialAdd}
-                                disabled={isUpdating}
-                            >
-                                {isUpdating ? '...' : 'Thêm vào giỏ'}
-                            </button>
-                        ) : (
-                            /* 2b. Đã có trong giỏ -> Nút +/- */
-                            <div className={styles.quantityControl}>
-                                <button 
-                                    onClick={(e) => handleQuantityUpdate(e, -1)}
+            {user?.role !== 'ADMIN' && (
+                <div className={styles.actionArea}>
+                    {product.stockQuantity <= 0 ? (
+                        <button className={styles.outOfStockButton} disabled>
+                            Hết hàng
+                        </button>
+                    ) : (
+                        <>
+                            {quantityInCart === 0 ? (
+                                <button
+                                    className={styles.addToCartButton}
+                                    onClick={handleInitialAdd}
                                     disabled={isUpdating}
-                                    className={styles.qtyBtn}
                                 >
-                                    -
+                                    {isUpdating ? '...' : 'Thêm vào giỏ'}
                                 </button>
-                                
-                                <span className={styles.qtyValue}>
-                                    {isUpdating ? '...' : quantityInCart}
-                                </span>
-                                
-                                <button 
-                                    onClick={(e) => handleQuantityUpdate(e, 1)}
-                                    disabled={isUpdating || quantityInCart >= product.stockQuantity}
-                                    className={styles.qtyBtn}
-                                >
-                                    +
-                                </button>
-                            </div>
-                        )}
-                    </>
-                )}
-            </div>
-            
-            {/* Hiển thị cảnh báo nhỏ nếu sắp hết hàng */}
+                            ) : (
+                                <div className={styles.quantityControl}>
+                                    <button
+                                        onClick={(e) => handleQuantityUpdate(e, -1)}
+                                        disabled={isUpdating}
+                                        className={styles.qtyBtn}
+                                        type="button"
+                                    >
+                                        -
+                                    </button>
+
+                                    <span className={styles.qtyValue}>
+                                        {isUpdating ? '...' : quantityInCart}
+                                    </span>
+
+                                    <button
+                                        onClick={(e) => handleQuantityUpdate(e, 1)}
+                                        disabled={isUpdating || quantityInCart >= product.stockQuantity}
+                                        className={styles.qtyBtn}
+                                        type="button"
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            )}
+                        </>
+                    )}
+                </div>
+            )}
+
+            {/* Cảnh báo tồn kho */}
             {product.stockQuantity > 0 && product.stockQuantity < 10 && (
                 <div className={styles.stockWarning}>
-                    Chỉ còn {product.stockQuantity} sản phẩm
+                    Còn {product.stockQuantity} sản phẩm
                 </div>
             )}
         </div>

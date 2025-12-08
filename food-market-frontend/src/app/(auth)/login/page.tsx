@@ -1,17 +1,19 @@
 // src/app/login/page.tsx
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, Suspense } from 'react'; // Thêm Suspense
+import { useRouter, useSearchParams } from 'next/navigation'; // Thêm useSearchParams
 import { useAuth } from '@/context/AuthContext';
+import Link from 'next/link';
 import styles from './login.module.css';
-import Link from 'next/link'; // <-- THÊM IMPORT
 
 const API_BASE_URL = '/api/v1';
 
-export default function LoginPage() {
+// Tách Form ra thành component con để dùng được useSearchParams
+function LoginForm() {
   const router = useRouter();
-  const { login, fetchUserProfile} = useAuth(); 
+  const searchParams = useSearchParams(); // Hook lấy tham số URL
+  const { login, fetchUserProfile } = useAuth(); 
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -29,18 +31,38 @@ export default function LoginPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        // Nếu không parse được JSON, tức là lỗi từ Next.js Proxy (VD: 500 Internal Server Error)
+        throw new Error(`Lỗi kết nối Server: ${response.status} ${response.statusText}`);
+      }
       if (!response.ok) {
         if(response.status === 500) {
-          throw new Error('Máy chủ đang gặp sự cố, vui lòng thử lại sau!');}
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Sai email hoặc mật khẩu');
+           // Log lỗi thực sự ra console trình duyệt để bạn xem
+           console.error("Backend Error:", data); 
+           throw new Error('Máy chủ đang gặp sự cố, vui lòng thử lại sau!');
+        }
+        // Ưu tiên hiển thị message từ backend gửi về
+        throw new Error(data.message || 'Sai email hoặc mật khẩu');
       }
-
-      const data = await response.json();
+      
+      // 1. Cập nhật Auth Context
       await login(data.token);
+      
+      // 2. Fetch User Profile (Token đã được lưu, authedFetch sẽ hoạt động)
       await fetchUserProfile();
-      router.push('/');
+
+      // 3. Xử lý Redirect
+      const returnUrl = searchParams.get('returnUrl');
+      if (returnUrl) {
+        // Decode để đảm bảo URL đúng định dạng
+        router.push(decodeURIComponent(returnUrl));
+      } else {
+        router.push('/');
+      }
 
     } catch (err: any) {
       setError(err.message || 'Đã có lỗi xảy ra. Vui lòng thử lại.');
@@ -49,9 +71,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className={styles.container}>
-      <form className={styles.loginForm} onSubmit={handleSubmit}>
-        <h2 className={styles.title}>Đăng nhập Food Market</h2>
+    <form className={styles.loginForm} onSubmit={handleSubmit}>
+        <h2 className={styles.title}>Đăng nhập BonMi</h2>
+        
         {error && <div className={styles.errorMessage}>{error}</div>}
         
         <div className={styles.inputGroup}>
@@ -64,6 +86,7 @@ export default function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             required
             autoComplete="email"
+            placeholder="nhapcuaban@example.com"
           />
         </div>
         
@@ -77,26 +100,33 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete="current-password"
+            placeholder="••••••••"
           />
         </div>
         
+        <div className={styles.forgotPassword}>
+            <Link href="/forgot-password">Quên mật khẩu?</Link>
+        </div>
+
         <button type="submit" className={styles.button} disabled={isLoading}>
           {isLoading ? 'Đang xử lý...' : 'Đăng nhập'}
         </button>
-        <div className={styles.navigationLink}>
-            <Link href="/forgot-password">
-                Quên mật khẩu?
-            </Link>
+
+        <div className={styles.registerLink}>
+            Chưa có tài khoản? <Link href="/register">Đăng ký ngay</Link>
         </div>
-        {/* --- THÊM LINK ĐĂNG KÝ --- */}
-        <div className={styles.navigationLink}>
-            <Link href="/register">
-                Chưa có tài khoản? Đăng ký ngay
-            </Link>
-        </div>
-        {/* ------------------------ */}
-        
-      </form>
+    </form>
+  );
+}
+
+// Component chính export ra ngoài
+export default function LoginPage() {
+  return (
+    <div className={styles.container}>
+      {/* Cần Suspense vì LoginForm dùng useSearchParams */}
+      <Suspense fallback={<div>Đang tải form...</div>}>
+        <LoginForm />
+      </Suspense>
     </div>
   );
 }

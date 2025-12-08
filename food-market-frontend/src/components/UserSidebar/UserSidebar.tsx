@@ -61,7 +61,7 @@ export default function UserSidebar() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className={`${styles.navLink} ${pathname === link.href ? styles.active : ''
+                    className={`${styles.navLink} ${pathname === link.href || pathname.startsWith(link.href + '/') ? styles.active : ''
                       }`}
                   >
                     <Icon size={18} />

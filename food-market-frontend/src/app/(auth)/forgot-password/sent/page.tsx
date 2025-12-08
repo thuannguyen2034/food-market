@@ -6,7 +6,7 @@
 import Link from 'next/link';
 // 2. Import hook
 import { useSearchParams } from 'next/navigation';
-import styles from '@/app/(guest)/login/login.module.css'; 
+import styles from '@/app/(auth)/login/login.module.css'; 
 
 // 3. Xóa props 'searchParams' khỏi hàm
 export default function ForgotPasswordSentPage() {

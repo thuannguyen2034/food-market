@@ -2,48 +2,58 @@
 
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
-import { ReactNode } from 'react';
-
-// --- Components (bạn sẽ tạo các component này) ---
+import { ReactNode, useState, useEffect } from 'react';
+import { Menu } from 'lucide-react';
 import AdminSidebar from '@/components/Admin/AdminSidebar';
-// --- CSS ---
 import styles from '@/styles/admin/AdminLayout.module.css';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  // Logic bảo vệ route (như bạn đã mô tả)
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace('/login');
+    }
+  }, [user, isLoading, router]);
+
   if (isLoading) {
-    return <div>Loading...</div>; // Hoặc một skeleton loader
+    return <div>Loading...</div>;
   }
 
   if (!user) {
-    router.replace('/login');
     return null;
   }
-
   if (user.role !== 'ADMIN') {
-    // Hiển thị trang cấm (Forbidden)
     return (
       <div className={styles.forbiddenContainer}>
-        <h1>Truy cập bị cấm</h1>
-        <p>Bạn không có quyền truy cập khu vực này.</p>
+        <h1>Không thấy trang</h1>
         <button onClick={() => router.push('/')}>Về trang chủ</button>
       </div>
     );
   }
 
-  // Nếu là ADMIN, hiển thị layout
   return (
     <div className={styles.adminLayout}>
-      {/* 1. Sidebar cố định bên trái */}
-      <AdminSidebar />
 
-      {/* 2. Phần nội dung chính */}
+      <AdminSidebar
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+      />
+
       <div className={styles.mainContent}>
+        <div className={styles.mobileHeader}>
+          <button
+            className={styles.menuBtn}
+            onClick={() => setIsSidebarOpen(true)}
+          >
+            <Menu size={24} />
+          </button>
+          <span className={styles.mobileLogo}>BonMi Admin</span>
+          <div style={{ width: 24 }}></div>
+        </div>
 
-        {/* Nội dung của từng trang (Dashboard, Products, Users...) */}
         <main className={styles.pageContent}>
           {children}
         </main>

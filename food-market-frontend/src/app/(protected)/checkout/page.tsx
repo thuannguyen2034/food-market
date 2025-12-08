@@ -1,153 +1,150 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { format, addDays, getHours, isSameDay } from 'date-fns';
+import { Plus, X, CheckCircle2 } from 'lucide-react'; // Import thêm icon
 import { useCart } from '@/context/CartContext';
-import { useAuth } from '@/context/AuthContext'; // Giả sử bạn có AuthContext
+import { useAuth } from '@/context/AuthContext';
+import toast from 'react-hot-toast';
+
+import AddressCard from '@/components/Address/AddressCard';
+import AddressModal from '@/components/Address/AddressModal';
+import { UserAddress } from '@/app/(protected)/user/address/page';
+
 import styles from './CheckoutPage.module.css';
 
-// --- Type Definitions (Mapping với DTO Backend) ---
-
-interface AddressDTO {
-    id: number;
-    recipientName: string;
-    recipientPhone: string;
-    province: string;
-    district: string;
-    ward: string;
-    streetAddress: string;
-    addressType: string;
-    isDefault: boolean;
-}
-
-// Mapping Enum DeliveryTimeSlot từ Backend
+// Enum Time Slots
 const TIME_SLOTS = [
-    { value: 'SLOT_08_10', label: '08:00 - 10:00' },
-    { value: 'SLOT_10_12', label: '10:00 - 12:00' },
-    { value: 'SLOT_12_14', label: '12:00 - 14:00' },
-    { value: 'SLOT_14_16', label: '14:00 - 16:00' },
-    { value: 'SLOT_16_18', label: '16:00 - 18:00' },
-    { value: 'SLOT_18_20', label: '18:00 - 20:00' },
+    { value: 'SLOT_08_10', label: '08:00 - 10:00', startHour: 8 },
+    { value: 'SLOT_10_12', label: '10:00 - 12:00', startHour: 10 },
+    { value: 'SLOT_12_14', label: '12:00 - 14:00', startHour: 12 },
+    { value: 'SLOT_14_16', label: '14:00 - 16:00', startHour: 14 },
+    { value: 'SLOT_16_18', label: '16:00 - 18:00', startHour: 16 },
+    { value: 'SLOT_18_20', label: '18:00 - 20:00', startHour: 18 },
 ];
 
 export default function CheckoutPage() {
     const router = useRouter();
-    const { cartData, isLoadingCart, clearCartLocal } = useCart(); // clearCartLocal: hàm clear context nếu cần
-    const { user, authedFetch } = useAuth(); // authedFetch: wrapper của fetch có kèm header Authorization
+    const { cartData, isLoadingCart, clearCartLocal } = useCart();
+    const { user, authedFetch } = useAuth();
 
-    // State cho Form Checkout
-    const [addresses, setAddresses] = useState<AddressDTO[]>([]);
+    // --- State Management ---
+    const [addresses, setAddresses] = useState<UserAddress[]>([]);
     const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
+    
+    // UI State
+    const [showSelectionModal, setShowSelectionModal] = useState(false); // Popup danh sách
+    const [showAddressModal, setShowAddressModal] = useState(false);     // Popup Thêm/Sửa
+    const [editingAddress, setEditingAddress] = useState<UserAddress | null>(null);
+
+    // Delivery & Note State
+    const [deliveryDate, setDeliveryDate] = useState<Date>(new Date());
     const [selectedSlot, setSelectedSlot] = useState<string>('');
     const [note, setNote] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // State cho việc thêm địa chỉ mới (Inline Form)
-    const [isAddingAddress, setIsAddingAddress] = useState(false);
-    const [newAddress, setNewAddress] = useState({
-        recipientName: '',
-        recipientPhone: '',
-        province: '',
-        district: '',
-        ward: '',
-        streetAddress: '',
-        addressType: 'HOME', // Default
-        isDefault: false
-    });
-
-    // Format tiền tệ
+    // --- Helpers ---
     const formatPrice = (price: number) =>
         new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
 
-    // 1. Fetch Addresses khi load trang
-    useEffect(() => {
-        if (!user) {
-            router.push('/login?redirect=/checkout');
-            return;
-        }
+    const today = new Date();
+    const tomorrow = addDays(today, 1);
 
-        const fetchAddresses = async () => {
-            try {
-                const res = await authedFetch(`/api/v1/users/addresses`);
-                if (res.ok) {
-                    const data: AddressDTO[] = await res.json();
-                    setAddresses(data);
-                    
-                    // Tự động chọn địa chỉ mặc định
-                    const defaultAddr = data.find(a => a.isDefault);
-                    if (defaultAddr) {
-                        setSelectedAddressId(defaultAddr.id);
-                    } else if (data.length > 0) {
-                        setSelectedAddressId(data[0].id);
-                    }
+    // 1. Fetch Addresses
+    const fetchAddresses = async () => {
+        try {
+            const res = await authedFetch(`/api/v1/users/addresses`);
+            if (res.ok) {
+                const data: UserAddress[] = await res.json();
+                setAddresses(data);
+                
+                // Nếu chưa chọn, tự động chọn Mặc định hoặc cái đầu tiên
+                if (!selectedAddressId && data.length > 0) {
+                    const defaultAddr = data.find(a => a.default);
+                    setSelectedAddressId(defaultAddr ? defaultAddr.id : data[0].id);
                 }
-            } catch (error) {
-                console.error('Lỗi tải địa chỉ:', error);
             }
-        };
+        } catch (error) {
+            console.error('Lỗi tải địa chỉ:', error);
+        }
+    };
 
-        fetchAddresses();
-    }, [user, router, authedFetch]);
+    useEffect(() => {
+        if (user) fetchAddresses();
+        else router.push('/login?redirect=/checkout');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user, router]);
 
-    // Check giỏ hàng rỗng -> Đá về trang chủ
+    // Check Cart Empty
     useEffect(() => {
         if (!isLoadingCart && cartData && cartData.items.length === 0) {
             router.replace('/');
         }
     }, [cartData, isLoadingCart, router]);
 
-    // Xử lý thêm địa chỉ mới
-    const handleSaveNewAddress = async () => {
-        // Validate sơ bộ
-        if (!newAddress.recipientName || !newAddress.recipientPhone || !newAddress.province) {
-            alert('Vui lòng điền đầy đủ thông tin địa chỉ.');
-            return;
-        }
+    // 2. Filter Time Slots
+    const availableSlots = useMemo(() => {
+        if (!isSameDay(deliveryDate, today)) return TIME_SLOTS;
+        const currentHour = getHours(new Date());
+        return TIME_SLOTS.filter(slot => slot.startHour > currentHour + 1);
+    }, [deliveryDate]);
 
+    useEffect(() => {
+        const isSlotValid = availableSlots.some(s => s.value === selectedSlot);
+        if (!isSlotValid) setSelectedSlot('');
+    }, [availableSlots, selectedSlot]);
+
+    // 3. Address CRUD Handlers
+    const handleDeleteAddress = async (id: number) => {
+        if (!confirm('Bạn có chắc chắn muốn xóa địa chỉ này?')) return;
         try {
-            const res = await authedFetch(`/api/v1/users/addresses`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newAddress)
-            });
-
+            const res = await authedFetch(`/api/v1/users/addresses/${id}`, { method: 'DELETE' });
             if (res.ok) {
-                const savedAddr: AddressDTO = await res.json();
-                // Cập nhật list và chọn luôn địa chỉ mới
-                setAddresses([...addresses, savedAddr]);
-                setSelectedAddressId(savedAddr.id);
-                setIsAddingAddress(false); // Đóng form
-                // Reset form
-                setNewAddress({
-                    recipientName: '', recipientPhone: '', province: '',
-                    district: '', ward: '', streetAddress: '',
-                    addressType: 'HOME', isDefault: false
-                });
-            } else {
-                alert('Không thể lưu địa chỉ. Vui lòng kiểm tra lại.');
+                toast.success('Xóa thành công');
+                fetchAddresses();
+                // Nếu xóa đúng cái đang chọn thì reset
+                if (selectedAddressId === id) setSelectedAddressId(null);
             }
-        } catch (error) {
-            console.error(error);
-            alert('Lỗi hệ thống khi lưu địa chỉ.');
-        }
+        } catch (error) { toast.error('Lỗi khi xóa'); }
     };
 
-    // Xử lý ĐẶT HÀNG (Checkout)
+    const handleSetDefaultAddress = async (id: number) => {
+        try {
+            const res = await authedFetch(`/api/v1/users/addresses/${id}/default`, { method: 'PUT' });
+            if (res.ok) {
+                toast.success('Đã đặt làm mặc định');
+                fetchAddresses();
+            }
+        } catch (error) { toast.error('Lỗi hệ thống'); }
+    };
+
+    const handleSaveAddress = (savedAddress: UserAddress) => {
+        setShowAddressModal(false); // Đóng form Sửa/Thêm
+        fetchAddresses();           // Refresh list
+        setSelectedAddressId(savedAddress.id); // Chọn luôn cái vừa lưu
+        // Lưu ý: Không đóng SelectionModal nếu user đang mở nó, 
+        // nhưng ở đây ta có thể đóng luôn SelectionModal để trải nghiệm mượt hơn
+        setShowSelectionModal(false); 
+    };
+
+    // 4. Place Order
     const handlePlaceOrder = async () => {
         if (!selectedAddressId) {
-            alert('Vui lòng chọn địa chỉ giao hàng.');
+            toast.error('Vui lòng chọn địa chỉ giao hàng.');
             return;
         }
         if (!selectedSlot) {
-            alert('Vui lòng chọn khung giờ nhận hàng mong muốn.');
+            toast.error('Vui lòng chọn khung giờ giao hàng.');
             return;
         }
 
         setIsSubmitting(true);
-
+        const formattedDate = format(deliveryDate, 'yyyy-MM-dd');
         const payload = {
             addressId: selectedAddressId,
-            paymentMethod: 'COD', // Hardcode theo yêu cầu
+            paymentMethod: 'COD',
+            deliveryDate: formattedDate,
             deliveryTimeslot: selectedSlot,
             note: note
         };
@@ -161,166 +158,137 @@ export default function CheckoutPage() {
 
             if (res.ok) {
                 const orderData = await res.json();
-                // 1. Clear cart context (vì Backend đã xóa DB)
                 if (clearCartLocal) clearCartLocal();
-                
-                // 2. Chuyển hướng đến trang thành công hoặc chi tiết đơn
-                alert('Đặt hàng thành công! Mã đơn: ' + orderData.orderId);
-                router.push(`/profile/orders/${orderData.orderId}`); // Ví dụ
+                toast.success('Đặt hàng thành công!');
+                router.push(`/user/purchase/${orderData.orderId}`);
             } else {
                 const errData = await res.json();
-                // Nếu lỗi do giá thay đổi (như ta đã bàn luận ở Backend)
-                if (res.status === 409 || errData.message?.includes('giá')) {
-                    alert('Lỗi: ' + (errData.message || 'Có thay đổi về giá/tồn kho. Vui lòng kiểm tra lại.'));
-                    window.location.reload(); // Reload để lấy giá mới
+                if (res.status === 409 || errData.message?.includes('giá') || errData.message?.includes('kho')) {
+                    toast.error('Dữ liệu sản phẩm thay đổi. Đang tải lại...');
+                    setTimeout(() => window.location.reload(), 2000);
                 } else {
-                    alert('Đặt hàng thất bại: ' + (errData.message || 'Lỗi không xác định'));
+                    toast.error(errData.message || 'Đặt hàng thất bại');
                 }
             }
         } catch (error) {
             console.error(error);
-            alert('Lỗi kết nối đến máy chủ.');
+            toast.error('Lỗi kết nối');
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    if (isLoadingCart || !cartData) {
-        return <div className={styles.container}>Đang tải thông tin thanh toán...</div>;
-    }
+    if (isLoadingCart || !cartData) return <div className={styles.container}>Đang tải...</div>;
+
+    // Tìm object địa chỉ đang được chọn để hiển thị
+    const currentAddress = addresses.find(a => a.id === selectedAddressId);
+    const savings = cartData.baseGrandTotal - cartData.grandTotal;
 
     return (
         <div className={styles.container}>
             <h1 className={styles.title}>Thanh toán & Đặt hàng</h1>
 
             <div className={styles.layout}>
-                {/* --- CỘT TRÁI: THÔNG TIN --- */}
+                {/* --- CỘT TRÁI --- */}
                 <div className={styles.leftColumn}>
                     
-                    {/* 1. Chọn Địa Chỉ */}
+                    {/* SECTION 1: ĐỊA CHỈ (UI Mới) */}
                     <section className={styles.section}>
                         <h2 className={styles.sectionTitle}>1. Địa chỉ nhận hàng</h2>
                         
-                        <div className={styles.addressList}>
-                            {addresses.length === 0 && !isAddingAddress && (
-                                <p style={{color: '#666'}}>Bạn chưa có địa chỉ nào. Vui lòng thêm mới.</p>
-                            )}
-
-                            {addresses.map(addr => (
-                                <div 
-                                    key={addr.id} 
-                                    className={`${styles.addressCard} ${selectedAddressId === addr.id ? styles.selected : ''}`}
-                                    onClick={() => setSelectedAddressId(addr.id)}
+                        {currentAddress ? (
+                            // TRƯỜNG HỢP 1: Đã có địa chỉ được chọn
+                            <div className={styles.selectedAddressContainer}>
+                                {/* Hiển thị AddressCard nhưng ẩn bớt nút xóa/default nếu muốn, 
+                                    ở đây ta dùng component có sẵn */}
+                                <AddressCard 
+                                    address={currentAddress}
+                                    onEdit={() => {
+                                        setEditingAddress(currentAddress);
+                                        setShowAddressModal(true);
+                                    }}
+                                    onDelete={() => handleDeleteAddress(currentAddress.id)}
+                                    onSetDefault={() => handleSetDefaultAddress(currentAddress.id)}
+                                />
+                                
+                                {/* Nút Thay đổi -> Mở Popup List */}
+                                <button 
+                                    className={styles.changeAddressBtn}
+                                    onClick={() => setShowSelectionModal(true)}
                                 >
-                                    <input 
-                                        type="radio" 
-                                        name="addressGroup"
-                                        className={styles.radioInput}
-                                        checked={selectedAddressId === addr.id}
-                                        readOnly
-                                    />
-                                    <div className={styles.addressContent}>
-                                        <strong>{addr.recipientName} ({addr.recipientPhone})</strong>
-                                        <p>{addr.streetAddress}, {addr.ward}, {addr.district}, {addr.province}</p>
-                                        <span style={{fontSize: '0.8rem', color: '#999'}}>
-                                            {addr.addressType} {addr.isDefault ? '(Mặc định)' : ''}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Nút mở form thêm địa chỉ */}
-                        {!isAddingAddress ? (
-                            <button className={styles.addAddressBtn} onClick={() => setIsAddingAddress(true)}>
-                                + Thêm địa chỉ mới
-                            </button>
+                                    Thay đổi địa chỉ khác
+                                </button>
+                            </div>
                         ) : (
-                            <div className={styles.newAddressForm}>
-                                <h4>Thêm địa chỉ mới</h4>
-                                <div className={styles.formGroup}>
-                                    <input 
-                                        className={styles.input} placeholder="Tên người nhận"
-                                        value={newAddress.recipientName}
-                                        onChange={e => setNewAddress({...newAddress, recipientName: e.target.value})}
-                                    />
-                                </div>
-                                <div className={styles.formGroup}>
-                                    <input 
-                                        className={styles.input} placeholder="Số điện thoại"
-                                        value={newAddress.recipientPhone}
-                                        onChange={e => setNewAddress({...newAddress, recipientPhone: e.target.value})}
-                                    />
-                                </div>
-                                <div className={styles.formGroup} style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
-                                    <input 
-                                        className={styles.input} placeholder="Tỉnh/Thành phố"
-                                        value={newAddress.province}
-                                        onChange={e => setNewAddress({...newAddress, province: e.target.value})}
-                                    />
-                                    <input 
-                                        className={styles.input} placeholder="Quận/Huyện"
-                                        value={newAddress.district}
-                                        onChange={e => setNewAddress({...newAddress, district: e.target.value})}
-                                    />
-                                </div>
-                                <div className={styles.formGroup} style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
-                                    <input 
-                                        className={styles.input} placeholder="Phường/Xã"
-                                        value={newAddress.ward}
-                                        onChange={e => setNewAddress({...newAddress, ward: e.target.value})}
-                                    />
-                                    <input 
-                                        className={styles.input} placeholder="Số nhà, tên đường"
-                                        value={newAddress.streetAddress}
-                                        onChange={e => setNewAddress({...newAddress, streetAddress: e.target.value})}
-                                    />
-                                </div>
-                                <div className={styles.formActions}>
-                                    <button className={styles.btnPrimary} onClick={handleSaveNewAddress}>Lưu địa chỉ</button>
-                                    <button className={styles.btnSecondary} onClick={() => setIsAddingAddress(false)}>Hủy</button>
-                                </div>
+                            // TRƯỜNG HỢP 2: Chưa có địa chỉ nào
+                            <div style={{textAlign: 'center', padding: '1rem'}}>
+                                <p style={{color: '#666', marginBottom: '1rem'}}>Bạn chưa có địa chỉ nhận hàng.</p>
+                                <button 
+                                    className={styles.addAddressBtn} 
+                                    onClick={() => {
+                                        setEditingAddress(null);
+                                        setShowAddressModal(true);
+                                    }}
+                                >
+                                    <Plus size={18} /> Thêm địa chỉ mới
+                                </button>
                             </div>
                         )}
                     </section>
 
-                    {/* 2. Chọn Thời Gian */}
+                    {/* SECTION 2: THỜI GIAN */}
                     <section className={styles.section}>
                         <h2 className={styles.sectionTitle}>2. Thời gian giao hàng</h2>
-                        <div className={styles.formGroup}>
-                            <label className={styles.label}>Chọn khung giờ mong muốn:</label>
-                            <select 
-                                className={styles.select}
-                                value={selectedSlot}
-                                onChange={(e) => setSelectedSlot(e.target.value)}
+                        <div className={styles.dateSelection}>
+                            <div 
+                                className={`${styles.dateOption} ${isSameDay(deliveryDate, today) ? styles.active : ''}`}
+                                onClick={() => setDeliveryDate(today)}
                             >
-                                <option value="">-- Vui lòng chọn --</option>
-                                {TIME_SLOTS.map(slot => (
-                                    <option key={slot.value} value={slot.value}>
-                                        {slot.label}
-                                    </option>
-                                ))}
-                            </select>
+                                Hôm nay ({format(today, 'dd/MM')})
+                            </div>
+                            <div 
+                                className={`${styles.dateOption} ${isSameDay(deliveryDate, tomorrow) ? styles.active : ''}`}
+                                onClick={() => setDeliveryDate(tomorrow)}
+                            >
+                                Ngày mai ({format(tomorrow, 'dd/MM')})
+                            </div>
+                        </div>
+                        <div className={styles.formGroup}>
+                            <label className={styles.label}>Khung giờ khả dụng:</label>
+                            {availableSlots.length > 0 ? (
+                                <select 
+                                    className={styles.select}
+                                    value={selectedSlot}
+                                    onChange={(e) => setSelectedSlot(e.target.value)}
+                                >
+                                    <option value="">-- Chọn khung giờ --</option>
+                                    {availableSlots.map(slot => (
+                                        <option key={slot.value} value={slot.value}>
+                                            {slot.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            ) : (
+                                <p style={{color: '#d32f2f'}}>Hết khung giờ giao hôm nay. Vui lòng chọn ngày mai.</p>
+                            )}
                         </div>
                     </section>
 
-                    {/* 3. Thanh toán & Ghi chú */}
+                    {/* SECTION 3: THANH TOÁN & NOTE */}
                     <section className={styles.section}>
                         <h2 className={styles.sectionTitle}>3. Thanh toán & Ghi chú</h2>
-                        
                         <div className={styles.formGroup}>
                             <label className={styles.label}>Phương thức thanh toán:</label>
                             <div className={styles.paymentOption}>
-                                <input type="radio" checked readOnly />
+                                <input type="radio" checked readOnly style={{accentColor: '#0070f3'}} />
                                 <span>Thanh toán khi nhận hàng (COD)</span>
                             </div>
                         </div>
-
                         <div className={styles.formGroup}>
-                            <label className={styles.label}>Ghi chú cho đơn hàng (tùy chọn):</label>
+                            <label className={styles.label}>Ghi chú:</label>
                             <textarea 
                                 className={styles.textarea}
-                                placeholder="Ví dụ: Gọi trước khi giao, giao giờ hành chính..."
+                                placeholder="Lời nhắn..."
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}
                             />
@@ -328,34 +296,40 @@ export default function CheckoutPage() {
                     </section>
                 </div>
 
-                {/* --- CỘT PHẢI: TÓM TẮT ĐƠN HÀNG --- */}
+                {/* --- CỘT PHẢI: SUMMARY --- */}
                 <div className={styles.rightColumn}>
                     <div className={styles.summaryBox}>
                         <h3 className={styles.sectionTitle}>Đơn hàng ({cartData.items.length} món)</h3>
-                        
-                        {/* List Items rút gọn */}
                         <div style={{maxHeight: '300px', overflowY: 'auto', marginBottom: '1rem'}}>
                             {cartData.items.map(item => (
                                 <div key={item.cartItemId} className={styles.summaryItem}>
-                                    <span className={styles.itemName}>
-                                        {item.quantity}x {item.product.name}
-                                    </span>
-                                    <span>{formatPrice(item.totalItemPrice)}</span>
+                                    <div className={styles.itemName}>
+                                        <b>{item.quantity}x</b> {item.product.name}
+                                    </div>
+                                    <div style={{textAlign: 'right'}}>
+                                        {item.totalBasePrice > item.totalItemPrice && (
+                                            <div style={{fontSize: '0.8rem', textDecoration: 'line-through', color: '#999'}}>
+                                                {formatPrice(item.totalBasePrice)}
+                                            </div>
+                                        )}
+                                        <div>{formatPrice(item.totalItemPrice)}</div>
+                                    </div>
                                 </div>
                             ))}
                         </div>
-
+                        
                         <div className={styles.row}>
                             <span>Tạm tính:</span>
                             <span>{formatPrice(cartData.grandTotal)}</span>
                         </div>
-                        <div className={styles.row}>
-                            <span>Phí vận chuyển:</span>
-                            <span>Miễn phí</span>
-                        </div>
-
+                        {savings > 0 && (
+                            <div className={styles.savingsRow}>
+                                <span>Tiết kiệm được:</span>
+                                <span>-{formatPrice(savings)}</span>
+                            </div>
+                        )}
                         <div className={styles.totalRow}>
-                            <span>Tổng cộng:</span>
+                            <span>Tổng thanh toán:</span>
                             <span>{formatPrice(cartData.grandTotal)}</span>
                         </div>
 
@@ -366,14 +340,76 @@ export default function CheckoutPage() {
                         >
                             {isSubmitting ? 'Đang xử lý...' : 'ĐẶT HÀNG NGAY'}
                         </button>
-
-                        <p style={{fontSize: '0.85rem', color: '#666', marginTop: '1rem', textAlign: 'center'}}>
-                            Bằng việc đặt hàng, bạn đồng ý với điều khoản dịch vụ của Food Market.
-                        </p>
                     </div>
                 </div>
-
             </div>
+
+            {/* --- POPUP 1: MODAL CHỌN ĐỊA CHỈ (Selection Modal) --- */}
+            {showSelectionModal && (
+                <div className={styles.modalOverlay} onClick={() => setShowSelectionModal(false)}>
+                    <div className={styles.modalContent} onClick={e => e.stopPropagation()}>
+                        <div className={styles.modalHeader}>
+                            <h3 className={styles.modalTitle}>Chọn địa chỉ nhận hàng</h3>
+                            <button className={styles.closeBtn} onClick={() => setShowSelectionModal(false)}>
+                                <X size={24} />
+                            </button>
+                        </div>
+                        <div className={styles.modalBody}>
+                            {addresses.map(addr => (
+                                <div 
+                                    key={addr.id}
+                                    // Click vào card để chọn ngay
+                                    className={`${styles.addressOption} ${selectedAddressId === addr.id ? styles.selected : ''}`}
+                                    onClick={() => {
+                                        setSelectedAddressId(addr.id);
+                                        setShowSelectionModal(false); // Chọn xong đóng luôn popup
+                                    }}
+                                >
+                                    {selectedAddressId === addr.id && (
+                                        <div className={styles.checkIcon}>
+                                            <CheckCircle2 size={20} fill="white" />
+                                        </div>
+                                    )}
+                                    {/* Dùng lại AddressCard để hiển thị thông tin đẹp mắt */}
+                                    {/* Chặn sự kiện click vào các nút Sửa/Xóa để không kích hoạt 'Chọn' */}
+                                    <div onClick={e => e.stopPropagation()}>
+                                        <AddressCard 
+                                            address={addr}
+                                            onEdit={() => {
+                                                setEditingAddress(addr);
+                                                setShowAddressModal(true);
+                                                // setShowSelectionModal(false); // Tùy chọn: Đóng list khi mở edit
+                                            }}
+                                            onDelete={() => handleDeleteAddress(addr.id)}
+                                            onSetDefault={() => handleSetDefaultAddress(addr.id)}
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+
+                            <button 
+                                className={styles.addAddressBtn} 
+                                onClick={() => {
+                                    setEditingAddress(null);
+                                    setShowAddressModal(true);
+                                    // setShowSelectionModal(false); // Tùy chọn
+                                }}
+                            >
+                                <Plus size={18} /> Thêm địa chỉ mới
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- POPUP 2: MODAL THÊM/SỬA (AddressModal) --- */}
+            {showAddressModal && (
+                <AddressModal 
+                    initialData={editingAddress}
+                    onClose={() => setShowAddressModal(false)}
+                    onSave={handleSaveAddress}
+                />
+            )}
         </div>
     );
 }

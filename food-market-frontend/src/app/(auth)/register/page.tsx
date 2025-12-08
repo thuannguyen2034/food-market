@@ -16,7 +16,7 @@ export default function RegisterPage() {
   // --- CẬP NHẬT Ở ĐÂY ---
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState(''); // <-- THÊM STATE CHO PHONE
+  const [phone, setPhone] = useState(''); 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   // -----------------------

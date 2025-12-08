@@ -86,6 +86,11 @@ export default function CategoryPage() {
     return (
         <div className={styles.container}>
             {/* Category Header */}
+            <div className={styles.breadcrumb}>
+                <Link href="/" className={styles.breadcrumbLink}>Trang chủ</Link>
+                <span className={styles.breadcrumbSeparator}>/</span>
+                <span className={styles.breadcrumbCurrent}>{currentCategory?.name}</span>
+            </div>
             {currentCategory && (
                 <div className={styles.categoryHeader}>
                     {currentCategory.imageUrl && (
@@ -125,9 +130,7 @@ export default function CategoryPage() {
             </div>
 
             {/* Products Grid */}
-            {loading && page === 0 ? (
-                <div className={styles.loading}>Đang tải...</div>
-            ) : products.length === 0 ? (
+            {products.length === 0 ? (
                 <div className={styles.empty}>Không có sản phẩm nào</div>
             ) : (
                 <>

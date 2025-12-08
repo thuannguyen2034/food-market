@@ -104,46 +104,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     url: string,
     options: RequestInit = {}
   ): Promise<Response> => {
-    
-    // Lấy token từ state (hoặc localStorage nếu state chưa kịp cập nhật)
-    const token = accessToken || localStorage.getItem('accessToken');
+    // Lấy token
+    let token = accessToken || localStorage.getItem('accessToken');
 
-    // Nếu không có token -> logout
     if (!token) {
       await logout();
       throw new Error('Not authenticated.');
     }
 
-    // Gắn header Authorization
+    // SANITIZE TOKEN: Safari rất ghét ký tự lạ hoặc xuống dòng trong Header
+    token = token.trim();
+
+    // CHUẨN HÓA HEADERS: Dùng class Headers để an toàn hơn việc spread object
+    const headers = new Headers(options.headers);
+    
+    // Chỉ set nếu chưa có (để tránh ghi đè nếu options đã truyền vào)
+    if (!headers.has('Authorization')) {
+      headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    // Tạo config mới
     const defaultOptions = {
       ...options,
-      headers: {
-        ...options.headers,
-        'Authorization': `Bearer ${token}`,
-      },
+      headers: headers,
     };
 
     // 1. Thử gọi API
     let response = await fetch(url, defaultOptions);
-    console.log(`authedFetch to ${url} returned status ${response.status}`);
-    // 2. Nếu thất bại (401), thử làm mới token
+
+    // 2. Xử lý Refresh Token (401)
     if (response.status === 401) {
-      console.log('Access token expired. Retrying with refresh...');
       const newAccessToken = await handleRefreshToken();
 
       if (newAccessToken) {
-        // 3. Nếu làm mới thành công, TỰ ĐỘNG gọi lại API
+        // Refresh thành công -> Cập nhật header và gọi lại
+        // Lưu ý: newAccessToken cũng cần trim() cho chắc
+        headers.set('Authorization', `Bearer ${newAccessToken.trim()}`);
+        
         const newOptions = {
           ...defaultOptions,
-          headers: {
-            ...defaultOptions.headers,
-            'Authorization': `Bearer ${newAccessToken}`,
-          },
+          headers: headers,
         };
         response = await fetch(url, newOptions);
-        console.log(`Retried authedFetch to ${url} returned status ${response.status}`);
       } else {
-        // Nếu làm mới thất bại (logout() đã được gọi)
         throw new Error('Session expired.');
       }
     }

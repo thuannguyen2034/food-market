@@ -1,12 +1,12 @@
-'use client'; // Bắt buộc, vì chúng ta dùng hook
+// src/app/(auth)/layout.tsx
+'use client';
 
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, Suspense } from 'react';
 
 /**
- * Một component loading đơn giản để hiển thị
- * trong khi chúng ta kiểm tra trạng thái đăng nhập.
+ * Component Loading
  */
 function LoadingScreen() {
   return (
@@ -17,42 +17,60 @@ function LoadingScreen() {
       height: '100vh',
       fontSize: '1.5rem',
       backgroundColor: '#f4f4f4',
+      color: '#333'
     }}>
-      Đang tải trang...
+      Đang xử lý...
     </div>
   );
 }
 
+/**
+ * Tách logic Guard ra component con để dùng được useSearchParams
+ */
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams(); // <-- Lấy tham số URL
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    // Nếu user ĐÃ đăng nhập
+    if (user) {
+      // 1. Kiểm tra xem có returnUrl không
+      const returnUrl = searchParams.get('returnUrl');
+      
+      console.log('User đã đăng nhập. ReturnURL:', returnUrl);
+
+      if (returnUrl) {
+        // 2. Nếu có, redirect về đó
+        router.push(decodeURIComponent(returnUrl));
+      } else {
+        // 3. Nếu không, về trang chủ như cũ
+        router.push('/');
+      }
+    }
+  }, [user, isLoading, router, searchParams]);
+
+  // Trong lúc chờ hoặc đang redirect, hiện loading để ẩn form Login/Register
+  if (isLoading || user) {
+    return <LoadingScreen />;
+  }
+
+  return <>{children}</>;
+}
+
+/**
+ * Layout chính phải bọc Suspense vì có dùng useSearchParams
+ */
 export default function GuestLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, isLoading } = useAuth();
-  const router = useRouter();
-
-  useEffect(() => {
-    console.log(isLoading);
-    // Nếu quá trình kiểm tra auth CHƯA hoàn tất -> không làm gì
-    if (isLoading) {
-      return;
-    }
-    // Nếu KHÔNG loading VÀ user ĐÃ đăng nhập
-    if (user) {
-      // Điều hướng họ về trang chủ
-      console.log('User đã đăng nhập, điều hướng về /');
-      router.push('/');
-    }
-  }, [user, isLoading, router]);
-
-  // Mấu chốt:
-  // Nếu chúng ta đang tải (check auth), HOẶC user đã đăng nhập (và đang chờ redirect)
-  // thì chúng ta KHÔNG render {children} (tức là form login/register).
-  // Thay vào đó, chúng ta hiển thị màn hình loading.
-  if (isLoading || user) {
-    return <LoadingScreen />;
-  }
-
-  // Nếu không loading VÀ không có user -> hiển thị trang (login hoặc register)
-  return <>{children}</>;
+  return (
+    <Suspense fallback={<LoadingScreen />}>
+      <AuthGuard>{children}</AuthGuard>
+    </Suspense>
+  );
 }

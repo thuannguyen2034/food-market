@@ -1,62 +1,83 @@
+/* Container chính: Nền trắng, padding chuẩn */
 .container {
-    max-width: 1000px;
-    margin: 0 auto;
+  padding: 24px 30px;
+  background-color: white;
+  min-height: 100%;
 }
 
+/* --- Header Section (Tiêu đề + Nút thêm) --- */
 .header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    gap: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #efefef; /* Đường kẻ mảnh ngăn cách */
 }
 
 .header h1 {
-    margin: 0;
-    font-size: 1.5rem;
-    font-weight: 600;
-    color: #1f2937;
+  font-size: 20px;
+  font-weight: 500;
+  color: #333;
+  margin: 0;
 }
 
+/* Nút Thêm địa chỉ mới */
 .addBtn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.625rem 1.25rem;
-    background: #F29AAE;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 0.875rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #e72a2a; /* Đỏ BonMi */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.05);
 }
 
 .addBtn:hover {
-    background: #e88aa0;
+  background-color: #c91e1e;
 }
 
+/* --- Content List --- */
 .content {
-    margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 20px; /* Khoảng cách giữa các thẻ địa chỉ */
 }
 
+/* Thông báo trạng thái (Loading / Empty) */
 .message {
-    text-align: center;
-    color: #6b7280;
-    padding: 3rem 0;
-    font-size: 0.9375rem;
+  text-align: center;
+  color: #888;
+  font-size: 15px;
+  margin-top: 60px; /* Đẩy xuống giữa giữa một chút cho đẹp */
 }
 
-/* Responsive */
-@media (max-width: 640px) {
-    .header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
+/* --- Responsive Mobile --- */
+@media (max-width: 600px) {
+  .container {
+    padding: 16px; /* Giảm padding trên mobile */
+  }
 
-    .addBtn {
-        width: 100%;
-        justify-content: center;
-    }
+  .header {
+    flex-direction: column; /* Xếp dọc tiêu đề và nút */
+    align-items: flex-start;
+    gap: 16px;
+    padding-bottom: 16px;
+  }
+
+  .addBtn {
+    width: 100%; /* Nút full width để dễ bấm */
+    justify-content: center;
+    padding: 12px;
+  }
+
+  .content {
+    gap: 16px;
+  }
 }
