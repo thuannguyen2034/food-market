@@ -23,10 +23,6 @@ public class InventoryAdjustment {
     @JoinColumn(name = "batch_id", nullable = false)
     private InventoryBatch inventoryBatch;
 
-    /**
-     * Tương tự productId, chúng ta chỉ lưu UUID của user.
-     * Giảm khớp nối với module User/Auth.
-     */
     @Column(name = "adjusted_by_user_id", nullable = false)
     private UUID adjustedByUserId;
 

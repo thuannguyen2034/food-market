@@ -33,5 +33,5 @@ public interface InventoryBatchRepository extends JpaRepository<InventoryBatch, 
     long countExpiringBatches(@Param("thresholdDate") LocalDate thresholdDate);
 
     @Query("SELECT COALESCE(SUM(b.currentQuantity), 0)  FROM InventoryBatch b WHERE b.productId = :productId")
-    long findCurrentProductQuantity(@Param("productId") Long productId);
+    int findCurrentProductQuantity(@Param("productId") Long productId);
 }

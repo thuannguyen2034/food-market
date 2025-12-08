@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
 
 public interface InventoryService {
 
@@ -40,7 +41,7 @@ public interface InventoryService {
      * @return Danh sách các lô đã phân bổ (và số lượng lấy từ lô đó).
      * @throws com.foodmarket.food_market.inventory.exception.InsufficientStockException Nếu không đủ hàng.
      */
-    List<AllocatedBatchDTO> allocateForOrder(Long productId, int quantityToAllocate);
+    List<AllocatedBatchDTO> allocateForOrder(Long productId, int quantityToAllocate, UUID userId,UUID orderId);
     /**
      * Nghiệp vụ 3: Điều chỉnh kho.
      * Dùng để sửa kho thủ công (hàng hỏng, mất, kiểm kho).
@@ -67,5 +68,5 @@ public interface InventoryService {
     ProductStockInfoDTO getProductStockInfo(Long productId);
 
     long countExpiringBatches(LocalDate thresholdDate);
-    void restoreStock(Long batchId, int quantityToRestore);
+    void restoreStock(Long batchId, int quantityToRestore, UUID userId, UUID orderId);
 }

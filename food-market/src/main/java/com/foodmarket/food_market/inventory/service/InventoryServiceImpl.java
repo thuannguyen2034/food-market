@@ -163,7 +163,7 @@ public class InventoryServiceImpl implements InventoryService {
      */
     @Override
     @Transactional // Rất quan trọng, phải nằm trong Transaction
-    public List<AllocatedBatchDTO> allocateForOrder(Long productId, int quantityToAllocate) {
+    public List<AllocatedBatchDTO> allocateForOrder(Long productId, int quantityToAllocate, UUID userId, UUID orderId) {
         if (quantityToAllocate <= 0) {
             throw new IllegalArgumentException("Quantity to allocate must be positive.");
         }
@@ -191,9 +191,14 @@ public class InventoryServiceImpl implements InventoryService {
             int quantityToTake = Math.min(batch.getCurrentQuantity(), remainingQuantityToAllocate);
 
             // Cập nhật lô
+            InventoryAdjustment adjustment = new InventoryAdjustment();
+            adjustment.setInventoryBatch(batch);
+            adjustment.setAdjustmentQuantity(-quantityToTake);
+            adjustment.setReason("Trừ kho cho đơn hàng mã: " + orderId.toString());
+            adjustment.setAdjustedByUserId(userId);
+            inventoryAdjustmentRepository.save(adjustment);
             batch.setCurrentQuantity(batch.getCurrentQuantity() - quantityToTake);
-            inventoryBatchRepository.save(batch); // Cập nhật lại vào DB
-
+            inventoryBatchRepository.save(batch);
             // Thêm vào danh sách trả về
             allocations.add(new AllocatedBatchDTO(batch, quantityToTake));
 
@@ -202,8 +207,6 @@ public class InventoryServiceImpl implements InventoryService {
 
         // 5. (Double-check)
         if (remainingQuantityToAllocate > 0) {
-            // Lỗi này không nên xảy ra nếu bước 2 đúng, nhưng nó đảm bảo
-            // logic không bị sai nếu có race condition (dù @Transactional đã giảm thiểu)
             throw new InsufficientStockException("Failed to allocate full quantity. Race condition likely. Product ID: " + productId);
         }
 
@@ -245,14 +248,10 @@ public class InventoryServiceImpl implements InventoryService {
      * {@inheritDoc}
      */
     @Override
-    @Transactional(readOnly = true) // Giao dịch chỉ đọc, tối ưu hiệu năng
+    @Transactional(readOnly = true)
     public int getStockAvailability(Long productId) {
         // Sử dụng phương thức repository đã định nghĩa
-        List<InventoryBatch> batches = inventoryBatchRepository
-                .findStillHasProductByProductIdOrderByExpirationDateAsc(productId);
-
-        // Tính tổng
-        return batches.stream().mapToInt(InventoryBatch::getCurrentQuantity).sum();
+       return inventoryBatchRepository.findCurrentProductQuantity(productId);
     }
 
     /**
@@ -262,19 +261,14 @@ public class InventoryServiceImpl implements InventoryService {
     @Transactional(readOnly = true)
     public ProductStockInfoDTO getProductStockInfo(Long productId) {
         // Lấy tất cả các lô còn hàng, sắp xếp FEFO
-        // (Đây chính là hàm repo mà chúng ta đã viết)
         List<InventoryBatch> batches = inventoryBatchRepository
                 .findStillHasProductByProductIdOrderByExpirationDateAsc(productId);
 
         if (batches.isEmpty()) {
-            // Không còn hàng, không có HSD
             return new ProductStockInfoDTO(0, null);
         }
-
         // 1. Tính tổng tồn kho
         int totalStock = batches.stream().mapToInt(InventoryBatch::getCurrentQuantity).sum();
-
-        // 2. Lấy HSD sớm nhất (là phần tử đầu tiên vì đã sắp xếp)
         LocalDate soonestDate = batches.getFirst().getExpirationDate();
 
         return new ProductStockInfoDTO(totalStock, soonestDate);
@@ -285,11 +279,10 @@ public class InventoryServiceImpl implements InventoryService {
         return inventoryBatchRepository.countExpiringBatches(thresholdDate);
     }
 
-    // Trong InventoryServiceImpl.java
 
     @Override
     @Transactional
-    public void restoreStock(Long batchId, int quantityToRestore) {
+    public void restoreStock(Long batchId, int quantityToRestore, UUID userId, UUID orderId) {
         InventoryBatch batch = inventoryBatchRepository.findById(batchId)
                 .orElseThrow(() -> new EntityNotFoundException("Batch not found"));
 
@@ -300,9 +293,9 @@ public class InventoryServiceImpl implements InventoryService {
         // (Option) Lưu log Adjustment để biết tại sao tự nhiên kho tăng lên
         InventoryAdjustment adjustment = new InventoryAdjustment();
         adjustment.setInventoryBatch(batch);
-        adjustment.setReason("RESTORE_FROM_CANCEL_ORDER");
+        adjustment.setReason("Cập nhật lại do đơn hàng bị huỷ, mã đơn: " + orderId.toString());
         adjustment.setAdjustmentQuantity(quantityToRestore);
-        // adjustment.setAdjustedByUserId(...); // Có thể null hoặc để ID hệ thống
+        adjustment.setAdjustedByUserId(userId);
         inventoryAdjustmentRepository.save(adjustment);
     }
 }
