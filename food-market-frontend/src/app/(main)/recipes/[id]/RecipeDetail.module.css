@@ -1,0 +1,230 @@
+/* --- Global --- */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 16px;
+    color: #333;
+}
+
+.loading {
+    padding: 40px;
+    text-align: center;
+    color: #666;
+}
+
+/* --- Layout Grid --- */
+.layout {
+    display: grid;
+    /* Cột trái (Product) linh hoạt, Cột phải (Recipe) cố định 380px */
+    grid-template-columns: 1fr 380px;
+    gap: 32px;
+    align-items: start;
+    /* Quan trọng để sticky hoạt động */
+}
+
+/* --- LEFT COLUMN: PRODUCTS --- */
+.productsSection {
+    background: white;
+}
+
+.sectionHeader {
+    margin-bottom: 24px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 16px;
+}
+
+.sectionHeader h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: #333;
+}
+
+.sectionHeader p {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+}
+
+.productGrid {
+    display: grid;
+    /* Grid tự động lấp đầy, min width 220px */
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.emptyNote {
+    color: #888;
+    font-style: italic;
+}
+
+/* --- RIGHT COLUMN: RECIPE SIDEBAR (Sticky & Compact) --- */
+.recipeSidebar {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    overflow: hidden;
+    position: sticky;
+    top: 20px;
+    /* Dính ở top khi cuộn trang */
+
+    /* Giới hạn chiều cao sidebar bằng chiều cao màn hình trừ đi khoảng hở */
+    max-height: calc(100vh - 40px);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Header của Sidebar (Không cuộn) */
+.recipeHeader {
+    padding: 20px;
+    background: white;
+    border-bottom: 1px solid #f0f0f0;
+    flex-shrink: 0;
+    /* Không bị co lại */
+}
+
+.recipeImage {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    background-color: #f5f5f5;
+}
+
+.recipeTitle {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    line-height: 1.4;
+    color: #333;
+}
+
+.tagsWrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tagBadge {
+    font-size: 11px;
+    background: #fff1f0;
+    color: #e72a2a;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    border: 1px solid #ffa39e;
+}
+
+/* Phần nội dung cuộn bên trong Sidebar */
+.recipeScrollContent {
+    padding: 20px;
+    overflow-y: auto;
+    /* Tạo thanh cuộn riêng cho nội dung dài */
+    flex: 1;
+
+    /* Style thanh cuộn mỏng đẹp */
+    scrollbar-width: thin;
+    scrollbar-color: #ccc transparent;
+}
+
+.recipeScrollContent::-webkit-scrollbar {
+    width: 6px;
+}
+
+.recipeScrollContent::-webkit-scrollbar-thumb {
+    background-color: #ccc;
+    border-radius: 4px;
+}
+
+/* Info Blocks */
+.infoBlock h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.divider {
+    border: 0;
+    border-top: 1px dashed #eee;
+    margin: 20px 0;
+}
+
+/* Style Ingredients List (Bullet points) */
+.ingredientUl {
+    margin: 0;
+    padding-left: 20px;
+    list-style-type: disc;
+}
+
+.ingredientUl li {
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: #444;
+    line-height: 1.5;
+}
+
+/* Style Steps List (Numbered Custom) */
+.stepsList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stepItem {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.stepNum {
+    background: #333;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+    /* Không bị méo vòng tròn */
+    margin-top: 2px;
+}
+
+.stepItem p {
+    margin: 0;
+    font-size: 14px;
+    color: #444;
+    line-height: 1.5;
+}
+
+/* --- Responsive --- */
+@media (max-width: 900px) {
+    .layout {
+        grid-template-columns: 1fr;
+        /* Về 1 cột */
+        gap: 24px;
+    }
+
+    .recipeSidebar {
+        /* Trên mobile/tablet, recipe sidebar nằm dưới hoặc trên tùy ý.
+           Ở đây mình để static để nó trôi tự nhiên */
+        position: static;
+        max-height: none;
+        /* Bỏ giới hạn chiều cao */
+        order: -1;
+        /* Đẩy Recipe lên đầu để user đọc trước khi mua (tuỳ chọn) */
+    }
+
+    .recipeScrollContent {
+        overflow-y: visible;
+        /* Bỏ scroll trong */
+    }
+}

@@ -25,8 +25,8 @@ import java.util.UUID;
 public class ReviewServiceImpl implements ReviewService {
 
     private final ReviewRepository reviewRepository;
-    private final ProductRepository productRepository; // Gọi Repo Product trực tiếp (Pragmatic)
-    private final OrderRepository orderRepository;     // Gọi Repo Order trực tiếp
+    private final ProductRepository productRepository;
+    private final OrderRepository orderRepository;
     private final UserRepository userRepository;
 
     @Override
@@ -45,11 +45,9 @@ public class ReviewServiceImpl implements ReviewService {
             throw new IllegalArgumentException("Bạn đã đánh giá sản phẩm này cho đơn hàng này rồi.");
         }
 
-        // 3. Lấy Product Reference (Tiết kiệm query hơn findById)
         Product product = productRepository.findById(request.getProductId())
                 .orElseThrow(() -> new EntityNotFoundException("Sản phẩm không tồn tại"));
 
-        // 4. Lưu Review
         Review review = Review.builder()
                 .userId(userId)
                 .orderId(request.getOrderId())

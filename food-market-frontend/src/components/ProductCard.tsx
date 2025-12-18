@@ -19,11 +19,9 @@ export default function ProductCard({ product, categorySlug }: ProductCardProps)
     const { user } = useAuth();
     const { cartMap, addToCart, updateCartItem } = useCart();
 
-    // State loading cục bộ cho nút bấm để tránh spam
     const [isUpdating, setIsUpdating] = useState(false);
-
+    const [stockQuantity, setStockQuantity] = useState(product.stockQuantity);
     // 1. Tính toán hiển thị giá
-    // Discount % = (Base - Final) / Base * 100
     const discountPercent = product.basePrice > product.finalPrice
         ? Math.round(((product.basePrice - product.finalPrice) / product.basePrice) * 100)
         : 0;
@@ -66,10 +64,11 @@ export default function ProductCard({ product, categorySlug }: ProductCardProps)
         if (!user || !cartItemId || isUpdating) return;
 
         const newQty = quantityInCart + delta;
-
-        // Chặn UI nếu vượt quá tồn kho
-        if (newQty > product.stockQuantity) return;
-
+        const productResponse = await fetch(`/api/v1/products/${product.slug}`);
+        const productData = await productResponse.json();
+        const newMaxQty = productData.stockQuantity;
+        if (newQty > newMaxQty) return;
+        setStockQuantity(newMaxQty);
         setIsUpdating(true);
         await updateCartItem(cartItemId, newQty);
         setIsUpdating(false);
@@ -111,7 +110,7 @@ export default function ProductCard({ product, categorySlug }: ProductCardProps)
             </Link>
 
             {/* Vùng nút bấm Action */}
-            {user?.role !== 'ADMIN' && (
+            {user?.role !== 'ADMIN' && user?.role !== 'STAFF' && (
                 <div className={styles.actionArea}>
                     {product.stockQuantity <= 0 ? (
                         <button className={styles.outOfStockButton} disabled>
@@ -158,9 +157,9 @@ export default function ProductCard({ product, categorySlug }: ProductCardProps)
             )}
 
             {/* Cảnh báo tồn kho */}
-            {product.stockQuantity > 0 && product.stockQuantity < 10 && (
+            {stockQuantity > 0 && stockQuantity < 50 && (
                 <div className={styles.stockWarning}>
-                    Còn {product.stockQuantity} sản phẩm
+                    Còn {stockQuantity} sản phẩm
                 </div>
             )}
         </div>

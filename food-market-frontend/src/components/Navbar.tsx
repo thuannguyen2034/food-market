@@ -3,17 +3,23 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Search, ShoppingCart, Menu, ChevronDown, Phone, Clock, Bell } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation'; // Thêm usePathname
+import {
+  Search, ShoppingCart, Menu, ChevronDown,
+  Phone, Clock, Bell, Facebook, MessageCircle, MapPin
+} from 'lucide-react';
 import { useNotification } from '@/context/NotificationContext';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
 import { CategoryResponse } from '@/types/product';
 import styles from './Navbar.module.css';
+
 export default function Navbar() {
   const { user, isLoading, logout } = useAuth();
   const { totalItems } = useCart();
+  const { unreadCount } = useNotification();
   const router = useRouter();
+  const pathname = usePathname(); // Để check active link
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -24,7 +30,7 @@ export default function Navbar() {
   const [categories, setCategories] = useState<CategoryResponse[]>([]);
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false);
   const categoriesRef = useRef<HTMLDivElement>(null);
-  const { unreadCount } = useNotification(); 
+
   useEffect(() => {
     const fetchCategories = async () => {
       try {
@@ -61,38 +67,16 @@ export default function Navbar() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Click outside handlers
   useEffect(() => {
-    if (!isDropdownOpen) return;
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsDropdownOpen(false);
-      }
-    }
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) setIsDropdownOpen(false);
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) setShowSuggestions(false);
+      if (categoriesRef.current && !categoriesRef.current.contains(event.target as Node)) setIsCategoriesOpen(false);
+    };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isDropdownOpen]);
-
-  useEffect(() => {
-    if (!showSuggestions) return;
-    function handleClickOutside(event: MouseEvent) {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showSuggestions]);
-
-  useEffect(() => {
-    if (!isCategoriesOpen) return;
-    function handleClickOutside(event: MouseEvent) {
-      if (categoriesRef.current && !categoriesRef.current.contains(event.target as Node)) {
-        setIsCategoriesOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isCategoriesOpen]);
+  }, []);
 
   const handleSearch = (query: string) => {
     if (query.trim()) {
@@ -102,13 +86,7 @@ export default function Navbar() {
   };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch(searchQuery);
-    }
-  };
-
-  const handleSuggestionClick = (suggestion: string) => {
-    handleSearch(suggestion);
+    if (e.key === 'Enter') handleSearch(searchQuery);
   };
 
   const handleLogout = () => {
@@ -118,7 +96,7 @@ export default function Navbar() {
 
   const getAvatarInitial = () => {
     return user?.avatarUrl ? (
-      <img src={user.avatarUrl} alt="Avatar" className={styles.avatar} />
+      <img src={user.avatarUrl} alt="Avatar" className={styles.userAvatar} /> // Fix class name usage
     ) : (
       <div>{user?.fullName ? user.fullName[0].toUpperCase() : 'U'}</div>
     );
@@ -126,17 +104,30 @@ export default function Navbar() {
 
   return (
     <div className={styles.navbarWrapper}>
-      {/* 1. Top Bar: Thông tin liên hệ */}
+
+      {/* 1. Top Bar: Slogan & Contact */}
       <div className={styles.topBar}>
         <div className={styles.container}>
-          <div className={styles.contactInfo}>
-            <span className={styles.contactItem}>
-              <Phone size={14} /> 0853539203
-            </span>
-            <span className={styles.contactDivider}>|</span>
-            <span className={styles.contactItem}>
-              <Clock size={14} /> Hỗ trợ 24/7
-            </span>
+          <div className={styles.topBarContent}>
+            {/* Slogan Text bên trái */}
+            <div className={styles.welcomeText}>
+              <MapPin size={14} color="#e72a2a" />
+              <span>Hệ thống thực phẩm sạch & Công thức chuẩn vị BonMi</span>
+            </div>
+
+            {/* Contact Info bên phải */}
+            <div className={styles.contactInfo}>
+              <a href="tel:0853539203" className={styles.contactItem}>
+                <Phone size={14} /> 0853.539.203
+              </a>
+              {/* Social Links */}
+              <a href="https://facebook.com" target="_blank" rel="noreferrer" className={styles.contactItem}>
+                <Facebook size={14} /> Facebook
+              </a>
+              <a href="https://zalo.me" target="_blank" rel="noreferrer" className={styles.contactItem}>
+                <MessageCircle size={14} /> Zalo
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -149,17 +140,16 @@ export default function Navbar() {
             {/* Logo */}
             <div className={styles.brand}>
               <Link href="/">
-                {/* Dùng file ảnh bạn gửi */}
                 <img src="/logoBonMi.png" alt="BonMi Market" className={styles.logo} />
               </Link>
             </div>
 
-            {/* Search Bar với Nút Bấm */}
+            {/* Search Bar */}
             <div className={styles.searchSection} ref={searchRef}>
               <div className={styles.searchBox}>
                 <input
                   type="text"
-                  placeholder="Tìm kiếm sản phẩm..."
+                  placeholder="Hôm nay bạn muốn ăn gì..."
                   value={searchQuery}
                   onChange={(e) => {
                     setSearchQuery(e.target.value);
@@ -169,22 +159,19 @@ export default function Navbar() {
                   className={styles.searchInput}
                   autoComplete="off"
                 />
-                <button
-                  className={styles.searchButton}
-                  onClick={() => handleSearch(searchQuery)}
-                >
-                  <Search size={18} />
+                <button className={styles.searchButton} onClick={() => handleSearch(searchQuery)}>
+                  <Search size={20} />
                 </button>
               </div>
 
-              {/* Suggestions Dropdown */}
+              {/* Suggestions */}
               {showSuggestions && searchSuggestions.length > 0 && (
                 <div className={styles.searchSuggestions}>
                   {searchSuggestions.map((suggestion, index) => (
                     <div
                       key={index}
                       className={styles.suggestionItem}
-                      onClick={() => handleSuggestionClick(suggestion)}
+                      onClick={() => handleSearch(suggestion)}
                     >
                       <Search size={14} />
                       <span>{suggestion}</span>
@@ -194,31 +181,40 @@ export default function Navbar() {
               )}
             </div>
 
-            {/* User & Cart */}
+            {/* User & Cart Actions */}
             <div className={styles.navLinks}>
-              {user && (
-                <Link href="/user/notifications" className={styles.cartLink}> {/* Tái sử dụng class cartLink cho nhanh */}
+
+              {/* Notifications */}
+              {user?.role === 'CUSTOMER' && (
+                <Link href="/user/notifications" className={styles.cartLink}>
                   <div className={styles.cartIconWrapper}>
-                    <Bell size={24} />
+                    <Bell size={24} strokeWidth={1.5} />
                     {unreadCount > 0 && (
                       <span className={styles.cartBadge}>
                         {unreadCount > 99 ? '99+' : unreadCount}
                       </span>
                     )}
                   </div>
+                  <span style={{ fontSize: '12px' }}>Thông báo</span>
                 </Link>
               )}
-              {user?.role === 'CUSTOMER' && (<Link href="/cart" className={styles.cartLink}>
-                <div className={styles.cartIconWrapper}>
-                  <ShoppingCart size={24} />
-                  {totalItems > 0 && (
-                    <span className={styles.cartBadge}>{totalItems > 99 ? '99+' : totalItems}</span>
-                  )}
-                </div>
-              </Link>)}
 
+              {/* Cart */}
+              {user?.role === 'CUSTOMER' && (
+                <Link href="/cart" className={styles.cartLink}>
+                  <div className={styles.cartIconWrapper}>
+                    <ShoppingCart size={24} strokeWidth={1.5} />
+                    {totalItems > 0 && (
+                      <span className={styles.cartBadge}>{totalItems > 99 ? '99+' : totalItems}</span>
+                    )}
+                  </div>
+                  <span style={{ fontSize: '12px' }}>Giỏ hàng</span>
+                </Link>
+              )}
+
+              {/* Auth / User Dropdown */}
               {isLoading ? (
-                <div className={styles.loadingAuth}>...</div>
+                <div>...</div>
               ) : user ? (
                 <div className={styles.userMenu} ref={dropdownRef}>
                   <button
@@ -226,28 +222,28 @@ export default function Navbar() {
                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                   >
                     <div className={styles.userAvatar}>{getAvatarInitial()}</div>
-                    <span className={styles.userName}>{user.fullName.split(' ')[0]}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                      <span style={{ fontSize: '11px', color: '#888' }}>Xin chào,</span>
+                      <span className={styles.userName}>{user.fullName.split(' ').slice(-1).join(' ')}</span>
+                    </div>
                   </button>
                   <div className={`${styles.dropdown} ${isDropdownOpen ? styles.open : ''}`}>
                     {user.role === 'ADMIN' ? (
-                      <Link href="/admin/dashboard" className={styles.dropdownItem}>
-                        Trang quản trị
-                      </Link>
+                      <Link href="/admin/dashboard" className={styles.dropdownItem}>Trang quản trị</Link>
                     ) : (
-                      <Link href="/user/profile" className={styles.dropdownItem}>
-                        Hồ sơ cá nhân
-                      </Link>
+                      <>
+                        <Link href="/user/profile" className={styles.dropdownItem}>Hồ sơ cá nhân</Link>
+                        <Link href="/user/purchase" className={styles.dropdownItem}>Đơn hàng của tôi</Link>
+                      </>
                     )}
-                    <button onClick={handleLogout} className={styles.dropdownButton}>
-                      Đăng xuất
-                    </button>
+                    <button onClick={handleLogout} className={styles.dropdownButton}>Đăng xuất</button>
                   </div>
                 </div>
               ) : (
                 <div className={styles.authLinks}>
-                  <Link href="/login" className={styles.authLink}>Đăng nhập</Link>
-                  <span className={styles.authDivider}>/</span>
-                  <Link href="/register" className={styles.authLink}>Đăng ký</Link>
+                  <Link href="/login" className={`${styles.authBtn} ${styles.highlight}`}>Đăng nhập</Link>
+                  <span className={styles.divider}>|</span>
+                  <Link href="/register" className={styles.authBtn}>Đăng ký</Link>
                 </div>
               )}
             </div>
@@ -255,40 +251,57 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* 3. Categories Bar */}
+      {/* 3. Categories & Nav Bar */}
       <div className={styles.categoriesBar}>
         <div className={styles.container}>
-          <div className={styles.categoriesDropdown} ref={categoriesRef}>
-            <button
-              className={styles.categoriesButton}
-              onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
-            >
-              <Menu size={20} />
-              <span>DANH MỤC SẢN PHẨM</span>
-              <ChevronDown size={16} style={{ transform: isCategoriesOpen ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
-            </button>
+          <div className={styles.catBarFlex}>
 
-            {isCategoriesOpen && (
-              <div className={styles.categoriesMenu}>
-                {categories.map((category) => (
-                  <div key={category.id} className={styles.categoryGroup}>
-                    <div className={styles.categoryHeader}>{category.name}</div>
-                    <div className={styles.subcategoryList}>
-                      {category.children.map((subcat) => (
-                        <Link
-                          key={subcat.id}
-                          href={`/${subcat.slug}`}
-                          className={styles.subcategoryLink}
-                          onClick={() => setIsCategoriesOpen(false)}
-                        >
-                          {subcat.name}
-                        </Link>
-                      ))}
+            {/* Dropdown Danh mục */}
+            <div className={styles.categoriesDropdown} ref={categoriesRef}>
+              <button
+                className={styles.categoriesButton}
+                onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Menu size={22} />
+                  <span>DANH MỤC SẢN PHẨM</span>
+                </div>
+                <ChevronDown size={16} style={{ transform: isCategoriesOpen ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
+              </button>
+
+              {isCategoriesOpen && (
+                <div className={styles.categoriesMenu}>
+                  {categories.map((category) => (
+                    <div key={category.id} className={styles.categoryGroup}>
+                      <div className={styles.categoryHeader}>{category.name}</div>
+                      <div className={styles.subcategoryList}>
+                        {category.children.map((subcat) => (
+                          <Link
+                            key={subcat.id}
+                            href={`/${subcat.slug}`}
+                            className={styles.subcategoryLink}
+                            onClick={() => setIsCategoriesOpen(false)}
+                          >
+                            {subcat.name}
+                          </Link>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Navigation Menu Links */}
+            <div className={styles.mainMenu}>
+              <Link
+                href="/recipes"
+                className={`${styles.menuItem} ${pathname === '/recipes' ? styles.active : ''}`}
+              >
+                Công thức nấu ăn
+              </Link>
+            </div>
+
           </div>
         </div>
       </div>

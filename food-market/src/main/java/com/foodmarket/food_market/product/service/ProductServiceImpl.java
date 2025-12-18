@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
-    private final ProductImageRepository productImageRepository;
     private final CategoryRepository categoryRepository;
     private final TagRepository tagRepository;
     private final InventoryService inventoryService;
@@ -250,7 +249,7 @@ public class ProductServiceImpl implements ProductService {
         int currentOrder = maxOrder + 1;
 
         for (MultipartFile file : files) {
-            UploadResult result = imageService.uploadProductImage(file, productId);
+                UploadResult result = imageService.uploadProductImage(file, productId);
             ProductImage newImage = ProductImage.builder()
                     .product(product)
                     .imageUrl(result.secureUrl())

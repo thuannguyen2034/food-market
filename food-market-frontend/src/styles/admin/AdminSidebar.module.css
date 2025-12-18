@@ -29,6 +29,7 @@
   border-bottom: 1px solid #f5f5f5;
   text-transform: uppercase;
   letter-spacing: 1px;
+  flex-shrink: 0;
 }
 
 /* Navigation List */
@@ -113,6 +114,97 @@
 .subNavLink.active {
   color: #e72a2a;
   font-weight: 500;
+}
+
+.sidebarFooter {
+    padding: 16px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    background-color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Đẩy Profile sang trái, Actions sang phải */
+    gap: 8px;
+    flex-shrink: 0;
+}
+.userProfile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    overflow: hidden;
+    flex: 1; /* Để tên user chiếm phần lớn không gian */
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  background-color: #e72a2a;
+  /* Màu đỏ thương hiệu */
+  color: black;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.userInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.userName {
+  font-size: 13px;
+  font-weight: 500;
+  color: black;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+
+.userRole {
+  font-size: 11px;
+  color: #aaa;
+}
+
+.logoutBtn {
+  background: none;
+  border: none;
+  color: #ccc;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.footerActions {
+    display: flex;
+    align-items: center;
+    gap: 4px; /* Khoảng cách giữa nút Home và Logout */
+}
+
+/* Đổi tên .logoutBtn cũ thành .actionBtn để dùng chung */
+.actionBtn {
+    background: none;
+    border: none;
+    color: #ccc;
+    cursor: pointer;
+    padding: 8px; /* Tăng vùng bấm lên chút cho dễ thao tác */
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none; /* Cho thẻ Link */
+}
+.logoutBtn:hover {
+  background-color: rgba(231, 42, 42, 0.2);
+  /* Hover đỏ nhạt */
+  color: #e72a2a;
 }
 
 /* Scrollbar */

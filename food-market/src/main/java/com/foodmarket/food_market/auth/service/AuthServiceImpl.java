@@ -30,7 +30,7 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
-    private final AuthenticationManager authenticationManager; // Sẽ dùng cho hàm login()
+    private final AuthenticationManager authenticationManager;
     private final RefreshTokenService refreshTokenService;
     private final EmailService emailService;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
@@ -79,7 +79,6 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponseDTO login(LoginRequestDTO request) {
-        // (Sẽ implement ở bước sau)
         // 1. Dùng authenticationManager để xác thực...
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -136,11 +135,7 @@ public class AuthServiceImpl implements AuthService {
     public void forgotPassword(ForgotPasswordRequestDTO request) {
         // 1. Tìm user bằng email
         User user = userRepository.findByEmail(request.getEmail())
-                .orElse(null); // Không văng lỗi, chỉ trả về null
-
-        // QUAN TRỌNG: Dù có tìm thấy user hay không, chúng ta KHÔNG báo cho client.
-        // Đây là một biện pháp bảo mật (chống "Email Enumeration Attack").
-        // Chúng ta chỉ gửi email nếu thực sự tìm thấy.
+                .orElse(null);
         if (user != null) {
             // Check nếu user đã tạo yêu cầu reset password trước đó
             Optional<PasswordResetToken> findResetToken = passwordResetTokenRepository.findByUser(user);
@@ -159,7 +154,6 @@ public class AuthServiceImpl implements AuthService {
             passwordResetTokenRepository.save(resetToken);
 
             // 4. Tạo link reset (Đây là link của Front-end)
-            // !! Front-end sẽ phải tự xây dựng trang này
             String resetLink = "http://localhost:3000/reset-password?token=" + resetToken.getToken();
 
             // 5. Gửi email (bất đồng bộ)
@@ -172,8 +166,6 @@ public class AuthServiceImpl implements AuthService {
 
             emailService.sendEmail(user.getEmail(), subject, text);
         }
-
-        // (Không làm gì cả nếu không tìm thấy user)
     }
 
     @Override

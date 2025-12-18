@@ -1,0 +1,211 @@
+/* --- Global Container --- */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 16px;
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    /* Để sidebar không bị giãn chiều cao theo main */
+}
+
+/* --- Sidebar (Bộ lọc) --- */
+.sidebar {
+    width: 260px;
+    flex-shrink: 0;
+    /* Giữ thanh lọc cố định khi cuộn trang danh sách dài */
+    position: sticky;
+    top: 20px;
+    background: white;
+    /* Không cần border khung, chỉ cần khoảng trắng là đủ tách biệt */
+}
+
+/* 1. Search Box */
+.searchBox h3 {
+    font-size: 16px;
+    font-weight: 700;
+    margin: 0 0 12px;
+    color: #333;
+}
+
+.searchInputWrapper {
+    display: flex;
+    gap: 8px;
+}
+
+.searchInputWrapper input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    outline: none;
+}
+
+.searchInputWrapper input:focus {
+    border-color: #e72a2a;
+}
+
+.searchInputWrapper button {
+    background: #333;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.searchInputWrapper button:hover {
+    background: #000;
+}
+
+/* Separator */
+.sep {
+    border: 0;
+    border-top: 1px solid #eee;
+    margin: 24px 0;
+}
+
+/* 2. Filter Groups */
+.filterGroup {
+    margin-bottom: 24px;
+}
+
+.filterGroup label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 12px;
+}
+
+/* Radio Group (Custom Style đơn giản) */
+.radioGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.radioGroup label {
+    font-weight: 400;
+    /* Reset weight */
+    margin: 0;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+    color: #555;
+}
+
+.radioGroup label:hover {
+    background-color: #f5f5f5;
+}
+
+/* Trạng thái Active cho Radio */
+.activeRadio {
+    background-color: #fff1f0 !important;
+    /* Nền đỏ nhạt */
+    color: #e72a2a !important;
+    font-weight: 600 !important;
+}
+
+/* Checkbox Items (Flavor) */
+.checkboxItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #555;
+    cursor: pointer;
+}
+
+.checkboxItem input {
+    cursor: pointer;
+    accent-color: #e72a2a;
+    /* Đổi màu checkbox mặc định sang đỏ */
+}
+
+/* Select Box (Time) */
+.filterGroup select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    font-size: 14px;
+    outline: none;
+}
+
+.filterGroup select:focus {
+    border-color: #e72a2a;
+}
+
+/* --- Main Content --- */
+.main {
+    flex: 1;
+    /* Chiếm hết phần còn lại */
+    min-height: 500px;
+}
+
+.header {
+    margin-bottom: 24px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 16px;
+}
+
+.header h2 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 4px;
+    color: #333;
+}
+
+.header p {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Grid Layout cho Recipe Cards */
+.grid {
+    display: grid;
+    /* Responsive Grid: Tự động chia cột, tối thiểu 220px một thẻ */
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+/* --- Responsive --- */
+@media (max-width: 768px) {
+    .container {
+        flex-direction: column;
+        /* Đẩy sidebar lên trên */
+    }
+
+    .sidebar {
+        width: 100%;
+        position: static;
+        /* Bỏ sticky trên mobile */
+        margin-bottom: 20px;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 20px;
+    }
+
+    .radioGroup {
+        flex-direction: row;
+        /* Xếp ngang các lựa chọn Role trên mobile cho gọn */
+        flex-wrap: wrap;
+    }
+
+    .radioGroup label {
+        flex: 1;
+        justify-content: center;
+        border: 1px solid #eee;
+    }
+}

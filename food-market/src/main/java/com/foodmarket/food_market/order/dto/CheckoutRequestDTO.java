@@ -14,7 +14,7 @@ public class CheckoutRequestDTO {
     private Long addressId;
 
     @NotNull(message = "Phương thức thanh toán không được để trống")
-    private PaymentMethod paymentMethod; // "COD" hoặc "VNPAY"
+    private PaymentMethod paymentMethod;
     @NotNull
     private DeliveryTimeSlot deliveryTimeslot;
     @NotNull(message = "Ngày giao hàng không được để trống")

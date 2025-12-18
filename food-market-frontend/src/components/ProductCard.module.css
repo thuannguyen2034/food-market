@@ -13,7 +13,6 @@
 }
 
 .card:hover {
-  transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   border-color: #e72a2a;
 }
@@ -42,13 +41,9 @@
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain; /* Đảm bảo ảnh không bị méo */
-  padding: 10px; /* Khoảng thở cho ảnh */
+  object-fit: contain; 
+  padding: 10px; 
   transition: transform 0.3s ease;
-}
-
-.card:hover .imageContainer img {
-  transform: scale(1.05);
 }
 
 .discountBadge {

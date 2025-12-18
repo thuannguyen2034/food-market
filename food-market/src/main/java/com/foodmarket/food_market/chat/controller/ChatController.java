@@ -120,21 +120,21 @@ public class ChatController {
             Authentication auth,
             @PathVariable UUID conversationId
     ) {
-        User user = (User) auth.getPrincipal(); // Có thể cần check xem đúng là staff đó không
+        User user = (User) auth.getPrincipal();
         chatService.finishConversation(conversationId, user.getUserId());
         return ResponseEntity.ok().build();
     }
 
-    // 7. Thống kê (THAY ĐỔI 2: Staff cũng xem được)
+    // 7. Thống kê
     @GetMapping("/admin/stats")
-    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')")
     public ResponseEntity<ChatStatsDTO> getStats(Authentication auth) {
         User user = (User) auth.getPrincipal();
         return ResponseEntity.ok(chatService.getStats(user.getUserId()));
     }
 
     @PatchMapping("/admin/conversations/{conversationId}/revoke")
-    @PreAuthorize("hasRole('ADMIN')") // Chỉ Admin mới có quyền "đá" nhân viên ra
+    @PreAuthorize("hasAnyRole('STAFF','ADMIN')") //
     public ResponseEntity<Void> revokeConversation(@PathVariable UUID conversationId) {
         chatService.revokeConversation(conversationId);
         return ResponseEntity.ok().build();

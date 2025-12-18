@@ -167,7 +167,7 @@ public class ChatServiceImpl implements ChatService {
                 .senderId(staffId)
                 .senderType(SenderType.STAFF)
                 .content(content)
-                .isRead(true) // Staff gửi thì coi như đã đọc
+                .isRead(true)
                 .build();
         chatMessageRepository.save(message);
 
@@ -204,7 +204,6 @@ public class ChatServiceImpl implements ChatService {
 
         // Bắn update dashboard
         pushConversationUpdate(conversation);
-
     }
 
     @Override
@@ -216,7 +215,6 @@ public class ChatServiceImpl implements ChatService {
         conversation.setStatus(ConversationStatus.WAITING);
         conversation.setStaffId(null);
         conversationRepository.save(conversation);
-
         pushConversationUpdate(conversation);
     }
 

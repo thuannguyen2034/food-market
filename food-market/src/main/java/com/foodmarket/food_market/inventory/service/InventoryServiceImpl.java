@@ -165,7 +165,7 @@ public class InventoryServiceImpl implements InventoryService {
     @Transactional // Rất quan trọng, phải nằm trong Transaction
     public List<AllocatedBatchDTO> allocateForOrder(Long productId, int quantityToAllocate, UUID userId, UUID orderId) {
         if (quantityToAllocate <= 0) {
-            throw new IllegalArgumentException("Quantity to allocate must be positive.");
+            throw new IllegalArgumentException("Số lượng sản phẩm muốn lấy phải lớn hơn 0");
         }
 
         // 1. Lấy tất cả các lô còn hàng, SẮP XẾP THEO HSD TĂNG DẦN (FEFO)
@@ -175,7 +175,8 @@ public class InventoryServiceImpl implements InventoryService {
         // 2. Kiểm tra tổng tồn kho
         int totalAvailable = batches.stream().mapToInt(InventoryBatch::getCurrentQuantity).sum();
         if (totalAvailable < quantityToAllocate) {
-            throw new InsufficientStockException(productId, quantityToAllocate);
+            String productName = productRepository.findNameById(productId);
+            throw new InsufficientStockException(productName, quantityToAllocate,totalAvailable);
         }
 
         // 3. Chuẩn bị danh sách trả về

@@ -1,0 +1,107 @@
+/* Container chính của Card */
+.card {
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    border: 1px solid #eee; /* Viền mỏng nhẹ nhàng */
+    border-radius: 8px;
+    overflow: hidden; /* Để crop ảnh khi zoom */
+    text-decoration: none;
+    transition: all 0.2s ease;
+    height: 100%; /* Đảm bảo chiều cao full trong grid */
+    position: relative;
+}
+
+/* Hiệu ứng hover toàn card */
+.card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Bóng đổ mềm */
+    border-color: #ffccc7; /* Đổi màu viền sang đỏ nhạt */
+}
+
+/* --- Phần hình ảnh --- */
+.imageWrapper {
+    position: relative;
+    width: 100%;
+    height: 180px; /* Chiều cao cố định cho ảnh để đồng bộ */
+    background-color: #f5f5f5; /* Màu nền placeholder khi chưa load ảnh */
+    overflow: hidden;
+}
+
+.imageWrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Đảm bảo ảnh luôn lấp đầy khung */
+    transition: transform 0.5s ease; /* Hiệu ứng zoom chậm */
+}
+
+/* Badge Role (Món mặn, Canh...) */
+.badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: white;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    z-index: 2;
+}
+
+/* --- Phần nội dung --- */
+.content {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    flex: 1; /* Để nội dung giãn hết chiều cao còn lại */
+    gap: 8px;
+}
+
+.title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+    line-height: 1.4;
+    
+    /* Giới hạn tên món ăn tối đa 2 dòng, quá dài sẽ hiện ... */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    height: 42px; /* Chiều cao cố định cho 2 dòng (15px * 1.4 * 2) */
+}
+
+.card:hover .title {
+    color: #e72a2a; /* Đổi màu tiêu đề khi hover */
+}
+
+/* Metadata (Thời gian, icon) */
+.meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: auto; /* Đẩy xuống dưới cùng của content */
+}
+
+.timeInfo {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #666;
+    font-weight: 500;
+}
+
+/* Điểm phù hợp (cho trang search) */
+.matchScore {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #27ae60; /* Màu xanh lá biểu thị sự phù hợp */
+    background-color: #f0fdf4;
+    padding: 4px 8px;
+    border-radius: 4px;
+    align-self: flex-start;
+    font-weight: 600;
+}

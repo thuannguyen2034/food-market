@@ -26,7 +26,6 @@ export default function RootLayout({
         <AuthProvider>
           <CartProvider>
           <NotificationProvider>
-          <Navbar />
           <Toaster />
           {children}
           <CustomerChat />

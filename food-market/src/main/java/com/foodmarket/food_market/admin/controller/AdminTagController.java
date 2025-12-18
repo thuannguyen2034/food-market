@@ -13,12 +13,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/admin/tags") // <-- Base path mới cho admin
+@RequestMapping("/api/v1/admin/tags")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')") // <-- Áp dụng security cho CẢ CLASS
+@PreAuthorize("hasRole('ADMIN')")
 public class AdminTagController {
 
-    private final TagService tagService; // Vẫn dùng TagService chung
+    private final TagService tagService;
 
     /**
      * API 1 (Admin): Lấy tất cả tag

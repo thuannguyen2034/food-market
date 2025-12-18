@@ -21,6 +21,7 @@ public class ImageService {
     private static final String AVATAR_FOLDER = "food_market/avatars";
     private static final String CATEGORY_FOLDER = "food_market/categories";
     private static final String PRODUCT_FOLDER = "food_market/products";
+    private static final String RECIPE_FOLDER = "food_market/recipes";
     /**
      * Upload avatar cho một user cụ thể và tự động ghi đè nếu đã tồn tại.
      *
@@ -175,5 +176,19 @@ public class ImageService {
         } catch (Exception e) {
             log.error("Failed to delete image {}: {}", publicId, e.getMessage());
         }
+    }
+
+    public String uploadRecipeImage(MultipartFile file, Long recipeId) throws IOException {
+        String publicId = RECIPE_FOLDER + "/" + recipeId;
+
+        Map<String, Object> options = Map.of(
+                "public_id", publicId,
+                "overwrite", true,
+                "resource_type", "image"
+        );
+
+        Map<?, ?> uploadResult = cloudinary.uploader().upload(file.getBytes(), options);
+        log.info("Image uploaded for recipe {}: {}", recipeId, uploadResult.get("secure_url"));
+        return (String) uploadResult.get("secure_url");
     }
 }

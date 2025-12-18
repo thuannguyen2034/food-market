@@ -1,6 +1,7 @@
 // src/app/(auth)/layout.tsx
 'use client';
 
+import Navbar from '@/components/Navbar';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, Suspense } from 'react';
@@ -70,6 +71,7 @@ export default function GuestLayout({
 }) {
   return (
     <Suspense fallback={<LoadingScreen />}>
+      <Navbar />
       <AuthGuard>{children}</AuthGuard>
     </Suspense>
   );

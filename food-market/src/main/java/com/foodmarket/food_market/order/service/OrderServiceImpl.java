@@ -21,12 +21,9 @@ import com.foodmarket.food_market.order.model.OrderItem;
 import com.foodmarket.food_market.order.model.enums.DeliveryTimeSlot;
 import com.foodmarket.food_market.order.model.enums.PaymentStatus;
 import com.foodmarket.food_market.order.repository.OrderSpecification;
-import com.foodmarket.food_market.payment.dto.PaymentCreationRequestDTO;
 import com.foodmarket.food_market.order.model.enums.OrderStatus;
 import com.foodmarket.food_market.order.repository.OrderItemRepository;
 import com.foodmarket.food_market.order.repository.OrderRepository;
-import com.foodmarket.food_market.payment.model.Payment;
-import com.foodmarket.food_market.payment.service.PaymentService;
 import com.foodmarket.food_market.product.model.Product;
 import com.foodmarket.food_market.product.repository.ProductRepository;
 import com.foodmarket.food_market.review.repository.ReviewRepository;
@@ -67,7 +64,6 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final ReviewRepository reviewRepository;
     private final InventoryService inventoryService;
-    private final PaymentService paymentService;
     private final ApplicationEventPublisher eventPublisher;
     private final ProductRepository productRepository;
 
@@ -127,9 +123,11 @@ public class OrderServiceImpl implements OrderService {
         newOrder.setDeliveryDate(request.getDeliveryDate());
         newOrder.setDeliveryTimeslot(request.getDeliveryTimeslot());
         newOrder.setNote(request.getNote());
+        newOrder.setPaymentMethod(request.getPaymentMethod());
+        newOrder.setPaymentStatus(PaymentStatus.PENDING);
         Order savedOrder = orderRepository.save(newOrder);
 
-        // 4. LOGIC CỐT LÕI (TỐI ƯU HÓA)
+        // 4. LOGIC CỐT LÕI
         for (CartItem cartItem : cart.getItems()) {
             Product product = cartItem.getProduct();
 
@@ -177,15 +175,7 @@ public class OrderServiceImpl implements OrderService {
         orderItemRepository.saveAll(newOrderItems);
         savedOrder.setItems(new HashSet<>(newOrderItems));
 
-        // 7. Tạo Payment
-        PaymentCreationRequestDTO paymentRequest = new PaymentCreationRequestDTO(
-                savedOrder,
-                request.getPaymentMethod(),
-                totalAmount
-        );
-        paymentService.createPendingPayment(paymentRequest);
-
-        // 8. Xóa Giỏ hàng
+        // 7. Xóa Giỏ hàng
         cart.getItems().clear();
         cartRepository.save(cart);
 
@@ -259,10 +249,10 @@ public class OrderServiceImpl implements OrderService {
 
         // 4. VALIDATE 2: Check trạng thái thanh toán
         // Nếu đã thanh toán Online rồi thì chặn, yêu cầu gọi Admin
-        Payment successPayment = order.getSuccessfulPayment();
-        if (successPayment != null) {
-            throw new IllegalStateException("Đơn hàng đã thanh toán Online. Vui lòng liên hệ CSKH để hủy và hoàn tiền.");
-        }
+
+//        if (successPayment != null) {
+//            throw new IllegalStateException("Đơn hàng đã thanh toán Online. Vui lòng liên hệ CSKH để hủy và hoàn tiền.");
+//        }
 
         // 5. --- QUAN TRỌNG: HOÀN KHO (RESTORE STOCK) ---
         // Phải trả lại số lượng cho đúng cái lô hàng (Batch) đã trừ
@@ -284,12 +274,12 @@ public class OrderServiceImpl implements OrderService {
 
         // 7. Cập nhật trạng thái Payment (nếu đang Pending)
         // Nếu có payment đang treo, set nó thành FAILED/CANCELLED luôn
-        Payment currentPayment = order.getPayment();
-
-        if (currentPayment != null && currentPayment.getStatus() == PaymentStatus.PENDING) {
-            // Nếu đang chờ thanh toán mà khách hủy đơn -> Hủy luôn giao dịch thanh toán
-            currentPayment.setStatus(PaymentStatus.CANCEL);
-        }
+//        Payment currentPayment = order.getPayment();
+//
+//        if (currentPayment != null && currentPayment.getStatus() == PaymentStatus.PENDING) {
+//            // Nếu đang chờ thanh toán mà khách hủy đơn -> Hủy luôn giao dịch thanh toán
+//            currentPayment.setStatus(PaymentStatus.CANCEL);
+//        }
 
         orderRepository.save(order);
 

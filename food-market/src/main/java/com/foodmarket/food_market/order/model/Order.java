@@ -2,8 +2,8 @@ package com.foodmarket.food_market.order.model;
 
 import com.foodmarket.food_market.order.model.enums.DeliveryTimeSlot;
 import com.foodmarket.food_market.order.model.enums.OrderStatus;
+import com.foodmarket.food_market.order.model.enums.PaymentMethod;
 import com.foodmarket.food_market.order.model.enums.PaymentStatus;
-import com.foodmarket.food_market.payment.model.Payment;
 import com.foodmarket.food_market.user.model.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -12,6 +12,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -67,18 +68,19 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
     private Set<OrderItem> items = new HashSet<>();
 
-    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
-    private Payment payment;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_method", nullable = false)
+    private PaymentMethod paymentMethod;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "payment_status", nullable = false)
+    private PaymentStatus paymentStatus;
+
+    @Column(name = "payment_date")
+    private LocalDateTime paymentDate;
 
     @PrePersist
     protected void onCreate() {
         createdAt = OffsetDateTime.now();
-    }
-
-    public Payment getSuccessfulPayment() {
-        if (this.payment != null && this.payment.getStatus() == PaymentStatus.PAID) {
-            return this.payment;
-        }
-        return null;
     }
 }

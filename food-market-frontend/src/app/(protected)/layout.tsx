@@ -1,11 +1,12 @@
 'use client';
+import Navbar from '@/components/Navbar';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
 export default function ProtectedPageLayout(
     { children }: { children: React.ReactNode }
-){
+) {
     const { user, isLoading } = useAuth();
     const router = useRouter();
 
@@ -23,19 +24,19 @@ export default function ProtectedPageLayout(
     }, [user, isLoading, router]);
 
     // Nếu đang load hoặc không có user, hiển thị màn hình loading
-    if (isLoading||!user) {
-        return (  
-             <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      height: '100vh',
-      fontSize: '1.5rem',
-      backgroundColor: '#f4f4f4',
-    }}>
-      Đang tải trang...
-    </div>);
+    if (isLoading || !user) {
+        return (
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh',
+                fontSize: '1.5rem',
+                backgroundColor: '#f4f4f4',
+            }}>
+                Đang tải trang...
+            </div>);
     }
     // Nếu có user, hiển thị nội dung trang
-    return <>{children}</>;
+    return <><Navbar />{children}</>;
 }

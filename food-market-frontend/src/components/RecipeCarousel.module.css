@@ -1,0 +1,93 @@
+/* src/components/RecipeCarousel.module.css */
+
+.wrapper {
+    position: relative;
+    width: 100%;
+    /* Khi hover vào vùng này thì mới hiện nút mũi tên (tuỳ chọn) */
+}
+
+/* Khung chứa danh sách cuộn */
+.scrollContainer {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto; /* Vẫn cho phép cuộn tự nhiên */
+    scroll-behavior: smooth; /* Quan trọng: tạo hiệu ứng trượt mượt */
+    
+    /* Scroll Snap: Giúp các item tự động căn chỉnh ngay ngắn khi dừng cuộn */
+    scroll-snap-type: x mandatory;
+    padding: 4px 4px 16px 4px; /* Padding bottom để bóng đổ không bị cắt */
+
+    /* Ẩn thanh cuộn (cho đẹp) */
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE/Edge */
+}
+
+.scrollContainer::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+.item {
+    flex: 0 0 auto;
+    width: 280px; /* Độ rộng cố định của card */
+    scroll-snap-align: start; /* Điểm neo khi dừng cuộn */
+}
+
+/* --- Nút Mũi Tên --- */
+.navBtn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid #eee;
+    background: white;
+    color: #333;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+    
+    opacity: 0.8;
+}
+
+.navBtn:hover:not(:disabled) {
+    background: #e72a2a; /* Màu đỏ chủ đạo */
+    color: white;
+    border-color: #e72a2a;
+    opacity: 1;
+    transform: translateY(-50%) scale(1.1); /* Phóng to nhẹ */
+}
+
+.navBtn:disabled {
+    opacity: 0;
+    pointer-events: none; /* Ẩn nút đi nếu không cuộn được nữa */
+}
+
+.prevBtn {
+    left: -20px; /* Treo lơ lửng bên trái */
+}
+
+.nextBtn {
+    right: -20px; /* Treo lơ lửng bên phải */
+}
+
+/* Responsive: Trên mobile thì ẩn nút đi, chỉ vuốt tay cho tiện */
+@media (max-width: 768px) {
+    .navBtn {
+        display: none;
+    }
+    
+    .prevBtn, .nextBtn {
+        display: none;
+    }
+    
+    .item {
+        width: 240px; /* Card nhỏ hơn chút trên mobile */
+    }
+}

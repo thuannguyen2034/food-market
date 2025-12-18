@@ -73,7 +73,6 @@ export default function CheckoutPage() {
     useEffect(() => {
         if (user) fetchAddresses();
         else router.push('/login?redirect=/checkout');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, router]);
 
     // Check Cart Empty
@@ -120,11 +119,9 @@ export default function CheckoutPage() {
     };
 
     const handleSaveAddress = (savedAddress: UserAddress) => {
-        setShowAddressModal(false); // Đóng form Sửa/Thêm
-        fetchAddresses();           // Refresh list
-        setSelectedAddressId(savedAddress.id); // Chọn luôn cái vừa lưu
-        // Lưu ý: Không đóng SelectionModal nếu user đang mở nó, 
-        // nhưng ở đây ta có thể đóng luôn SelectionModal để trải nghiệm mượt hơn
+        setShowAddressModal(false); 
+        fetchAddresses();           
+        setSelectedAddressId(savedAddress.id); 
         setShowSelectionModal(false); 
     };
 

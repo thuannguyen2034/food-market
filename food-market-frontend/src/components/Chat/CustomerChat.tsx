@@ -39,10 +39,10 @@ export default function CustomerChat() {
         setLoading(true);
         try {
             // Backend: /api/v1/chat/customer/history?size=50
-            const res = await authedFetch('/api/v1/chat/customer/history?size=50&sort=sentAt,asc');
+            const res = await authedFetch('/api/v1/chat/customer/history?size=50&sort=sentAt,desc');
             if (res.ok) {
                 const data = await res.json();
-                setMessages(data.content);
+                setMessages(data.content.reverse());
                 scrollToBottom();
             }
         } catch (err) {

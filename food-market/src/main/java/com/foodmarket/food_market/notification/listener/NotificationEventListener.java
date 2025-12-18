@@ -4,7 +4,6 @@ import com.foodmarket.food_market.notification.model.enums.NotificationType;
 import com.foodmarket.food_market.notification.service.NotificationService;
 import com.foodmarket.food_market.order.model.Order;
 import com.foodmarket.food_market.order.model.enums.OrderStatus;
-import com.foodmarket.food_market.payment.event.PaymentSuccessfulEvent;
 import com.foodmarket.food_market.order.event.OrderStatusChangedEvent;
 import com.pusher.rest.Pusher;
 import lombok.RequiredArgsConstructor;
@@ -26,35 +25,6 @@ public class NotificationEventListener {
 
     private final NotificationService notificationService;
     private final Pusher pusher;
-    /**
-     * Lắng nghe sự kiện PaymentSuccessfulEvent
-     */
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void handlePaymentSuccess(PaymentSuccessfulEvent event) {
-        try {
-            Order order = event.getOrder();
-            log.info("Đang xử lý sự kiện thanh toán thành công cho Order ID: {}", order.getId());
-
-            String message = String.format(
-                    "Thanh toán cho đơn hàng #%s trị giá %,.0fđ đã thành công!",
-                    order.getId().toString().substring(0, 8), // Lấy 8 ký tự đầu
-                    order.getTotalAmount()
-            );
-
-            // Gọi service nội bộ (hàm này sẽ chạy trong 1 transaction MỚI)
-            notificationService.createNotification(
-                    order.getUser().getUserId(),
-                    message,
-                    NotificationType.PAYMENT,
-                    "/user/purchase/" + order.getId()
-            );
-
-        } catch (Exception e) {
-            log.error("LỖI khi xử lý sự kiện thanh toán thành công: ", e);
-            // (Trong Giai đoạn 3, chúng ta sẽ dùng Dead Letter Queue (DLQ) ở đây)
-        }
-    }
-
     /**
      * (MỚI) Lắng nghe sự kiện thay đổi trạng thái Order
      */
