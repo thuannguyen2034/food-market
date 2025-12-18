@@ -97,4 +97,5 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
     Page<Order> findByUser_UserIdAndStatus(UUID userId, OrderStatus status, Pageable pageable);
     boolean existsByIdAndUser_UserIdAndStatus(UUID orderId, UUID userId, OrderStatus status);
 
+    //Kiểm tra xem đã thanh toán chưa
 }

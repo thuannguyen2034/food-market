@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
 
-@RestControllerAdvice // Biến class này thành "bộ bắt lỗi"
+@RestControllerAdvice
 public class GlobalExceptionHandler {
 
     /**
@@ -86,11 +86,12 @@ public class GlobalExceptionHandler {
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);
     }
+
     /**
      * Bắt lỗi nghiệp vụ đặc thù: Hết hàng.
-     * Trả về 400 BAD_REQUEST.
      * (Chúng ta cũng có thể dùng 409 CONFLICT, nhưng 400 phổ biến hơn)
      */
+
     @ExceptionHandler(com.foodmarket.food_market.inventory.exception.InsufficientStockException.class)
     public ResponseEntity<ErrorResponseDTO> handleInsufficientStockException(
             com.foodmarket.food_market.inventory.exception.InsufficientStockException ex,
@@ -98,11 +99,11 @@ public class GlobalExceptionHandler {
 
         ErrorResponseDTO errorResponse = new ErrorResponseDTO(
                 LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
+                HttpStatus.CONFLICT.value(),
                 "Insufficient Stock",
-                ex.getMessage(), // Lấy thông điệp từ "throw new InsufficientStockException(...)"
+                ex.getMessage(),
                 request.getRequestURI()
         );
-        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(errorResponse, HttpStatus.CONFLICT);
     }
 }

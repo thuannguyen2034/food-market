@@ -29,7 +29,6 @@ public class OrderSpecification {
                 .and(containsKeyword(filter.getKeyword()));
     }
 
-    // --- CÁC HÀM NHỎ (SUB-SPECIFICATIONS) ---
 
     /**
      * Lọc theo danh sách trạng thái (WHERE status IN (...))
@@ -91,11 +90,8 @@ public class OrderSpecification {
             // Join Order -> OrderItems
             Join<Order, OrderItem> itemsJoin = root.join("items", JoinType.INNER);
 
-            // Quan trọng: Phải distinct để không bị trùng lặp dòng Order khi join
             query.distinct(true);
 
-            // Giả sử trong OrderItem, bạn lưu quan hệ với Product qua field "product" hoặc "productIdSnapshot"
-            // Nếu dùng quan hệ Entity:
             return itemsJoin.get("product").get("id").in(productIds);
         };
     }
@@ -121,11 +117,7 @@ public class OrderSpecification {
             Predicate searchName = cb.like(cb.lower(userJoin.get("fullName")), likePattern);
             Predicate searchEmail = cb.like(cb.lower(userJoin.get("email")), likePattern);
 
-            // Giả sử User có field phoneNumber
-            // Predicate searchPhone = cb.like(cb.lower(userJoin.get("phoneNumber")), likePattern);
-
-            // Dùng OR cho tất cả các trường này
-            return cb.or(searchOrderId, searchName, searchEmail);
+            return cb.or(searchOrderId, searchName, searchEmail,searchOrderRecipePhone);
         };
     }
 }

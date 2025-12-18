@@ -24,7 +24,7 @@ export default function ProductDetailPage() {
     const [totalReviews, setTotalReviews] = useState(0);
     const [relatedProducts, setRelatedProducts] = useState<ProductResponse[]>([]);
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-    
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [relatedStartIndex, setRelatedStartIndex] = useState(0);
@@ -115,35 +115,33 @@ export default function ProductDetailPage() {
         if (!user || !cartItemId || isUpdating) return;
         const newQty = qtyInCart + delta;
         if (product && newQty > product.stockQuantity) return;
-        
+
         setIsUpdating(true);
         await updateCartItem(cartItemId, newQty);
         setIsUpdating(false);
     };
 
     // --- Helper Functions ---
-    const formatPrice = (price: number) => 
+    const formatPrice = (price: number) =>
         new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-    
-    const formatDate = (dateString: string) => 
+
+    const formatDate = (dateString: string) =>
         new Date(dateString).toLocaleDateString('vi-VN', { year: 'numeric', month: 'long', day: 'numeric' });
 
-    const renderStars = (rating: number) => 
+    const renderStars = (rating: number) =>
         Array.from({ length: 5 }, (_, i) => (
             <span key={i} className={i < rating ? styles.starFilled : styles.starEmpty}>★</span>
         ));
 
     const currentImage = product?.images[selectedImageIndex] || product?.images[0];
-    const displayRating = product?.averageRating ?? 
+    const displayRating = product?.averageRating ??
         (reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0);
 
     const nextImage = () => product && setSelectedImageIndex((prev) => (prev + 1) % product.images.length);
     const prevImage = () => product && setSelectedImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
-    
+
     // Related Carousel
-    const relatedItemsPerPage = 4;
-    const nextRelated = () => { if (relatedStartIndex + relatedItemsPerPage < relatedProducts.length) setRelatedStartIndex(relatedStartIndex + 1); };
-    const prevRelated = () => { if (relatedStartIndex > 0) setRelatedStartIndex(relatedStartIndex - 1); };
+    const relatedItemsPerPage = 5;
     const visibleRelatedProducts = relatedProducts.slice(relatedStartIndex, relatedStartIndex + relatedItemsPerPage);
 
     if (loading) return <div className={styles.loadingContainer}><div className={styles.spinner}></div>Đang tải...</div>;
@@ -167,7 +165,7 @@ export default function ProductDetailPage() {
                 <div className={styles.imageGallery}>
                     <div className={styles.mainImageContainer}>
                         {currentImage ? (
-                            <img src={currentImage.imageUrl} alt={product.name} className={styles.mainImage}/>
+                            <img src={currentImage.imageUrl} alt={product.name} className={styles.mainImage} />
                         ) : (
                             <div className={styles.noImage}>No Image</div>
                         )}
@@ -182,8 +180,8 @@ export default function ProductDetailPage() {
                     {product.images.length > 1 && (
                         <div className={styles.thumbnails}>
                             {product.images.map((img, idx) => (
-                                <div 
-                                    key={img.id} 
+                                <div
+                                    key={img.id}
                                     className={`${styles.thumbnailWrapper} ${idx === selectedImageIndex ? styles.thumbnailActive : ''}`}
                                     onClick={() => setSelectedImageIndex(idx)}
                                 >
@@ -197,7 +195,7 @@ export default function ProductDetailPage() {
                 {/* Product Info */}
                 <div className={styles.productInfo}>
                     <h1 className={styles.productName}>{product.name}</h1>
-                    
+
                     <div className={styles.ratingAndSold}>
                         <div className={styles.stars}>{renderStars(Math.round(displayRating))}</div>
                         <span className={styles.ratingText}>({displayRating.toFixed(1)})</span>
@@ -232,8 +230,8 @@ export default function ProductDetailPage() {
                         {product.stockQuantity > 0 && user?.role !== 'ADMIN' && (
                             <>
                                 {qtyInCart === 0 ? (
-                                    <button 
-                                        className={styles.addToCartBtn} 
+                                    <button
+                                        className={styles.addToCartBtn}
                                         onClick={handleInitialAdd}
                                         disabled={isUpdating}
                                     >

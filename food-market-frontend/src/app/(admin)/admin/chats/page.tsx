@@ -108,13 +108,12 @@ export default function AdminChatPage() {
 
   // --- 3. Select & Load Messages ---
   const handleSelectConversation = async (conv: Conversation) => {
-    setSelectedConv(conv); // UI highlight ngay
-    setLoading(true);
+    setSelectedConv(conv);
     try {
-      const res = await authedFetch(`/api/v1/chat/admin/conversations/${conv.id}/messages?size=50&sort=sentAt,asc`);
+      const res = await authedFetch(`/api/v1/chat/admin/conversations/${conv.id}/messages?size=50&sort=sentAt,desc`);
       if (res.ok) {
         const data = await res.json();
-        setMessages(data.content);
+        setMessages(data.content.reverse());
         scrollToBottom();
       }
     } catch (err) { console.error(err); } 

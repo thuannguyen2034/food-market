@@ -6,7 +6,7 @@ public class InsufficientStockException extends RuntimeException {
         super(message);
     }
 
-    public InsufficientStockException(Long productId, int quantityRequested) {
-        super("Insufficient stock for product ID: " + productId + ". Requested: " + quantityRequested);
+    public InsufficientStockException(String productName, int quantityRequested, int quantityLeft) {
+        super("Kho hàng không đủ cho sản phẩm: " + productName + ". Yêu cầu: " + quantityRequested + ". Hàng còn: " + quantityLeft);
     }
 }
