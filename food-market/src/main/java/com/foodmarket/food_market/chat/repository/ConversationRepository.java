@@ -14,20 +14,35 @@ import java.util.UUID;
 
 @Repository
 public interface ConversationRepository extends JpaRepository<Conversation, UUID> {
-
     Optional<Conversation> findByCustomer_UserId(UUID customerId);
 
-    // 1. Dùng cho Tab "Hàng chờ" (WAITING) và Tab "Lịch sử chung" (IDLE)
-    // Sắp xếp giảm dần theo tin nhắn cuối
-    Page<Conversation> findByStatusOrderByLastMessageAtDesc(ConversationStatus status, Pageable pageable);
-
-    // 2. CHỈ Dùng cho Tab "Của tôi" (ACTIVE)
-    // Lúc này staffId chắc chắn phải có giá trị
-    Page<Conversation> findByStaffIdAndStatusOrderByLastMessageAtDesc(UUID staffId, ConversationStatus status, Pageable pageable);
-
-    // --- Stats ---
     long countByStatus(ConversationStatus status);
 
-    // Đếm xem mình đang chat với bao nhiêu người (chỉ count Active)
+    // count Active
     long countByStaffIdAndStatus(UUID staffId, ConversationStatus status);
+
+    //
+    @Query("SELECT c FROM Conversation c JOIN c.customer u " +
+            "WHERE (:status IS NULL OR c.status = :status) " +
+            "AND (:keyword IS NULL OR :keyword = '' OR " +
+            "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Conversation> searchByStatusAndKeyword(
+            @Param("status") ConversationStatus status,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+    // My Conversations
+    @Query("SELECT c FROM Conversation c JOIN c.customer u " +
+            "WHERE c.staffId = :staffId " +
+            "AND c.status = 'ACTIVE' " +
+            "AND (:keyword IS NULL OR :keyword = '' OR " +
+            "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
+            "LOWER(u.email) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<Conversation> searchMyConversations(
+            @Param("staffId") UUID staffId,
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
 }

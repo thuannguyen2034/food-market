@@ -18,29 +18,26 @@ public class ConversationDTO {
     private UUID customerId;
     private String customerName;
     private String customerAvatar;
-    private String customerEmail; // Thêm email để Staff dễ liên hệ nếu cần
+    private String customerEmail;
 
-    private UUID staffId; // Null nếu chưa ai nhận
-
+    private UUID staffId;
+    private String staffName;
     private ConversationStatus status;
-    private String title; // Optional
+    private String title;
 
     private OffsetDateTime lastMessageAt;
     private OffsetDateTime createdAt;
 
-    // Các trường bổ sung (Computed fields)
-    private String lastMessagePreview; // Tin nhắn cuối (cắt ngắn)
-    private int unreadCount; // Số tin chưa đọc (để hiện badge đỏ)
+    private String lastMessagePreview;
+    private int unreadCount;
 
     /**
      * Mapper thủ công: Chuyển từ Entity sang DTO
      * Cách này nhanh, hiệu năng cao hơn dùng Reflection của thư viện.
      */
     public static ConversationDTO fromEntity(Conversation conversation) {
-        // Lấy thông tin Customer từ quan hệ @OneToOne
         User customer = conversation.getCustomer();
 
-        // Xử lý avatar: Nếu null thì có thể để null hoặc FE tự xử lý
         String avatarUrl = customer != null ? customer.getAvatarUrl() : null;
         String fullName = customer != null ? customer.getFullName() : "Unknown Customer";
         String email = customer != null ? customer.getEmail() : "";
@@ -57,7 +54,6 @@ public class ConversationDTO {
                 .title(conversation.getTitle())
                 .lastMessageAt(conversation.getLastMessageAt())
                 .createdAt(conversation.getCreatedAt())
-                // Lưu ý: unreadCount và preview sẽ được set riêng ở Service nếu cần query phức tạp
                 .build();
     }
 }

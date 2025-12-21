@@ -4,43 +4,60 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { pusherClient } from '@/utils/pusher';
 import { Conversation, ChatMessage, ChatStats, ConversationStatus } from '@/types/chat';
-import { Send, CheckCircle, RefreshCcw, User } from 'lucide-react';
+import { Send, CheckCircle, RefreshCcw, User, X, History, Search } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
-import styles from './AdminChat.module.css'; 
+import styles from './AdminChat.module.css';
+
+// Interface phụ cho Staff List
+interface StaffDTO {
+  userId: string;
+  fullName: string;
+  email: string;
+}
 
 export default function AdminChatPage() {
   const { user, authedFetch } = useAuth();
-  
-  // State
+
+  // --- STATE QUẢN LÝ UI ---
   const [activeTab, setActiveTab] = useState<'WAITING' | 'ACTIVE' | 'IDLE'>('WAITING');
-  // State mới cho Admin: Lọc xem chat của mình hay xem tất cả
-  const [adminFilter, setAdminFilter] = useState<'MY' | 'ALL'>('MY'); 
-  
+  const [adminFilter, setAdminFilter] = useState<'MY' | 'ALL'>('MY');
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // --- STATE DỮ LIỆU ---
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConv, setSelectedConv] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [stats, setStats] = useState<ChatStats>({ waitingCount: 0, myActiveCount: 0 });
+  const [staffList, setStaffList] = useState<StaffDTO[]>([]);
+  const [selectedStaffId, setSelectedStaffId] = useState<string>('');
+
+  // --- STATE INPUT & PAGINATION ---
   const [inputMessage, setInputMessage] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // Loading tổng quan
+  const [page, setPage] = useState(0);           // Page hiện tại của tin nhắn
+  const [hasMore, setHasMore] = useState(true);  // Còn tin cũ hơn không?
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false); // Đang load thêm tin cũ?
 
+  // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null); // Để bắt sự kiện scroll
 
-  // --- 1. Fetch Data ---
+  // ================= 1. FETCH CONVERSATIONS & STATS =================
   const fetchConversations = async () => {
     try {
+      const queryParam = searchTerm ? `&keyword=${encodeURIComponent(searchTerm)}` : '';
+
       let url = '';
       if (activeTab === 'ACTIVE') {
-        // Nếu là Admin và chọn xem ALL -> Gọi API lấy tất cả active (cần endpoint backend hỗ trợ hoặc dùng status=ACTIVE)
-        // Hiện tại endpoint /admin/conversations?status=ACTIVE trả về ALL ACTIVE (của mọi staff)
-        // Endpoint /admin/conversations/my trả về của riêng Staff
         if (user?.role === 'ADMIN' && adminFilter === 'ALL') {
-             url = `/api/v1/chat/admin/conversations?status=ACTIVE`;
+          url = `/api/v1/chat/admin/conversations?status=ACTIVE${queryParam}`;
         } else {
-             url = '/api/v1/chat/admin/conversations/my';
+          url = `/api/v1/chat/admin/conversations/my?keyword=${encodeURIComponent(searchTerm)}`;
         }
       } else {
-        url = `/api/v1/chat/admin/conversations?status=${activeTab}`;
+        url = `/api/v1/chat/admin/conversations?status=${activeTab}${queryParam}`;
       }
 
       const res = await authedFetch(url);
@@ -60,67 +77,129 @@ export default function AdminChatPage() {
     } catch (err) { console.error(err); }
   };
 
-  // Re-fetch khi tab hoặc filter thay đổi
+  const fetchStaffList = async () => {
+    // Chỉ fetch 1 lần nếu chưa có data
+    if (staffList.length > 0) return;
+    try {
+      const res = await authedFetch('/api/v1/admin/users?role=STAFF&size=100');
+      if (res.ok) {
+        const data = await res.json();
+        setStaffList(data.content);
+      }
+    } catch (e) { console.error(e); }
+  };
+
   useEffect(() => {
-    fetchConversations();
     fetchStats();
     const interval = setInterval(fetchStats, 30000);
     return () => clearInterval(interval);
   }, [activeTab, adminFilter]);
 
-  // --- 2. Pusher Global Listener ---
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchConversations();
+    }, 500); // Debounce 500ms
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, activeTab, adminFilter]);
+  // ================= 2. PUSHER LISTENERS =================
   useEffect(() => {
     if (!user) return;
     const channel = pusherClient.subscribe('admin-chat-feed');
 
     channel.bind('session-updated', (updatedConv: Conversation) => {
       fetchStats();
-      
-      // Update logic list (Giữ nguyên logic cũ của bạn, chỉ thêm filter active)
+
       setConversations((prev) => {
         const exists = prev.some(c => c.id === updatedConv.id);
-        
-        // Logic hiển thị realtime phức tạp hơn một chút:
-        // Nếu tab WAITING: chỉ hiện WAITING.
-        // Nếu tab ACTIVE: 
-        //    - Admin xem ALL: Hiện tất cả ACTIVE.
-        //    - Staff/Admin xem MY: Chỉ hiện cái nào có staffId == user.id
-        
         const isMyConv = updatedConv.staffId === user.userId;
         const shouldShowInActive = (adminFilter === 'ALL' || isMyConv);
 
         if (updatedConv.status === activeTab) {
-           // Đang ở tab khớp status
-           if (activeTab === 'ACTIVE' && !shouldShowInActive) return prev; // Không phải của mình thì thôi
-           
-           return exists 
-             ? prev.map(c => c.id === updatedConv.id ? updatedConv : c)
-             : [updatedConv, ...prev];
+          if (activeTab === 'ACTIVE' && !shouldShowInActive) return prev;
+          return exists
+            ? prev.map(c => c.id === updatedConv.id ? updatedConv : c)
+            : [updatedConv, ...prev];
         } else {
-           // Status thay đổi -> Xóa khỏi list hiện tại
-           return exists ? prev.filter(c => c.id !== updatedConv.id) : prev;
+          return exists ? prev.filter(c => c.id !== updatedConv.id) : prev;
         }
       });
+
+      // Cập nhật status realtime cho đoạn chat đang mở (nếu có)
+      if (selectedConv && selectedConv.id === updatedConv.id) {
+        setSelectedConv(updatedConv);
+      }
     });
 
     return () => pusherClient.unsubscribe('admin-chat-feed');
-  }, [activeTab, adminFilter, user]);
+  }, [activeTab, adminFilter, user, selectedConv]);
 
-  // --- 3. Select & Load Messages ---
-  const handleSelectConversation = async (conv: Conversation) => {
-    setSelectedConv(conv);
+  // ================= 3. MESSAGE LOGIC (Load & Infinite Scroll) =================
+
+  // Hàm tải tin nhắn chung (dùng cho cả Init và Load More)
+  const fetchMessages = async (convId: string, pageIndex: number, isLoadMore: boolean) => {
     try {
-      const res = await authedFetch(`/api/v1/chat/admin/conversations/${conv.id}/messages?size=50&sort=sentAt,desc`);
+      if (isLoadMore) setIsLoadingHistory(true);
+      else setLoading(true);
+
+      const res = await authedFetch(`/api/v1/chat/admin/conversations/${convId}/messages?size=20&page=${pageIndex}&sort=sentAt,desc`);
+
       if (res.ok) {
         const data = await res.json();
-        setMessages(data.content.reverse());
-        scrollToBottom();
+        const newMessages = data.content.reverse(); // API trả về DESC (Mới -> Cũ), ta đảo lại để hiển thị (Cũ -> Mới)
+
+        if (isLoadMore) {
+          // Giữ vị trí scroll khi load thêm
+          const container = messagesContainerRef.current;
+          const oldScrollHeight = container ? container.scrollHeight : 0;
+
+          setMessages(prev => [...newMessages, ...prev]);
+
+          // Sau khi render, chỉnh lại scrollTop
+          setTimeout(() => {
+            if (container) {
+              const newScrollHeight = container.scrollHeight;
+              container.scrollTop = newScrollHeight - oldScrollHeight;
+            }
+          }, 0);
+        } else {
+          setMessages(newMessages);
+          scrollToBottom();
+        }
+
+        // Update pagination state
+        setPage(pageIndex);
+        setHasMore(!data.last); // Nếu data.last = true -> hết tin
       }
-    } catch (err) { console.error(err); } 
-    finally { setLoading(false); }
+    } catch (err) { console.error(err); }
+    finally {
+      setLoading(false);
+      setIsLoadingHistory(false);
+    }
   };
 
-  // --- 4. Pusher Message Listener ---
+  const handleSelectConversation = (conv: Conversation) => {
+    setSelectedConv(conv);
+    // Reset state pagination
+    setPage(0);
+    setHasMore(true);
+    setMessages([]);
+
+    // Fetch trang đầu tiên (page 0)
+    fetchMessages(conv.id, 0, false);
+  };
+
+  const handleScroll = () => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    // Nếu cuộn lên đỉnh (scrollTop = 0) và còn tin cũ + không đang load
+    if (container.scrollTop === 0 && hasMore && !isLoadingHistory) {
+      fetchMessages(selectedConv!.id, page + 1, true);
+    }
+  };
+
+  // Pusher message listener
   useEffect(() => {
     if (!selectedConv) return;
     const channelName = `chat-${selectedConv.id}`;
@@ -138,7 +217,6 @@ export default function AdminChatPage() {
   }, [selectedConv]);
 
   const scrollToBottom = () => {
-    // Timeout nhỏ để đảm bảo DOM đã render
     setTimeout(() => {
       if (messagesEndRef.current) {
         messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -146,7 +224,7 @@ export default function AdminChatPage() {
     }, 100);
   };
 
-  // --- 5. Actions ---
+  // ================= 4. ACTIONS (Send, Assign, Finish, Revoke) =================
 
   const sendMessage = async () => {
     if (!inputMessage.trim() || !selectedConv) return;
@@ -160,108 +238,159 @@ export default function AdminChatPage() {
     } catch (err) { alert('Lỗi gửi tin'); }
   };
 
-  // FIX BUG: Tiếp nhận không nhảy
-  const assignConversation = async () => {
+  // Mở Modal Assign
+  const openAssignModal = () => {
+    if (user?.role === 'ADMIN') {
+      fetchStaffList();
+      setSelectedStaffId("");
+      setShowAssignModal(true);
+    }
+  };
+
+  // Thực thi Assign (Gọi API)
+  const executeAssign = async (targetId: string | null) => {
     if (!selectedConv) return;
     try {
-        await authedFetch(`/api/v1/chat/admin/conversations/${selectedConv.id}/assign`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-        });
+      const body = targetId ? JSON.stringify({ staffId: targetId }) : null;
 
-        // 1. Cập nhật ngay trạng thái cục bộ để UI đổi (Hiện input chat)
-        const updatedConv = { ...selectedConv, status: 'ACTIVE' as ConversationStatus, staffId: user.userId };
-        setSelectedConv(updatedConv);
+      await authedFetch(`/api/v1/chat/admin/conversations/${selectedConv.id}/assign`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: body
+      });
 
-        // 2. Chuyển Tab sang ACTIVE
-        setActiveTab('ACTIVE');
-        setAdminFilter('MY'); // Chắc chắn về tab của mình
-        
-        // Lưu ý: useEffect sẽ chạy lại và load list active, 
-        // nhưng selectedConv đã được set nên khung chat bên phải vẫn hiện đúng.
-    } catch(e) { alert('Lỗi nhận chat'); }
+      // Optimistic UI Update
+      const updatedConv = {
+        ...selectedConv,
+        status: 'ACTIVE' as ConversationStatus,
+        staffId: targetId || user!.userId
+      };
+      setSelectedConv(updatedConv);
+      setShowAssignModal(false);
+
+      // Chuyển tab nếu cần
+      setActiveTab('ACTIVE');
+      if (user?.role === 'ADMIN' && targetId && targetId !== user.userId) {
+        setAdminFilter('ALL'); // Nếu gán cho người khác thì chuyển filter ALL để thấy
+      } else {
+        setAdminFilter('MY');
+      }
+    } catch (e) { alert('Lỗi nhận chat'); }
   };
 
   const finishConversation = async () => {
     if (!selectedConv) return;
-    if (!confirm('Kết thúc phiên chat?')) return;
+    if (!confirm('Lưu trữ hội thoại?')) return;
     try {
-        await authedFetch(`/api/v1/chat/admin/conversations/${selectedConv.id}/finish`, { method: 'PATCH' });
-        setSelectedConv(null);
-        fetchStats();
-        fetchConversations(); // Reload list để cái vừa finish biến mất
-    } catch(e) { alert('Lỗi kết thúc'); }
+      await authedFetch(`/api/v1/chat/admin/conversations/${selectedConv.id}/finish`, { method: 'PATCH' });
+      setSelectedConv(null);
+      fetchStats();
+      fetchConversations();
+    } catch (e) { alert('Lỗi lưu trữ'); }
   };
 
   const revokeConversation = async () => {
     if (!selectedConv) return;
-    if (!confirm('Thu hồi hội thoại về hàng chờ?')) return;
+    if (!confirm('Đưa hội thoại về hàng chờ?')) return;
     try {
-        await authedFetch(`/api/v1/chat/admin/conversations/${selectedConv.id}/revoke`, { method: 'PATCH' });
-        setSelectedConv(null);
-        fetchStats();
-        fetchConversations();
-    } catch(e) { alert('Lỗi thu hồi'); }
+      await authedFetch(`/api/v1/chat/admin/conversations/${selectedConv.id}/revoke`, { method: 'PATCH' });
+      setSelectedConv(null);
+      fetchStats();
+      fetchConversations();
+    } catch (e) { alert('Lỗi đưa về hàng chờ'); }
   };
 
-  // --- RENDER ---
+  // Re-open: Từ IDLE/History muốn chat tiếp -> Tự assign cho mình
+  const reopenConversation = async () => {
+    if (!selectedConv) return;
+    // Re-open bản chất là Assign cho chính mình
+    await executeAssign(user!.userId);
+  };
+
+  // ================= 5. RENDER =================
   return (
     <div className={styles.container}>
       {/* SIDEBAR */}
       <div className={styles.sidebar}>
+        <div className="p-3 border-b border-gray-200">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Tìm tên, email..."
+              className="w-full pl-9 pr-3 py-2 bg-gray-100 rounded-md text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <Search size={16} className="absolute left-3 top-2.5 text-gray-400" />
+
+            {/* Nút Clear nếu đang nhập */}
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        </div>
         <div className={styles.tabs}>
-          <button 
+          <button
             className={`${styles.tab} ${activeTab === 'WAITING' ? styles.active : ''}`}
             onClick={() => setActiveTab('WAITING')}
           >
             Hàng chờ {stats.waitingCount > 0 && <span className={styles.badge}>{stats.waitingCount}</span>}
           </button>
-          <button 
+          <button
             className={`${styles.tab} ${activeTab === 'ACTIVE' ? styles.active : ''}`}
             onClick={() => setActiveTab('ACTIVE')}
           >
             Đang chat {stats.myActiveCount > 0 && <span className={styles.badge}>{stats.myActiveCount}</span>}
           </button>
-          <button 
+          <button
             className={`${styles.tab} ${activeTab === 'IDLE' ? styles.active : ''}`}
             onClick={() => setActiveTab('IDLE')}
           >
             Lịch sử
           </button>
         </div>
-        
-        {/* Bộ lọc cho Admin khi ở tab ACTIVE */}
+
         {user?.role === 'ADMIN' && activeTab === 'ACTIVE' && (
-           <div className={styles.filterBar}>
-             <select 
-                className={styles.filterSelect}
-                value={adminFilter}
-                onChange={(e) => setAdminFilter(e.target.value as 'MY' | 'ALL')}
-             >
-                <option value="MY">Chat của tôi</option>
-                <option value="ALL">Tất cả nhân viên (Giám sát)</option>
-             </select>
-           </div>
+          <div className={styles.filterBar}>
+            <select
+              className={styles.filterSelect}
+              value={adminFilter}
+              onChange={(e) => setAdminFilter(e.target.value as 'MY' | 'ALL')}
+            >
+              <option value="MY">Chat của tôi</option>
+              <option value="ALL">Tất cả nhân viên</option>
+            </select>
+          </div>
         )}
 
         <div className={styles.list}>
           {conversations.length === 0 ? (
-            <div className="p-4 text-center text-sm text-gray-500">Không có dữ liệu</div>
+            <div className="p-4 text-center text-sm text-gray-500"></div>
           ) : (
             conversations.map((conv) => (
-              <div 
-                key={conv.id} 
+              <div
+                key={conv.id}
                 className={`${styles.conversationItem} ${selectedConv?.id === conv.id ? styles.selected : ''}`}
                 onClick={() => handleSelectConversation(conv)}
               >
                 <div className={styles.avatar}>
-                   {conv.customerAvatar ? <img src={conv.customerAvatar} className="w-full h-full object-cover"/> : <User size={20}/>}
+                  {conv.customerAvatar ? <img src={conv.customerAvatar} alt="" className="w-full h-full object-cover rounded-full" /> : <User size={20} />}
                 </div>
                 <div className={styles.info}>
                   <div className={styles.topRow}>
                     <span className={styles.name}>{conv.customerName}</span>
                     <span className={styles.time}>{conv.lastMessageAt && formatDistanceToNow(new Date(conv.lastMessageAt), { locale: vi })}</span>
                   </div>
+                  {conv.staffName && (
+                    <div className="text-xs text-blue-600 font-medium mt-1 flex items-center gap-1">
+                      <User size={12} /> {conv.staffName}
+                    </div>
+                  )}
                   <div className={`${styles.preview} ${conv.unreadCount > 0 ? styles.unread : ''}`}>
                     {conv.lastMessagePreview}
                   </div>
@@ -280,63 +409,146 @@ export default function AdminChatPage() {
           <>
             <div className={styles.header}>
               <div className={styles.customerInfo}>
-                <h3>{selectedConv.customerName}</h3>
+                <h3 className="font-bold">{selectedConv.customerName}</h3>
                 <span className={styles.statusText}>{selectedConv.status}</span>
+                {selectedConv.customerEmail && <span className="text-xs text-gray-500 ml-2">({selectedConv.customerEmail})</span>}
               </div>
               <div className={styles.actions}>
+                {/* Nút Tiếp nhận (WAITING) */}
                 {selectedConv.status === 'WAITING' && (
-                    <button onClick={assignConversation} className={`${styles.btnAction} ${styles.btnPrimary}`}>
-                        <CheckCircle size={16} className="mr-1"/> Tiếp nhận
+                  <>
+                    {/* Nút 1: Tự nhận (Nhanh) */}
+                    <button
+                      onClick={() => executeAssign(user?.userId!)}
+                      className={`${styles.btnAction} ${styles.btnPrimary}`}
+                      title="Gán cho bản thân"
+                    >
+                      <CheckCircle size={16} className="mr-1" /> Tiếp nhận
                     </button>
+
+                    {/* Nút 2: Gán cho người khác (Chỉ Admin thấy) */}
+                    {user?.role === 'ADMIN' && (
+                      <button
+                        onClick={openAssignModal}
+                        className={`${styles.btnAction} bg-gray-100 text-gray-700 hover:bg-gray-200 ml-2`}
+                        title="Chuyển cho nhân viên khác"
+                      >
+                        <User size={16} className="mr-1" /> Chỉ định...
+                      </button>
+                    )}
+                  </>
                 )}
-                {/* Nút Kết thúc chỉ hiện nếu là active CỦA MÌNH */}
-                {selectedConv.status === 'ACTIVE' && selectedConv.staffId === user.userId && (
-                    <button onClick={finishConversation} className={`${styles.btnAction} ${styles.btnSecondary}`}>
-                         Kết thúc
-                    </button>
+
+                {/* Nút Kết thúc (ACTIVE + Của mình) */}
+                {selectedConv.status === 'ACTIVE' && (
+                  <div className="flex items-center gap-2">
+                    {/* Hiển thị label ai đang chat ngay trên header */}
+                    {selectedConv.staffName && (
+                      <span className="text-sm text-gray-500 mr-2 bg-gray-100 px-2 py-1 rounded">
+                        Nhân viên đang tiếp nhận: <b>{selectedConv.staffName}</b>
+                      </span>
+                    )}
+                    {selectedConv.staffId === user?.userId && (
+                      <button onClick={finishConversation} className={`${styles.btnAction} ${styles.btnSecondary}`}>
+                        Lưu trữ
+                      </button>
+                    )}
+
+                    {/* Nút Thu hồi (ACTIVE + Admin) */}
+                    {selectedConv.status === 'ACTIVE' && (
+                      <button onClick={revokeConversation} className={`${styles.btnAction} ${styles.btnDanger}`}>
+                        <RefreshCcw size={16} /> Đưa về hàng chờ
+                      </button>
+                    )}
+                  </div>
                 )}
-                {/* Nút Revoke cho Admin */}
-                {user?.role === 'ADMIN' && selectedConv.status === 'ACTIVE' && (
-                    <button onClick={revokeConversation} className={`${styles.btnAction} ${styles.btnDanger}`}>
-                        <RefreshCcw size={16} /> Thu hồi
-                    </button>
+
+                {/* Nút Mở lại (IDLE) */}
+                {selectedConv.status === 'IDLE' && (
+                  <button onClick={reopenConversation} className={`${styles.btnAction} ${styles.btnPrimary}`}>
+                    <History size={16} className="mr-1" /> Mở lại & Chat
+                  </button>
                 )}
               </div>
             </div>
 
-            <div className={styles.messages}>
+            {/* MESSAGE LIST WITH SCROLL HANDLER */}
+            <div
+              className={styles.messages}
+              ref={messagesContainerRef}
+              onScroll={handleScroll}
+            >
+              {isLoadingHistory && <div className={styles.loadingHistory}>Đang tải tin cũ...</div>}
+
               {messages.map((msg) => (
-                 <div key={msg.id} className={
-                     msg.senderType === 'SYSTEM' ? styles.systemMessage :
-                     (msg.senderType === 'STAFF' ? `${styles.messageRow} ${styles.right}` : `${styles.messageRow} ${styles.left}`)
-                 }>
-                    <div className={styles.bubble}>{msg.content}</div>
-                    {msg.senderType !== 'SYSTEM' && <span className={styles.msgTime}>{formatDistanceToNow(new Date(msg.sentAt), { locale: vi })}</span>}
-                 </div>
+                <div key={msg.id} className={
+                  msg.senderType === 'SYSTEM' ? styles.systemMessage :
+                    (msg.senderType === 'STAFF' ? `${styles.messageRow} ${styles.right}` : `${styles.messageRow} ${styles.left}`)
+                }>
+                  <div className={styles.bubble}>{msg.content}</div>
+                  {msg.senderType !== 'SYSTEM' && <span className={styles.msgTime}>{formatDistanceToNow(new Date(msg.sentAt), { locale: vi })}</span>}
+                </div>
               ))}
               <div ref={messagesEndRef} />
             </div>
 
-            {selectedConv.status === 'ACTIVE' && selectedConv.staffId === user.userId ? (
-                <div className={styles.inputArea}>
-                    <input 
-                        className={styles.input}
-                        placeholder="Nhập tin nhắn..."
-                        value={inputMessage}
-                        onChange={e => setInputMessage(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && sendMessage()}
-                    />
-                    <button className={styles.sendBtn} onClick={sendMessage}><Send size={18} /></button>
-                </div>
+            {selectedConv.status === 'ACTIVE' && selectedConv.staffId === user?.userId ? (
+              <div className={styles.inputArea}>
+                <input
+                  className={styles.input}
+                  placeholder="Nhập tin nhắn..."
+                  value={inputMessage}
+                  onChange={e => setInputMessage(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && sendMessage()}
+                />
+                <button className={styles.sendBtn} onClick={sendMessage}><Send size={18} /></button>
+              </div>
             ) : (
-                <div className="p-4 text-center bg-gray-50 text-gray-500 text-sm border-t">
-                    {selectedConv.status === 'WAITING' ? 'Vui lòng tiếp nhận.' : 
-                     (selectedConv.status === 'ACTIVE' ? 'Đang được nhân viên khác hỗ trợ.' : 'Đã kết thúc.')}
-                </div>
+              <div className="p-4 text-center bg-gray-50 text-gray-500 text-sm border-t">
+                {selectedConv.status === 'WAITING' ? 'Vui lòng tiếp nhận để chat.' :
+                  (selectedConv.status === 'ACTIVE' ? `Đang được hỗ trợ bởi nhân viên tiếp nhận.` : 'Cuộc trò chuyện đã kết thúc.')}
+              </div>
             )}
           </>
         )}
       </div>
+
+      {/* MODAL ASSIGN STAFF (Admin Only) */}
+      {showAssignModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalTitle}>Chọn nhân viên tiếp nhận</div>
+
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1">Nhân viên:</label>
+              <select
+                className={styles.selectInput}
+                value={selectedStaffId}
+                onChange={(e) => setSelectedStaffId(e.target.value)}
+              >
+                <option value="">-- Chọn nhân viên --</option>
+                {staffList
+                  .filter(s => s.userId !== user?.userId) // Lọc bỏ bản thân Admin
+                  .map(staff => (
+                    <option key={staff.userId} value={staff.userId}>
+                      {staff.fullName}
+                    </option>
+                  ))}
+              </select>
+
+              {/* Disable nút nếu chưa chọn */}
+              <button
+                className={`${styles.btnConfirm} ${!selectedStaffId ? 'opacity-50 cursor-not-allowed' : ''}`}
+                onClick={() => selectedStaffId && executeAssign(selectedStaffId)}
+                disabled={!selectedStaffId}
+              >
+                Gán việc
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

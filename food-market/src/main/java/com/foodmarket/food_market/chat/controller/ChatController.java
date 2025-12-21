@@ -49,14 +49,15 @@ public class ChatController {
 
     // ================= STAFF/ADMIN ENDPOINTS =================
 
-    // 1. Lấy danh sách hội thoại (Filter theo Status)
+    // 1. Lấy danh sách hội thoại (chỉ waiting hoặc idle)
     @GetMapping("/admin/conversations")
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<Page<ConversationDTO>> getConversations(
             @RequestParam(required = false) ConversationStatus status,
+            @RequestParam(required = false) String keyword,
             @PageableDefault(size = 20, sort = "lastMessageAt") Pageable pageable
     ) {
-        return ResponseEntity.ok(chatService.getConversations(status, pageable));
+        return ResponseEntity.ok(chatService.getConversations(status,keyword, pageable));
     }
 
     // 2. Lấy danh sách hội thoại Của Tôi (Đang chat)
@@ -64,10 +65,11 @@ public class ChatController {
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<Page<ConversationDTO>> getMyConversations(
             Authentication auth,
+            @RequestParam(required = false) String keyword,
             @PageableDefault(size = 20, sort = "lastMessageAt") Pageable pageable
     ) {
         User user = (User) auth.getPrincipal();
-        return ResponseEntity.ok(chatService.getMyConversations(user.getUserId(), pageable));
+        return ResponseEntity.ok(chatService.getMyConversations(user.getUserId(),keyword, pageable));
     }
 
     // 3. Xem chi tiết tin nhắn của 1 hội thoại
@@ -77,7 +79,7 @@ public class ChatController {
             @PathVariable UUID conversationId,
             @PageableDefault(size = 20, sort = "sentAt") Pageable pageable
     ) {
-        return ResponseEntity.ok(chatService.getMessages(conversationId, pageable));
+        return ResponseEntity.ok(chatService.getMessagesAdmin(conversationId, pageable));
     }
 
     // 4. Staff trả lời tin nhắn
@@ -99,18 +101,20 @@ public class ChatController {
     public ResponseEntity<Void> assignConversation(
             Authentication auth,
             @PathVariable UUID conversationId,
-            @RequestBody(required = false) AssignConversationRequestDTO request // Body có thể null
+            @RequestBody(required = false) AssignConversationRequestDTO request
     ) {
         User currentUser = (User) auth.getPrincipal();
         UUID targetStaffId = (request != null) ? request.getStaffId() : null;
-
-        // Validation quyền: Staff thường không được gán cho người khác
+        //Staff thường không được gán cho người khác
         if (currentUser.getRole() == Role.STAFF && targetStaffId != null && !targetStaffId.equals(currentUser.getUserId())) {
-            throw new IllegalArgumentException("Nhân viên chỉ được phép tự nhận hội thoại.");
+            return ResponseEntity.status(403).build();
         }
-
-        chatService.assignConversation(conversationId, currentUser.getUserId(), targetStaffId);
-        return ResponseEntity.ok().build();
+        try {
+            chatService.assignConversation(conversationId, currentUser.getUserId(), targetStaffId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(409).build();
+        }
     }
 
     // 6. Kết thúc (Finish/Idle)

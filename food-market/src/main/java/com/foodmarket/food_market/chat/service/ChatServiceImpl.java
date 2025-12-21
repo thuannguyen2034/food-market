@@ -9,6 +9,7 @@ import com.foodmarket.food_market.chat.model.enums.SenderType;
 import com.foodmarket.food_market.chat.repository.ChatMessageRepository;
 import com.foodmarket.food_market.chat.repository.ConversationRepository;
 import com.foodmarket.food_market.user.model.entity.User;
+import com.foodmarket.food_market.user.repository.UserRepository;
 import com.pusher.rest.Pusher;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -19,9 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
-import java.util.Collections;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -30,8 +30,9 @@ public class ChatServiceImpl implements ChatService {
 
     private final ConversationRepository conversationRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final UserRepository userRepository;
     private final ObjectMapper objectMapper;
-    private final Pusher pusher; // Đã config bean Pusher từ trước
+    private final Pusher pusher;
 
     // Channel names constants
     private static final String CHANNEL_ADMIN_FEED = "admin-chat-feed";
@@ -70,77 +71,44 @@ public class ChatServiceImpl implements ChatService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public Page<ChatMessageDTO> getCustomerHistory(UUID customerId, Pageable pageable) {
         Conversation conversation = conversationRepository.findByCustomer_UserId(customerId)
-                .orElseThrow(() -> new EntityNotFoundException("Bạn chưa có cuộc trò chuyện nào."));
+                .orElseThrow(() -> new EntityNotFoundException("Lỗi khi tải cuộc trò chuyện"));
 
-        return chatMessageRepository.findByConversation_Id(conversation.getId(), pageable)
-                .map(ChatMessageDTO::fromEntity);
+        Page<ChatMessage> chatMessagePage = chatMessageRepository.findByConversation_Id(conversation.getId(), pageable);
+        for (ChatMessage chatMessage : chatMessagePage.getContent()) {
+            if (!chatMessage.getSenderType().equals(SenderType.CUSTOMER)) {
+                chatMessage.setRead(true);
+            }
+        }
+        return chatMessagePage.map(ChatMessageDTO::fromEntity);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ConversationDTO> getConversations(ConversationStatus status, Pageable pageable) {
-        ConversationStatus queryStatus = (status != null) ? status : ConversationStatus.WAITING;
-
-        return conversationRepository.findByStatusOrderByLastMessageAtDesc(queryStatus, pageable)
-                .map(conversation -> {
-                    ConversationDTO dto = ConversationDTO.fromEntity(conversation);
-                    String lastMsg = chatMessageRepository.findFirstByConversation_IdOrderBySentAtDesc(conversation.getId())
-                            .map(ChatMessage::getContent)
-                            .orElse(""); // Hàng chờ thì có thể để trống hoặc "..."
-
-                    dto.setLastMessagePreview(lastMsg);
-
-                    // Hàng chờ cũng cần biết khách nhắn bao nhiêu tin chưa đọc
-                    long unread = chatMessageRepository.countByConversation_IdAndIsReadFalseAndSenderType(
-                            conversation.getId(),
-                            SenderType.CUSTOMER
-                    );
-                    dto.setUnreadCount((int) unread);
-
-                    return dto;
-                });
+    public Page<ConversationDTO> getConversations(ConversationStatus status,String keyword, Pageable pageable) {
+        Page<Conversation> conversations = conversationRepository.searchByStatusAndKeyword(status,keyword, pageable);
+        return enrichConversations(conversations);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ConversationDTO> getMyConversations(UUID staffId, Pageable pageable) {
-        // Lấy danh sách Active của Staff
-        Page<Conversation> conversations = conversationRepository.findByStaffIdAndStatusOrderByLastMessageAtDesc(
-                staffId,
-                ConversationStatus.ACTIVE,
-                pageable
-        );
-        // Map sang DTO và điền thêm thông tin (Last Message + Unread)
-        return conversations.map(conversation -> {
-            ConversationDTO dto = ConversationDTO.fromEntity(conversation);
-
-            // 1. Lấy Last Message (Xử lý an toàn với orElse)
-            String lastMsg = chatMessageRepository.findFirstByConversation_IdOrderBySentAtDesc(conversation.getId())
-                    .map(ChatMessage::getContent) // Nếu có tin nhắn -> lấy content
-                    .orElse("Chưa có tin nhắn");  // Nếu chưa có -> Default text
-
-            dto.setLastMessagePreview(lastMsg);
-
-            // 2. Lấy Unread Count (Chỉ đếm tin của CUSTOMER gửi)
-            long unread = chatMessageRepository.countByConversation_IdAndIsReadFalseAndSenderType(
-                    conversation.getId(),
-                    SenderType.CUSTOMER // Enum SenderType.CUSTOMER
-            );
-
-            dto.setUnreadCount((int) unread);
-
-            return dto;
-        });
+    public Page<ConversationDTO> getMyConversations(UUID staffId, String keyword, Pageable pageable) {
+        Page<Conversation> conversations = conversationRepository.searchMyConversations(staffId, keyword, pageable);
+        return enrichConversations(conversations);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Page<ChatMessageDTO> getMessages(UUID conversationId, Pageable pageable) {
-        return chatMessageRepository.findByConversation_Id(conversationId, pageable)
-                .map(ChatMessageDTO::fromEntity);
+    @Transactional
+    public Page<ChatMessageDTO> getMessagesAdmin(UUID conversationId, Pageable pageable) {
+        Page<ChatMessage> chatMessagePage = chatMessageRepository.findByConversation_Id(conversationId, pageable);
+        for (ChatMessage chatMessage : chatMessagePage.getContent()) {
+            if (chatMessage.getSenderType().equals(SenderType.CUSTOMER)) {
+                chatMessage.setRead(true);
+            }
+        }
+        return chatMessagePage.map(ChatMessageDTO::fromEntity);
     }
 
     @Override
@@ -167,7 +135,7 @@ public class ChatServiceImpl implements ChatService {
                 .senderId(staffId)
                 .senderType(SenderType.STAFF)
                 .content(content)
-                .isRead(true)
+                .isRead(false)
                 .build();
         chatMessageRepository.save(message);
 
@@ -178,15 +146,16 @@ public class ChatServiceImpl implements ChatService {
     @Transactional
     public void assignConversation(UUID conversationId, UUID requesterId, UUID targetStaffId) {
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new EntityNotFoundException("Conversation not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy cuộc trò chuyện"));
+        // Race Condition Check: Nếu đã có người khác nhận rồi
+        if (conversation.getStaffId() != null && !conversation.getStaffId().equals(requesterId) && !conversation.getStaffId().equals(targetStaffId)) {
+            throw new IllegalStateException("Hội thoại này đã được nhận bởi nhân viên khác!");
+        }
 
         UUID assignedStaffId = (targetStaffId != null) ? targetStaffId : requesterId;
-
         conversation.setStaffId(assignedStaffId);
         conversation.setStatus(ConversationStatus.ACTIVE);
         conversationRepository.save(conversation);
-
-        // Bắn event update dashboard (để conversation biến mất khỏi list Waiting)
         pushConversationUpdate(conversation);
     }
 
@@ -194,15 +163,12 @@ public class ChatServiceImpl implements ChatService {
     @Transactional
     public void finishConversation(UUID conversationId, UUID staffId) {
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new EntityNotFoundException("Conversation not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy cuộc trò chuyện"));
 
-        // Logic chuẩn: Set IDLE và Xóa staffId
         conversation.setStatus(ConversationStatus.IDLE);
         conversation.setStaffId(null);
-
         conversationRepository.save(conversation);
-
-        // Bắn update dashboard
+        //update dashboard
         pushConversationUpdate(conversation);
     }
 
@@ -210,7 +176,7 @@ public class ChatServiceImpl implements ChatService {
     @Transactional
     public void revokeConversation(UUID conversationId) {
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new EntityNotFoundException("Conversation not found"));
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy cuộc trò chuyện"));
 
         conversation.setStatus(ConversationStatus.WAITING);
         conversation.setStaffId(null);
@@ -219,26 +185,50 @@ public class ChatServiceImpl implements ChatService {
     }
 
     // --- Helper Methods ---
+    private Page<ConversationDTO> enrichConversations(Page<Conversation> page) {
+        if (page.isEmpty()) {
+            return Page.empty();
+        }
+        List<UUID> ids = page.getContent().stream().map(Conversation::getId).toList();
+        // 1. Batch Query Unread Counts (Map<ConversationId, Long>)
+        List<Object[]> unreadResults = chatMessageRepository.countUnreadBatch(ids, SenderType.CUSTOMER);
+        Map<UUID, Long> unreadMap = unreadResults.stream()
+                .collect(Collectors.toMap(
+                        row -> (UUID) row[0],
+                        row -> (Long) row[1]
+                ));
+        // 2. Batch Query Last Messages (Map<ConversationId, String>)
+        List<Object[]> lastMsgResults = chatMessageRepository.findLatestContentBatch(ids);
+        Map<UUID, String> lastMsgMap = lastMsgResults.stream()
+                .collect(Collectors.toMap(
+                        row -> (UUID) row[0],
+                        row -> (String) row[1]
+                ));
+        // 3. Map to DTO
+        return page.map(conv -> {
+            ConversationDTO dto = ConversationDTO.fromEntity(conv);
+            dto.setUnreadCount(unreadMap.getOrDefault(conv.getId(), 0L).intValue());
+            dto.setLastMessagePreview(lastMsgMap.getOrDefault(conv.getId(), ""));
+            if (conv.getStaffId() != null) {
+                String staffName = userRepository.getReferenceById(conv.getStaffId()).getFullName();
+                dto.setStaffName(staffName);
+            } else dto.setStaffName(null);
+            return dto;
+        });
+    }
 
     private void triggerPusherEvents(Conversation conversation, ChatMessage message) {
         try {
             ChatMessageDTO dto = ChatMessageDTO.fromEntity(message);
             @SuppressWarnings("unchecked")
             Map<String, Object> payload = objectMapper.convertValue(dto, Map.class);
-            // 1. Gửi vào channel riêng của Khách hàng (để họ thấy tin nhắn ngay)
-            // Channel: user-{uuid}
             String userChannel = "user-" + conversation.getCustomer().getUserId();
             pusher.trigger(userChannel, EVENT_NEW_MESSAGE, payload);
-
-            // 2. Gửi vào channel riêng của cuộc hội thoại (Cho Staff đang chat thấy)
-            // Channel: chat-{conversationId}
             String chatChannel = "chat-" + conversation.getId();
             pusher.trigger(chatChannel, EVENT_NEW_MESSAGE, payload);
-
-            // 3. Nếu là tin nhắn mới của khách -> Cập nhật list hàng chờ cho Admin Dashboard
-            if (message.getSenderType() == SenderType.CUSTOMER) {
-                pushConversationUpdate(conversation);
-            }
+            // Logic: Nếu customer nhắn -> Update Dashboard (để nổi lên đầu)
+            // Nếu Staff nhắn -> Cũng nên Update Dashboard để cập nhật "Last Message Preview" cho Admin thấy
+            pushConversationUpdate(conversation);
         } catch (Exception e) {
             log.error("Pusher error: ", e);
         }
@@ -246,11 +236,17 @@ public class ChatServiceImpl implements ChatService {
 
     private void pushConversationUpdate(Conversation conversation) {
         try {
-            // Channel chung cho toàn bộ Staff/Admin đang mở Dashboard
             ConversationDTO dto = ConversationDTO.fromEntity(conversation);
-
-            String lastestMessage = chatMessageRepository.findFirstByConversation_IdOrderBySentAtDesc(conversation.getId()).map(ChatMessage::getContent).orElse("cập nhật trạng thái...");
+            //Lấy last msg realtime cho pusher
+            String lastestMessage = chatMessageRepository.findFirstByConversation_IdOrderBySentAtDesc(conversation.getId())
+                    .map(ChatMessage::getContent)
+                    .orElse("Hình ảnh/File"); // Fallback nếu sau này làm ảnh
             dto.setLastMessagePreview(lastestMessage);
+            // Tính lại unread realtime
+            long unread = chatMessageRepository.countByConversation_IdAndIsReadFalseAndSenderType(
+                    conversation.getId(), SenderType.CUSTOMER);
+            dto.setUnreadCount((int) unread);
+
             @SuppressWarnings("unchecked")
             Map<String, Object> payload = objectMapper.convertValue(dto, Map.class);
             pusher.trigger(CHANNEL_ADMIN_FEED, EVENT_SESSION_UPDATED, payload);

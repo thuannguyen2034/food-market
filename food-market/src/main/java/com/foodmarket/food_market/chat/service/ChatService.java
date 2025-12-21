@@ -17,9 +17,9 @@ public interface ChatService {
     Page<ChatMessageDTO> getCustomerHistory(UUID customerId, Pageable pageable);
 
     // --- Staff/Admin: Query ---
-    Page<ConversationDTO> getConversations(ConversationStatus status, Pageable pageable);
-    Page<ConversationDTO> getMyConversations(UUID staffId, Pageable pageable);
-    Page<ChatMessageDTO> getMessages(UUID conversationId, Pageable pageable);
+    Page<ConversationDTO> getConversations(ConversationStatus status,String keyword, Pageable pageable);
+    Page<ConversationDTO> getMyConversations(UUID staffId,String keyword, Pageable pageable);
+    Page<ChatMessageDTO> getMessagesAdmin(UUID conversationId, Pageable pageable);
     ChatStatsDTO getStats(UUID staffId);
 
     // --- Staff/Admin: Actions ---

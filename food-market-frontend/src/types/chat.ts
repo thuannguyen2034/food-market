@@ -15,6 +15,7 @@ export interface Conversation {
   customerAvatar: string | null;
   customerEmail: string;
   staffId: string | null;
+  staffName: string | null;
   status: ConversationStatus;
   title: string | null;
   lastMessageAt: string;
