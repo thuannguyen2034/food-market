@@ -49,7 +49,8 @@ public class SecurityConfig {
                                 "/api/v1/products/**",
                                 "/api/v1/categories/**",
                                 "/api/v1/reviews/**",
-                                "/api/v1/storefront/**"
+                                "/api/v1/storefront/**",
+                                "/api/payment/vnpay_ipn"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

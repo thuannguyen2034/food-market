@@ -1,12 +1,12 @@
 package com.foodmarket.food_market.inventory.model;
 
+import com.foodmarket.food_market.user.model.entity.User;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Entity
 @Table(name = "inventory_adjustments")
@@ -23,8 +23,9 @@ public class InventoryAdjustment {
     @JoinColumn(name = "batch_id", nullable = false)
     private InventoryBatch inventoryBatch;
 
-    @Column(name = "adjusted_by_user_id", nullable = false)
-    private UUID adjustedByUserId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "adjusted_by_user_id", nullable = false)
+    private User adjustedBy;
 
     @Column(name = "adjustment_quantity", nullable = false)
     private int adjustmentQuantity; // Có thể là số âm (hủy hàng) hoặc dương (hiếm)
@@ -36,5 +37,4 @@ public class InventoryAdjustment {
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
-    // Constructors, equals, hashCode...
 }

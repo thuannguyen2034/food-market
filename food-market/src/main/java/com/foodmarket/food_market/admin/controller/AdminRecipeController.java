@@ -23,7 +23,7 @@ import java.io.IOException;
 @RestController
 @RequestMapping("/api/v1/admin/recipes")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN','STAFF')")
 public class AdminRecipeController {
 
     private final AdminRecipeService adminRecipeService;

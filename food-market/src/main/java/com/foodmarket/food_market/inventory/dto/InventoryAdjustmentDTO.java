@@ -8,6 +8,7 @@ public record InventoryAdjustmentDTO(
         Long adjustmentId,
         Long batchId,
         String adjustedByUserId,
+        String adjustedByUserName,
         int adjustmentQuantity,
         String reason,
         OffsetDateTime adjustmentDate  // Giả sử entity có @CreationTimestamp cho field này
@@ -16,10 +17,11 @@ public record InventoryAdjustmentDTO(
         return new InventoryAdjustmentDTO(
                 adjustment.getAdjustmentId(),  // Giả sử entity có ID
                 adjustment.getInventoryBatch().getBatchId(),
-                adjustment.getAdjustedByUserId().toString(),
+                adjustment.getAdjustedBy().getUserId().toString(),
+                adjustment.getAdjustedBy().getEmail(),
                 adjustment.getAdjustmentQuantity(),
                 adjustment.getReason(),
-                adjustment.getCreatedAt()  // Nếu có field
+                adjustment.getCreatedAt()
         );
     }
 }

@@ -14,7 +14,7 @@ public record InventoryBatchDTO(
         String batchCode,
         int quantityReceived,
         int currentQuantity,
-        OffsetDateTime entryDate, // Nếu có field ngày nhập, thêm vào entity nếu chưa
+        OffsetDateTime entryDate,
         LocalDate expirationDate,
         List<InventoryAdjustmentDTO> adjustments
         ) {

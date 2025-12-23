@@ -1,4 +1,4 @@
-package com.foodmarket.food_market.admin.service;
+package com.foodmarket.food_market.user.service;
 
 import com.foodmarket.food_market.user.dto.UserResponseDTO;
 import com.foodmarket.food_market.user.model.entity.User;
@@ -13,13 +13,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
-import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service // Đánh dấu đây là một Spring Bean
 @RequiredArgsConstructor
-public class AdminServiceImpl implements AdminService {
+public class AdminUserServiceImpl implements AdminUserService {
 
     private final UserRepository userRepository;
 

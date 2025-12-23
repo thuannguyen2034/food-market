@@ -29,11 +29,8 @@ public class UserController {
      * Chỉ user đã đăng nhập (có token hợp lệ) mới gọi được.
      */
     @GetMapping("/me")
-    @PreAuthorize("isAuthenticated()") // Chỉ cần đã đăng nhập là được (Role gì cũng OK)
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<UserResponseDTO> getCurrentUser(Authentication authentication) {
-        // Sau khi JwtAuthenticationFilter chạy, Spring Security
-        // sẽ "nhét" thông tin user vào `Authentication`
-        // getEmail() là hàm getUsername() mà chúng ta đã implement trong UserDetails
         String userEmail = authentication.getName();
 
         return ResponseEntity.ok(userService.getCurrentUser(userEmail));

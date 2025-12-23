@@ -17,7 +17,7 @@ public interface InventoryService {
     Page<InventoryBatchDTO> getInventoryBatches(Pageable pageable, Integer daysThreshold);
 
     Page<InventoryAdjustmentDTO> getAdjustmentsForBatch(Long batchId, Pageable pageable);
-
+    Page<InventoryAdjustmentDTO> getAllAdjustments(Pageable pageable);
     // Cao ưu tiên 3: destroyBatch
     void destroyBatch(Long batchId, String reason, String userId);
 
@@ -28,7 +28,7 @@ public interface InventoryService {
      * @param requestDTO Thông tin lô hàng mới.
      * @return Lô hàng vừa được tạo.
      */
-    InventoryBatchDTO importStock(ImportStockRequestDTO requestDTO);
+    InventoryBatchDTO importStock(ImportStockRequestDTO requestDTO, UUID currentAdminId);
 
     /**
      * Nghiệp vụ 2 (Nâng cấp): Phân bổ kho cho Đơn hàng (Logic FEFO).
@@ -67,6 +67,5 @@ public interface InventoryService {
      */
     ProductStockInfoDTO getProductStockInfo(Long productId);
 
-    long countExpiringBatches(LocalDate thresholdDate);
     void restoreStock(Long batchId, int quantityToRestore, UUID userId, UUID orderId);
 }

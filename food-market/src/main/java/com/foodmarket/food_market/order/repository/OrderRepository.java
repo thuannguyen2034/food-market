@@ -6,6 +6,8 @@ import com.foodmarket.food_market.admin.dashboard.dto.projection.OrderStatusStat
 import com.foodmarket.food_market.admin.dashboard.dto.projection.TopProductStat;
 import com.foodmarket.food_market.order.model.Order;
 import com.foodmarket.food_market.order.model.enums.OrderStatus;
+import com.foodmarket.food_market.order.model.enums.PaymentMethod;
+import com.foodmarket.food_market.order.model.enums.PaymentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -96,6 +98,15 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
                                                 Pageable pageable);
     Page<Order> findByUser_UserIdAndStatus(UUID userId, OrderStatus status, Pageable pageable);
     boolean existsByIdAndUser_UserIdAndStatus(UUID orderId, UUID userId, OrderStatus status);
-
-    //Kiểm tra xem đã thanh toán chưa
+    //Tìm các order quá hạn thanh toán online
+    @Query("SELECT o FROM Order o WHERE o.status = :status " +
+            "AND o.paymentMethod = :method " +
+            "AND o.paymentStatus <> :paidStatus " +
+            "AND o.createdAt < :threshold")
+    List<Order> findExpiredOrders(
+            @Param("status") OrderStatus status,
+            @Param("method") PaymentMethod method,
+            @Param("paidStatus") PaymentStatus paidStatus,
+            @Param("threshold") OffsetDateTime threshold
+    );
 }

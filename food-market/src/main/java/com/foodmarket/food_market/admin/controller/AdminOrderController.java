@@ -3,7 +3,7 @@ package com.foodmarket.food_market.admin.controller;
 import com.foodmarket.food_market.order.dto.OrderFilterDTO;
 import com.foodmarket.food_market.order.dto.OrderResponseDTO;
 import com.foodmarket.food_market.order.dto.UpdateOrderStatusDTO;
-import com.foodmarket.food_market.order.model.Order;
+import com.foodmarket.food_market.order.model.enums.PaymentStatus;
 import com.foodmarket.food_market.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -58,4 +59,14 @@ public class AdminOrderController {
         return ResponseEntity.ok().build();
     }
 
+    @PutMapping("/{orderId}/payment-status")
+    public ResponseEntity<Void> updatePaymentStatus(
+            @PathVariable UUID orderId,
+            @RequestBody Map<String, String> payload
+    ) {
+        String statusStr = payload.get("paymentStatus");
+        PaymentStatus newStatus = PaymentStatus.valueOf(statusStr);
+        orderService.updatePaymentStatus(orderId, newStatus);
+        return ResponseEntity.ok().build();
+    }
 }

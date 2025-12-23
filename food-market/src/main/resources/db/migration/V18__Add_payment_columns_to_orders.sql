@@ -1,0 +1,8 @@
+ALTER TABLE orders
+    ADD COLUMN payment_method VARCHAR(50) NOT NULL DEFAULT 'COD';
+ALTER TABLE orders
+    ADD COLUMN payment_status VARCHAR(50) NOT NULL DEFAULT 'PAID';
+ALTER TABLE orders
+    ADD COLUMN payment_date TIMESTAMP;
+ALTER TABLE orders ALTER COLUMN payment_method DROP DEFAULT;
+ALTER TABLE orders ALTER COLUMN payment_status DROP DEFAULT;

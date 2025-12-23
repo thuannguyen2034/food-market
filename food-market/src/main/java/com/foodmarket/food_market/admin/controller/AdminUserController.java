@@ -1,10 +1,9 @@
 package com.foodmarket.food_market.admin.controller;
 
 import com.foodmarket.food_market.admin.dashboard.dto.response.UserStatsDTO;
-import com.foodmarket.food_market.admin.service.AdminService;
+import com.foodmarket.food_market.user.service.AdminUserService;
 import com.foodmarket.food_market.user.dto.UpdateRoleRequestDTO;
 import com.foodmarket.food_market.user.dto.UserResponseDTO;
-import com.foodmarket.food_market.user.repository.UserRepository;
 import com.foodmarket.food_market.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -24,7 +23,7 @@ import java.util.UUID;
 @PreAuthorize("hasRole('ADMIN')") // Chỉ ADMIN mới được truy cập Class này
 public class AdminUserController {
 
-    private final AdminService adminService;
+    private final AdminUserService adminService;
     private  final UserService userService;
     /**
      * 1. Lấy danh sách User (Có tìm kiếm & Phân trang)

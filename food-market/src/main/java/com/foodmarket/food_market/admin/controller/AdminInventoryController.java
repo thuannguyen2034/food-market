@@ -20,9 +20,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/v1/admin/inventory") // <-- Base path mới cho admin
+@RequestMapping("/api/v1/admin/inventory")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')") // <-- Áp dụng security cho CẢ CLASS
+@PreAuthorize("hasAnyRole('ADMIN','STAFF')")
 public class AdminInventoryController {
 
     private final InventoryService inventoryService;
@@ -33,8 +33,8 @@ public class AdminInventoryController {
     @PostMapping("/import")
     public ResponseEntity<InventoryBatchDTO> importStockBatch(
             @Valid @RequestBody ImportStockRequestDTO requestDTO) {
-        // Lưu ý: userId thực hiện nhập hàng có thể lấy từ token nếu cần lưu vết người nhập ban đầu
-        InventoryBatchDTO response = inventoryService.importStock(requestDTO);
+        UUID currentAdminId = getCurrentUserId();
+        InventoryBatchDTO response = inventoryService.importStock(requestDTO,currentAdminId);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
@@ -44,8 +44,6 @@ public class AdminInventoryController {
     @PostMapping("/adjustments")
     public ResponseEntity<Void> adjustStock(
             @Valid @RequestBody AdjustStockRequestDTO requestDTO) {
-
-        // Security: Ghi đè userId bằng người đang đăng nhập để đảm bảo tính trung thực
         UUID currentAdminId = getCurrentUserId();
         requestDTO.setAdjustedByUserId(currentAdminId);
 
@@ -98,10 +96,17 @@ public class AdminInventoryController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         // Giả sử Principal của bạn là User Entity hoặc Custom UserDetails có getUserId()
         if (authentication != null && authentication.getPrincipal() instanceof User) {
-            return ((User) authentication.getPrincipal()).getUserId(); // hoặc .getUserId() tuỳ entity của bạn
+            return ((User) authentication.getPrincipal()).getUserId();
         }
         // Fallback hoặc throw exception nếu không lấy được user
         throw new IllegalStateException("User not authenticated correctly");
+    }
+
+    @GetMapping("/adjustments")
+    public ResponseEntity<Page<InventoryAdjustmentDTO>> getAllAdjustments(
+            @PageableDefault(size = 20,sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ){
+        return ResponseEntity.ok(inventoryService.getAllAdjustments(pageable));
     }
 
 }

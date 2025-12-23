@@ -46,6 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
@@ -148,7 +149,7 @@ public class OrderServiceImpl implements OrderService {
                     quantityNeeded,
                     userId,
                     savedOrder.getId()
-                    );
+            );
 
             for (AllocatedBatchDTO alloc : allocations) {
                 OrderItem newOrderItem = new OrderItem();
@@ -223,8 +224,6 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(newStatus);
         orderRepository.save(order);
 
-        // BẮN SỰ KIỆN (LA LÊN)
-        // Dùng @TransactionalEventListener ở bên kia sẽ bắt được
         eventPublisher.publishEvent(new OrderStatusChangedEvent(order, newStatus));
     }
 
@@ -248,14 +247,17 @@ public class OrderServiceImpl implements OrderService {
         }
 
         // 4. VALIDATE 2: Check trạng thái thanh toán
-        // Nếu đã thanh toán Online rồi thì chặn, yêu cầu gọi Admin
+        // Nếu đã thanh toán Online rồi thì yêu cầu gọi Admin
 
-//        if (successPayment != null) {
-//            throw new IllegalStateException("Đơn hàng đã thanh toán Online. Vui lòng liên hệ CSKH để hủy và hoàn tiền.");
-//        }
+        if (order.getPaymentStatus() == PaymentStatus.PAID) {
+            throw new IllegalStateException("Đơn hàng đã thanh toán Online. Vui lòng liên hệ CSKH để hủy và hoàn tiền.");
+        } else {
+            // Nếu chưa thì cancel luôn payment
+            order.setPaymentStatus(PaymentStatus.CANCELLED);
+        }
 
-        // 5. --- QUAN TRỌNG: HOÀN KHO (RESTORE STOCK) ---
-        // Phải trả lại số lượng cho đúng cái lô hàng (Batch) đã trừ
+        // 5. RESTORE STOCK
+        // Phải trả lại số lượng cho đúng lô hàng đã trừ
         for (OrderItem item : order.getItems()) {
             inventoryService.restoreStock(
                     item.getInventoryBatch().getBatchId(), // Lấy ID lô hàng từ OrderItem
@@ -264,7 +266,6 @@ public class OrderServiceImpl implements OrderService {
                     orderId
             );
         }
-
         // 6. Cập nhật trạng thái Order
         order.setStatus(OrderStatus.CANCELLED);
 
@@ -273,20 +274,36 @@ public class OrderServiceImpl implements OrderService {
         order.setNote(oldNote + " [Đã hủy bởi khách: " + reason + "]");
 
         // 7. Cập nhật trạng thái Payment (nếu đang Pending)
-        // Nếu có payment đang treo, set nó thành FAILED/CANCELLED luôn
-//        Payment currentPayment = order.getPayment();
-//
-//        if (currentPayment != null && currentPayment.getStatus() == PaymentStatus.PENDING) {
-//            // Nếu đang chờ thanh toán mà khách hủy đơn -> Hủy luôn giao dịch thanh toán
-//            currentPayment.setStatus(PaymentStatus.CANCEL);
-//        }
+
+    }
+    // Trong OrderServiceImpl.java
+
+    @Override
+    @Transactional
+    public void systemCancelOrder(UUID orderId, String reason) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Order not found"));
+
+        // Logic hoàn kho (Copy từ hàm cancelOrder cũ hoặc tách ra hàm private dùng chung)
+        for (OrderItem item : order.getItems()) {
+            inventoryService.restoreStock(
+                    item.getInventoryBatch().getBatchId(),
+                    item.getQuantity(),
+                    order.getUser().getUserId(), // Vẫn log userId chủ đơn để trace
+                    orderId
+            );
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        order.setNote(order.getNote() + " [" + reason + "]");
+
+        // Nếu payment đang failed/pending -> set thành CANCELLED luôn cho gọn
+        if (order.getPaymentStatus() != PaymentStatus.PAID) {
+            order.setPaymentStatus(PaymentStatus.CANCELLED); // Cần thêm Enum này nếu chưa có
+        }
 
         orderRepository.save(order);
-
-        // 8. (Option) Bắn event thông báo cho Admin biết
-        // eventPublisher.publishEvent(new OrderCancelledEvent(order));
     }
-
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponseDTO> getAllOrders(OrderFilterDTO filterDTO, Pageable pageable) {
@@ -297,16 +314,6 @@ public class OrderServiceImpl implements OrderService {
         Specification<Order> spec = OrderSpecification.filterBy(filterDTO);
         return orderRepository.findAll(spec, pageable)
                 .map(order -> OrderResponseDTO.fromEntity(order, new HashSet<>()));
-    }
-
-    @Override
-    public BigDecimal totalRevenueInAPeriod(OffsetDateTime startDate, OffsetDateTime endDate) {
-        return orderRepository.sumRevenueBetween(startDate, endDate, OrderStatus.ACTIVE_STATUSES);
-    }
-
-    @Override
-    public long countOrderInAPeriod(OffsetDateTime startDate, OffsetDateTime endDate) {
-        return orderRepository.countOrdersBetween(startDate, endDate);
     }
 
     @Override
@@ -425,12 +432,6 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public List<DailyRevenueStat> getDailyRevenueStats(OffsetDateTime startDate) {
-//        return orderRepository.getDailyRevenueStats(startDate,statusList);
-        return null;
-    }
-
-    @Override
     public List<OrderStatusStat> countOrdersByStatus() {
         return orderRepository.countOrdersByStatus();
     }
@@ -462,9 +463,29 @@ public class OrderServiceImpl implements OrderService {
         return OrderResponseDTO.fromEntity(order.get(), new HashSet<>());
     }
 
-    /**
-     * Helper
-     */
+    @Override
+    @Transactional
+    public void updatePaymentStatus(UUID orderId, PaymentStatus newStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng"));
+
+        // Logic nghiệp vụ: Nếu đánh dấu là PAID, có thể cần cập nhật ngày thanh toán
+        if (newStatus == PaymentStatus.PAID && order.getPaymentStatus() != PaymentStatus.PAID) {
+            order.setPaymentDate(LocalDateTime.now());
+        }
+
+        // Nếu đánh dấu là FAILED/PENDING, có thể cần clear ngày thanh toán
+        if (newStatus != PaymentStatus.PAID) {
+            order.setPaymentDate(null);
+        }
+
+        order.setPaymentStatus(newStatus);
+        orderRepository.save(order);
+
+        // Log hoặc bắn event nếu cần
+    }
+
+    /** Helper */
 
 // Helper tính % tăng trưởng
     private Double calculateGrowth(BigDecimal current, BigDecimal previous) {
