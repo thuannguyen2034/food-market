@@ -4,8 +4,32 @@ import { useState, useEffect } from 'react';
 import { Package, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { ImportStockRequestDTO } from '../types';
-import styles from '@/styles/admin/Inventory.module.css';
-
+import styles from '../InventoryPage.module.css';
+const formStyles = {
+    grid: {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        gap: '12px',
+        padding: '12px'
+    },
+    fullWidth: {
+        gridColumn: '1 / -1'
+    },
+    label: {
+        display: 'block',
+        fontSize: '0.8rem',
+        marginBottom: '4px',
+        fontWeight: 500,
+        color: '#4b5563'
+    },
+    input: {
+        width: '100%',
+        padding: '6px',
+        fontSize: '0.9rem',
+        border: '1px solid #d1d5db',
+        borderRadius: '4px'
+    }
+};
 type Props = {
     onSuccess?: () => void;
 };
@@ -117,86 +141,71 @@ export default function ImportStockForm({ onSuccess }: Props) {
     };
 
     return (
-        <div className={styles.formContainer}>
-            <h2 className={styles.formTitle}><Package size={24} /> Nhập hàng mới</h2>
-
-            <form onSubmit={handleSubmit} className={styles.importForm}>
-                <div className={styles.formGroup}>
-                    <label htmlFor="productId">
-                        Sản phẩm <span className={styles.required}>*</span>
-                    </label>
+        <div className={styles.tableContainer}>
+            <div style={{padding: '12px', borderBottom: '1px solid #eee'}}>
+                <h3 style={{margin:0, fontSize:'1rem'}}>Nhập hàng vào kho</h3>
+            </div>
+            
+            <form onSubmit={handleSubmit} style={formStyles.grid}>
+                {/* Product Select - Full width */}
+                <div style={formStyles.fullWidth}>
+                    <label style={formStyles.label}>Sản phẩm <span style={{color:'red'}}>*</span></label>
                     <select
-                        id="productId"
                         value={formData.productId}
                         onChange={(e) => handleChange('productId', Number(e.target.value))}
-                        className={errors.productId ? styles.inputError : ''}
+                        style={formStyles.input}
                     >
                         <option value={0}>-- Chọn sản phẩm --</option>
-                        {products.map((product) => (
-                            <option key={product.id} value={product.id}>
-                                {product.name}
-                            </option>
+                        {products.map((p) => (
+                            <option key={p.id} value={p.id}>{p.name}</option>
                         ))}
                     </select>
-                    {errors.productId && (
-                        <span className={styles.errorText}>{errors.productId}</span>
-                    )}
                 </div>
 
-                <div className={styles.formGroup}>
-                    <label htmlFor="batchCode">Mã lô (tùy chọn)</label>
+                {/* Row 2: Batch Code & Quantity */}
+                <div>
+                    <label style={formStyles.label}>Mã lô (Batch Code)</label>
                     <input
-                        id="batchCode"
                         type="text"
                         value={formData.batchCode}
                         onChange={(e) => handleChange('batchCode', e.target.value)}
-                        placeholder="Nhập mã lô từ nhà cung cấp"
+                        placeholder="VD: #L001"
+                        style={formStyles.input}
                     />
                 </div>
 
-                <div className={styles.formRow}>
-                    <div className={styles.formGroup}>
-                        <label htmlFor="quantityReceived">
-                            Số lượng <span className={styles.required}>*</span>
-                        </label>
-                        <input
-                            id="quantityReceived"
-                            type="number"
-                            min="1"
-                            value={formData.quantityReceived}
-                            onChange={(e) => handleChange('quantityReceived', Number(e.target.value))}
-                            className={errors.quantityReceived ? styles.inputError : ''}
-                        />
-                        {errors.quantityReceived && (
-                            <span className={styles.errorText}>{errors.quantityReceived}</span>
-                        )}
-                    </div>
-
-                    <div className={styles.formGroup}>
-                        <label htmlFor="expirationDate">
-                            Ngày hết hạn <span className={styles.required}>*</span>
-                        </label>
-                        <input
-                            id="expirationDate"
-                            type="date"
-                            value={formData.expirationDate}
-                            onChange={(e) => handleChange('expirationDate', e.target.value)}
-                            className={errors.expirationDate ? styles.inputError : ''}
-                        />
-                        {errors.expirationDate && (
-                            <span className={styles.errorText}>{errors.expirationDate}</span>
-                        )}
-                    </div>
+                <div>
+                    <label style={formStyles.label}>Số lượng <span style={{color:'red'}}>*</span></label>
+                    <input
+                        type="number"
+                        min="1"
+                        value={formData.quantityReceived}
+                        onChange={(e) => handleChange('quantityReceived', Number(e.target.value))}
+                        style={formStyles.input}
+                    />
                 </div>
 
-                <div className={styles.formActions}>
-                    <button
-                        type="submit"
+                {/* Row 3: Expiration Date */}
+                <div>
+                    <label style={formStyles.label}>Ngày hết hạn <span style={{color:'red'}}>*</span></label>
+                    <input
+                        type="date"
+                        value={formData.expirationDate}
+                        onChange={(e) => handleChange('expirationDate', e.target.value)}
+                        style={formStyles.input}
+                    />
+                </div>
+
+                {/* Actions - Full width */}
+                <div style={{...formStyles.fullWidth, marginTop: '8px', display: 'flex', justifyContent: 'flex-end'}}>
+                   <button 
+                        type="submit" 
                         disabled={loading}
-                        className={styles.submitButton}
-                    >
-                        {loading ? 'Đang xử lý...' : <><CheckCircle size={16} /> Nhập hàng</>}
-                    </button>
+                        className={styles.refreshButton} // Re-use style
+                        style={{background: '#2563eb', color: 'white', borderColor: '#2563eb'}}
+                   >
+                        {loading ? 'Đang xử lý...' : 'Xác nhận nhập kho'}
+                   </button>
                 </div>
             </form>
         </div>

@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Eye, Edit, Trash2 } from 'lucide-react';
+import { Eye, Edit, Trash2, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { InventoryBatchDTO, PageResponse } from '../types';
 import BatchDetailsModal from './BatchDetailsModal';
 import AdjustStockModal from './AdjustStockModal';
 import DestroyBatchModal from './DestroyBatchModal';
-import styles from '@/styles/admin/Inventory.module.css';
+import styles from '../InventoryPage.module.css'; 
 
 type Props = {
     refreshTrigger?: number;
@@ -20,15 +20,14 @@ export default function InventoryTable({ refreshTrigger, onRefresh }: Props) {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
     const [daysThreshold, setDaysThreshold] = useState<string>('');
-    const [searchTerm, setSearchTerm] = useState('');
-
+    
     // Modal states
     const [selectedBatch, setSelectedBatch] = useState<InventoryBatchDTO | null>(null);
     const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [showAdjustModal, setShowAdjustModal] = useState(false);
     const [showDestroyModal, setShowDestroyModal] = useState(false);
 
-    const pageSize = 20;
+    const pageSize = 20; // Tăng size vì bảng đã compact
 
     const fetchBatches = useCallback(async () => {
         setLoading(true);
@@ -36,6 +35,7 @@ export default function InventoryTable({ refreshTrigger, onRefresh }: Props) {
             const params = new URLSearchParams();
             params.append('page', page.toString());
             params.append('size', pageSize.toString());
+            // Backend hỗ trợ filter theo daysThreshold
             if (daysThreshold) {
                 params.append('daysThreshold', daysThreshold);
             }
@@ -45,8 +45,6 @@ export default function InventoryTable({ refreshTrigger, onRefresh }: Props) {
             if (response.ok) {
                 const data: PageResponse<InventoryBatchDTO> = await response.json();
                 setDataPage(data);
-            } else {
-                console.error('Failed to fetch batches:', response.status);
             }
         } catch (error) {
             console.error('Failed to fetch inventory batches:', error);
@@ -58,122 +56,87 @@ export default function InventoryTable({ refreshTrigger, onRefresh }: Props) {
         fetchBatches();
     }, [fetchBatches, refreshTrigger]);
 
-    const handleRefresh = () => {
-        fetchBatches();
-        onRefresh?.();
-    };
-
-    const handlePageChange = (newPage: number) => {
-        if (newPage >= 0 && (!dataPage || newPage < dataPage.totalPages)) {
-            setPage(newPage);
-        }
-    };
-
+    // Handlers
     const handleFilterSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setPage(0);
         fetchBatches();
     };
 
-    const getDaysUntilExpiry = (expirationDate: string) => {
-        const days = Math.ceil(
-            (new Date(expirationDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-        );
-        return days;
+    const handleRefresh = () => {
+        fetchBatches();
+        onRefresh?.();
     };
 
-    const getExpiryClassName = (expirationDate: string) => {
+    // Helper logic tính ngày hết hạn
+    const getDaysUntilExpiry = (expirationDate: string) => {
+        return Math.ceil(
+            (new Date(expirationDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
+        );
+    };
+
+    // Helper xác định class màu sắc cho dòng
+    const getRowClass = (expirationDate: string) => {
         const days = getDaysUntilExpiry(expirationDate);
-        if (days < 0) return styles.expired;
-        if (days <= 3) return styles.criticalExpiry;
-        if (days <= 7) return styles.warningExpiry;
+        if (days < 0) return styles.expired; // Đỏ nhạt nền (định nghĩa trong css chung)
+        if (days <= 3) return styles.criticalExpiry; // Chữ đỏ
+        if (days <= 7) return styles.warningExpiry; // Chữ cam
         return '';
     };
 
-    const openDetailsModal = (batch: InventoryBatchDTO) => {
-        setSelectedBatch(batch);
-        setShowDetailsModal(true);
-    };
-
-    const openAdjustModal = (batch: InventoryBatchDTO) => {
-        setSelectedBatch(batch);
-        setShowAdjustModal(true);
-    };
-
-    const openDestroyModal = (batch: InventoryBatchDTO) => {
-        setSelectedBatch(batch);
-        setShowDestroyModal(true);
-    };
-
     const renderTableBody = () => {
-        if (loading) {
-            return (
-                <tr>
-                    <td colSpan={7} className={styles.centerText}>
-                        Đang tải dữ liệu...
-                    </td>
-                </tr>
-            );
-        }
-
-        if (!dataPage || dataPage.content.length === 0) {
-            return (
-                <tr>
-                    <td colSpan={7} className={styles.centerText}>
-                        Không tìm thấy lô hàng nào.
-                    </td>
-                </tr>
-            );
-        }
+        if (loading) return <tr><td colSpan={7} style={{textAlign:'center'}}>Đang tải dữ liệu...</td></tr>;
+        if (!dataPage || dataPage.content.length === 0) return <tr><td colSpan={7} style={{textAlign:'center'}}>Không tìm thấy lô hàng nào.</td></tr>;
 
         return dataPage.content.map((batch) => {
             const daysLeft = getDaysUntilExpiry(batch.expirationDate);
+            const rowClass = getRowClass(batch.expirationDate);
+
             return (
-                <tr key={batch.batchId} className={getExpiryClassName(batch.expirationDate)}>
+                <tr key={batch.batchId} className={rowClass}>
                     <td>{batch.batchId}</td>
-                    <td>{batch.batchCode || 'N/A'}</td>
-                    <td>{batch.productName}</td>
+                    
+                    {/* Kết hợp Mã lô và icon cảnh báo nếu sắp hết hạn */}
                     <td>
-                        <div className={styles.quantityCell}>
-                            <span>{batch.currentQuantity}</span>
-                            <small>/ {batch.quantityReceived}</small>
+                        <div style={{display:'flex', alignItems:'center', gap:'4px'}}>
+                            {batch.batchCode || '-'}
+                            {daysLeft <= 3 && <AlertCircle size={14} color="#ef4444" />}
                         </div>
                     </td>
+                    
+                    <td title={batch.productName} style={{maxWidth:'200px', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>
+                        {batch.productName}
+                    </td>
+                    
+                    {/* Cột số lượng gộp: Hiện tại / Tổng nhập */}
+                    <td>
+                        <span style={{fontWeight: 600}}>{batch.currentQuantity}</span>
+                        <span style={{color: '#9ca3af', fontSize: '0.8em'}}> / {batch.quantityReceived}</span>
+                    </td>
+                    
                     <td>{new Date(batch.entryDate).toLocaleDateString('vi-VN')}</td>
-                    <td>
-                        <div className={styles.expiryCell}>
-                            {new Date(batch.expirationDate).toLocaleDateString('vi-VN')}
-                            {daysLeft >= 0 && daysLeft <= 7 && (
-                                <small className={styles.expiryWarning}>
-                                    ({daysLeft} ngày)
-                                </small>
-                            )}
-                            {daysLeft < 0 && (
-                                <small className={styles.expiryWarning}>
-                                    Đã hết hạn
-                                </small>
-                            )}
-                        </div>
+                    
+                    {/* Hạn sử dụng với Tooltip */}
+                    <td title={daysLeft < 0 ? `Đã hết hạn ${Math.abs(daysLeft)} ngày` : `Còn ${daysLeft} ngày`}>
+                        {new Date(batch.expirationDate).toLocaleDateString('vi-VN')}
                     </td>
+                    
                     <td className={styles.actions}>
-                        <button
-                            onClick={() => openDetailsModal(batch)}
-                            className={styles.viewButton}
-                            title="Xem chi tiết"
+                        <button 
+                            onClick={() => { setSelectedBatch(batch); setShowDetailsModal(true); }}
+                            className={styles.actionBtn} title="Xem chi tiết"
                         >
                             <Eye size={16} />
                         </button>
-                        <button
-                            onClick={() => openAdjustModal(batch)}
-                            className={styles.adjustButton}
-                            title="Điều chỉnh"
+                        <button 
+                            onClick={() => { setSelectedBatch(batch); setShowAdjustModal(true); }}
+                            className={styles.actionBtn} title="Điều chỉnh kho"
                         >
                             <Edit size={16} />
                         </button>
-                        <button
-                            onClick={() => openDestroyModal(batch)}
-                            className={styles.destroyButton}
-                            title="Hủy lô"
+                        <button 
+                            onClick={() => { setSelectedBatch(batch); setShowDestroyModal(true); }}
+                            className={`${styles.actionBtn} ${styles.destroy}`} title="Hủy lô hàng"
                         >
                             <Trash2 size={16} />
                         </button>
@@ -185,69 +148,71 @@ export default function InventoryTable({ refreshTrigger, onRefresh }: Props) {
 
     return (
         <div className={styles.tableContainer}>
-            {/* Filters */}
+            {/* Compact Filter Bar */}
             <form onSubmit={handleFilterSubmit} className={styles.filterBar}>
-                <div className={styles.filterGroup}>
-                    <label>Lọc theo hạn sử dụng:</label>
+                <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                    <span style={{fontSize:'0.85rem', fontWeight:500}}>Lọc hạn sử dụng:</span>
                     <select
                         value={daysThreshold}
-                        onChange={(e) => setDaysThreshold(e.target.value)}
+                        onChange={(e) => {
+                            setDaysThreshold(e.target.value);
+                            setPage(0); // Auto reset page khi đổi filter
+                        }}
                         className={styles.filterSelect}
                     >
-                        <option value="">Tất cả</option>
-                        <option value="3">Hết hạn trong 3 ngày</option>
-                        <option value="7">Hết hạn trong 7 ngày</option>
-                        <option value="14">Hết hạn trong 14 ngày</option>
-                        <option value="30">Hết hạn trong 30 ngày</option>
+                        <option value="">-- Tất cả --</option>
+                        <option value="3">Hết hạn &lt; 3 ngày</option>
+                        <option value="7">Hết hạn &lt; 7 ngày</option>
+                        <option value="14">Hết hạn &lt; 14 ngày</option>
+                        <option value="30">Hết hạn &lt; 30 ngày</option>
+                        <option value="-1">Đã hết hạn</option> {/* Backend cần handle logic -1 nếu chưa có */}
                     </select>
+                    <button type="submit" className={styles.refreshButton}>Áp dụng</button>
                 </div>
-                <button type="submit" className={styles.filterButton}>
-                    Áp dụng
-                </button>
             </form>
 
-            {/* Table */}
+            {/* Scrollable Table Wrapper */}
             <div className={styles.tableWrapper}>
-                <table className={styles.inventoryTable}>
+                <table className={styles.compactTable}>
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Mã lô</th>
+                            <th style={{width: '60px'}}>ID</th>
+                            <th style={{width: '120px'}}>Mã lô</th>
                             <th>Sản phẩm</th>
-                            <th>Số lượng</th>
-                            <th>Ngày nhập</th>
-                            <th>Hạn sử dụng</th>
-                            <th>Hành động</th>
+                            <th style={{width: '120px'}}>Tồn / Tổng</th>
+                            <th style={{width: '100px'}}>Ngày nhập</th>
+                            <th style={{width: '100px'}}>HSD</th>
+                            <th style={{width: '100px'}}>Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>{renderTableBody()}</tbody>
                 </table>
             </div>
 
-            {/* Pagination */}
+            {/* Pagination Compact */}
             {!loading && dataPage && dataPage.totalPages > 1 && (
                 <div className={styles.pagination}>
-                    <button
-                        onClick={() => handlePageChange(page - 1)}
-                        disabled={dataPage.first}
-                        className={styles.pageButton}
-                    >
-                        &laquo; Trước
-                    </button>
-                    <span className={styles.pageInfo}>
-                        Trang {dataPage.number + 1} / {dataPage.totalPages}
-                    </span>
-                    <button
-                        onClick={() => handlePageChange(page + 1)}
-                        disabled={dataPage.last}
-                        className={styles.pageButton}
-                    >
-                        Sau &raquo;
-                    </button>
+                    <span>Trang {dataPage.number + 1} / {dataPage.totalPages}</span>
+                    <div style={{display:'flex', gap: '4px'}}>
+                        <button 
+                            className={styles.pageBtn} 
+                            disabled={dataPage.first} 
+                            onClick={() => setPage(p => p - 1)}
+                        >
+                            &lt;
+                        </button>
+                        <button 
+                            className={styles.pageBtn} 
+                            disabled={dataPage.last} 
+                            onClick={() => setPage(p => p + 1)}
+                        >
+                            &gt;
+                        </button>
+                    </div>
                 </div>
             )}
 
-            {/* Modals */}
+            {/* Modals - Giữ nguyên logic gọi modal */}
             {showDetailsModal && selectedBatch && (
                 <BatchDetailsModal
                     batch={selectedBatch}

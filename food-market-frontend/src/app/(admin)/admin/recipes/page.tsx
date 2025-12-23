@@ -9,7 +9,6 @@ import {
   Plus,
   Search,
   Edit,
-  Trash2,
   RefreshCw,
   ChevronLeft,
   ChevronRight
@@ -114,7 +113,18 @@ export default function RecipeListPage() {
           <button type="submit" className={styles.searchBtn}><Search size={18} /> Tìm</button>
         </form>
       </div>
-
+      {/* Pagination */}
+      {dataPage && dataPage.totalPages > 1 && (
+        <div className={styles.pagination}>
+          <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={dataPage.first} className={styles.pageBtn}>
+            <ChevronLeft size={16} />
+          </button>
+          <span>Trang {dataPage.number + 1} / {dataPage.totalPages}</span>
+          <button onClick={() => setPage(p => Math.min(dataPage.totalPages - 1, p + 1))} disabled={dataPage.last} className={styles.pageBtn}>
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
       {/* Table */}
       <div className={styles.tableWrapper}>
         <table className={styles.table}>
@@ -128,9 +138,7 @@ export default function RecipeListPage() {
             </tr>
           </thead>
           <tbody>
-            {loading ? (
-              <tr><td colSpan={5} className={styles.centerText}>Đang tải...</td></tr>
-            ) : dataPage?.content.length === 0 ? (
+            {dataPage?.content.length === 0 ? (
               <tr><td colSpan={5} className={styles.centerText}>Chưa có công thức nào.</td></tr>
             ) : (
               dataPage?.content.map(recipe => (
@@ -169,19 +177,6 @@ export default function RecipeListPage() {
           </tbody>
         </table>
       </div>
-
-      {/* Pagination (Tương tự Product) */}
-      {!loading && dataPage && dataPage.totalPages > 1 && (
-        <div className={styles.pagination}>
-          <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={dataPage.first} className={styles.pageBtn}>
-            <ChevronLeft size={16} />
-          </button>
-          <span>Trang {dataPage.number + 1} / {dataPage.totalPages}</span>
-          <button onClick={() => setPage(p => Math.min(dataPage.totalPages - 1, p + 1))} disabled={dataPage.last} className={styles.pageBtn}>
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      )}
     </div>
   );
 }

@@ -3,439 +3,225 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import styles from '@/styles/admin/Products.module.css';
+import styles from './AdminProduct.module.css'; // Style mới
 import {
-  Package,
-  RefreshCw,
-  Plus,
-  Search,
-  Edit,
-  Trash2,
-  RotateCcw, // Icon cho Restore
-  AlertCircle,
-  XCircle,
-  ChevronLeft,
-  ChevronRight,
-  Filter
+  Package, RefreshCw, Plus, Search, Edit, Trash2, RotateCcw, AlertCircle, Filter, ChevronLeft, ChevronRight
 } from 'lucide-react';
 
-// --- Updated Types based on AdminProductResponseDTO ---
-type ProductImageDTO = {
-  id: number;
-  imageUrl: string;
-  displayOrder: number;
-};
-
-type CategorySummaryDTO = {
-  id: number;
-  name: string;
-  slug: string;
-};
-
-// Khớp hoàn toàn với AdminProductResponseDTO.java
+// Giữ nguyên các Type Definitions
+type ProductImageDTO = { id: number; imageUrl: string; displayOrder: number; };
+type CategorySummaryDTO = { id: number; name: string; slug: string; };
 type AdminProductResponse = {
-  id: number;
-  name: string;
-  slug: string;
-  category: CategorySummaryDTO;
-  basePrice: number;
-  salePrice: number;
-  finalPrice: number;
-  onSale: boolean;
-  discountPercentage: number;
-  stockQuantity: number;
-  soldCount: number;
-  averageRating: number;
-  reviewCount: number;
-  images: ProductImageDTO[];
-  deleted: boolean;
-  deletedAt: string | null;
+  id: number; name: string; category: CategorySummaryDTO;
+  basePrice: number; salePrice: number; finalPrice: number; onSale: boolean; discountPercentage: number;
+  stockQuantity: number; soldCount: number; averageRating: number;
+  images: ProductImageDTO[]; deleted: boolean; deletedAt: string | null;
 };
-
-type PageResponse<T> = {
-  content: T[];
-  totalPages: number;
-  totalElements: number;
-  number: number;
-  size: number;
-  first: boolean;
-  last: boolean;
-};
+type PageResponse<T> = { content: T[]; totalPages: number; totalElements: number; number: number; first: boolean; last: boolean; };
 
 export default function ProductListPage() {
   const { authedFetch } = useAuth();
-
   const [dataPage, setDataPage] = useState<PageResponse<AdminProductResponse> | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Search & Filter State
   const [searchInput, setSearchInput] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-
-  // Hints State
+  const [statusFilter, setStatusFilter] = useState('ALL');
+  const [sortOrder, setSortOrder] = useState('newest');
+  const [page, setPage] = useState(0);
+  const [lowStockCount, setLowStockCount] = useState<number>(0);
+  const [filterLowStock, setFilterLowStock] = useState(false);
   const [searchHints, setSearchHints] = useState<string[]>([]);
   const [showHints, setShowHints] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
-  // Advanced Filters
-  const [statusFilter, setStatusFilter] = useState('ALL'); // ACTIVE_ONLY, DELETED_ONLY, ALL
-  const [sortOrder, setSortOrder] = useState('newest'); // newest, best_selling, price_asc, price_desc
-
-  const [page, setPage] = useState(0);
-  const pageSize = 10;
-  const [lowStockCount, setLowStockCount] = useState<number>(0);
-  const [filterLowStock, setFilterLowStock] = useState(false);
-  // 1. Fetch Products List
   const fetchProducts = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
       params.append('page', page.toString());
-      params.append('size', pageSize.toString());
-
-      // Map frontend filters to backend params
-      if (searchTerm) params.append('searchTerm', searchTerm);
+      params.append('size', '15'); // Tăng size vì view compact
+      if (searchInput) params.append('searchTerm', searchInput);
       if (statusFilter) params.append('status', statusFilter);
       if (sortOrder) params.append('sort', sortOrder);
       if (filterLowStock) params.append('lowStock', 'true');
 
       const response = await authedFetch(`/api/v1/admin/products?${params.toString()}`);
-
-      if (response.ok) {
-        const data: PageResponse<AdminProductResponse> = await response.json();
-        setDataPage(data);
-      } else {
-        console.error("Failed to fetch. Status:", response.status);
-      }
-    } catch (error) {
-      console.error('Failed to fetch products:', error);
-    }
+      if (response.ok) setDataPage(await response.json());
+    } catch (error) { console.error('Failed to fetch:', error); }
     setLoading(false);
-  }, [authedFetch, page, searchTerm, statusFilter, sortOrder, filterLowStock]);
+  }, [authedFetch, page, searchInput, statusFilter, sortOrder, filterLowStock]);
 
+  useEffect(() => { fetchProducts(); }, [fetchProducts]);
+
+  // Fetch stats low stock
   useEffect(() => {
-    fetchProducts();
-  }, [fetchProducts]);
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await authedFetch('/api/v1/admin/products/count-low-stock');
-        if (res.ok) {
-          const count = await res.json();
-          setLowStockCount(count);
-        }
-      } catch (err) {
-        console.error("Lỗi fetch stats:", err);
-      }
-    };
-    fetchStats();
+    authedFetch('/api/v1/admin/products/count-low-stock')
+      .then(res => res.ok ? res.json() : 0)
+      .then(setLowStockCount).catch(console.error);
   }, [authedFetch]);
-  // 2. Fetch Search Hints (Debounced)
-  useEffect(() => {
-    const fetchHints = async () => {
-      if (!searchInput.trim() || searchInput.length < 2) {
-        setSearchHints([]);
-        return;
-      }
-      try {
-        // Gọi API Public getSearchHints từ ProductController
-        const res = await fetch(`/api/v1/products/search/hints?keyword=${encodeURIComponent(searchInput)}`);
-        if (res.ok) {
-          const hints = await res.json();
-          setSearchHints(hints);
-          setShowHints(true);
-        }
-      } catch (err) {
-        console.error(err);
-      }
-    };
 
-    const timer = setTimeout(fetchHints, 300); // Debounce 300ms
+  // Logic Hints (Giữ nguyên logic cũ, chỉ đổi UI)
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (searchInput.length < 2) { setSearchHints([]); return; }
+      try {
+        const res = await fetch(`/api/v1/products/search/hints?keyword=${encodeURIComponent(searchInput)}`);
+        if (res.ok) { setSearchHints(await res.json()); setShowHints(true); }
+      } catch (e) { }
+    }, 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Click outside to close hints
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
-        setShowHints(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  // Format currency
+  const fmt = (p: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(p);
 
-  // 3. Actions: Delete (Soft) & Restore
   const handleDelete = async (id: number) => {
-    if (confirm('Bạn có chắc muốn xóa sản phẩm này? (Có thể khôi phục sau)')) {
-      try {
-        const response = await authedFetch(`/api/v1/admin/products/${id}`, {
-          method: 'DELETE',
-        });
-        if (response.ok || response.status === 204) {
-          fetchProducts();
-        } else {
-          alert('❌ Lỗi khi xóa sản phẩm.');
-        }
-      } catch (error) {
-        console.error(error);
-      }
+    if (confirm('Xóa sản phẩm này vào thùng rác?')) {
+      await authedFetch(`/api/v1/admin/products/${id}`, { method: 'DELETE' });
+      fetchProducts();
     }
   };
 
   const handleRestore = async (id: number) => {
-    if (confirm('Khôi phục sản phẩm này?')) {
-      try {
-        const response = await authedFetch(`/api/v1/admin/products/${id}/restore`, {
-          method: 'PUT',
-        });
-        if (response.ok || response.status === 204) {
-          alert('✅ Khôi phục thành công');
-          fetchProducts();
-        } else {
-          alert('❌ Lỗi khi khôi phục.');
-        }
-      } catch (error) {
-        console.error(error);
-      }
+    if (confirm('Khôi phục sản phẩm?')) {
+      await authedFetch(`/api/v1/admin/products/${id}/restore`, { method: 'PUT' });
+      fetchProducts();
     }
   };
 
-  // Handlers
-  const handlePageChange = (newPage: number) => {
-    if (newPage >= 0 && (!dataPage || newPage < dataPage.totalPages)) setPage(newPage);
-  };
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setSearchTerm(searchInput);
-    setShowHints(false);
-    setPage(0);
-  };
-
-  const handleHintClick = (hint: string) => {
-    setSearchInput(hint);
-    setSearchTerm(hint);
-    setShowHints(false);
-    setPage(0);
-  };
-
-  // Stats calculation
-  const totalProducts = dataPage?.totalElements || 0;
-  // Note: These stats are only for the current page/filter context due to server-side paging
-  // Ideally backend should provide global stats separately.
-
-  const formatPrice = (price: number) =>
-    new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
-
-  const renderTableBody = () => {
-    if (loading) return <tr><td colSpan={8} className={styles.centerText}>Đang tải dữ liệu...</td></tr>;
-    if (!dataPage || dataPage.content.length === 0) return <tr><td colSpan={8} className={styles.centerText}>Chưa có dữ liệu.</td></tr>;
-
-    return dataPage.content.map((product) => (
-      <tr key={product.id} className={product.deleted ? styles.deletedRow : ''}>
-        <td><span className={styles.idBadge}>#{product.id}</span></td>
-        <td>
-          {product.images && product.images.length > 0 ? (
-            <img src={product.images[0].imageUrl} alt={product.name} className={styles.productImage} />
-          ) : <div className={styles.noImage}>No Img</div>}
-        </td>
-        <td>
-          <div className={styles.productName}>{product.name}</div>
-          {/* Hiển thị Rich Data: Sales, Ratings */}
-          <div className={styles.soldCount}>Đã bán: {product.soldCount} | ⭐ {product.averageRating?.toFixed(1) || 0}</div>
-          {product.deleted && <small className={styles.deletedLabel}>(Đã xóa: {new Date(product.deletedAt!).toLocaleDateString('vi-VN')})</small>}
-        </td>
-        <td><span className={styles.categoryBadge}>{product.category?.name || '---'}</span></td>
-
-        {/* Cột giá hiển thị thông minh */}
-        <td className={styles.priceCell}>
-          {product.onSale ? (
-            <>
-              <span className={styles.priceOriginal}>{formatPrice(product.basePrice)}</span>
-              <span className={styles.priceFinal}>{formatPrice(product.finalPrice)}</span>
-              <span className={styles.badgeSale}>-{product.discountPercentage}%</span>
-            </>
-          ) : (
-            <span className={styles.priceFinal}>{formatPrice(product.basePrice)}</span>
-          )}
-        </td>
-
-        <td>
-          <span className={
-            product.stockQuantity === 0 ? styles.outOfStock :
-              product.stockQuantity < 10 ? styles.lowStock : styles.inStock
-          }>
-            {product.stockQuantity}
-          </span>
-        </td>
-
-        <td className={styles.actions}>
-          {!product.deleted ? (
-            <>
-              <Link href={`/admin/products/${product.id}`} className={styles.editButton}>
-                <Edit size={16} /> Sửa
-              </Link>
-              <button onClick={() => handleDelete(product.id)} className={styles.deleteButton}>
-                <Trash2 size={16} /> Xóa
-              </button>
-            </>
-          ) : (
-            <button onClick={() => handleRestore(product.id)} className={styles.restoreButton}>
-              <RotateCcw size={16} /> Khôi phục
-            </button>
-          )}
-        </td>
-      </tr>
-    ));
-  };
-
   return (
-    <div className={styles.productsContainer}>
-      {/* Header */}
+    <div className={styles.container}>
+      {/* 1. Header & Stats Compact Ribbon */}
       <div className={styles.header}>
-        <h1><Package className="inline-icon" size={32} style={{ marginBottom: -6, marginRight: 10 }} /> Quản lý Sản phẩm</h1>
-        <div className={styles.headerActions}>
-          <button onClick={fetchProducts} className={styles.refreshButton}>
-            <RefreshCw size={18} style={{ marginRight: 8 }} /> Làm mới
-          </button>
-          <Link href="/admin/products/new" className={styles.addButton}>
-            <Plus size={18} style={{ marginRight: 8 }} /> Thêm mới
-          </Link>
-        </div>
-      </div>
-
-      {/* Quick Stats (Optional: Can make dynamic if backend supports stats endpoint) */}
-      <div className={styles.statsContainer}>
-        <div className={`${styles.statCard} ${styles.primary}`}>
-          <div className={styles.statIcon}><Package size={40} /></div>
-          <div className={styles.statContent}>
-            <div className={styles.statValue}>{totalProducts}</div>
-            <div className={styles.statLabel}>Sản phẩm</div>
-          </div>
-        </div>
-        {/* ... Other static stats or fetch from separate stats API ... */}
-        <div
-          className={`${styles.statCard} ${filterLowStock ? styles.activeFilter : ''}`} // Cần thêm class activeFilter vào CSS để highlight khi chọn
-          style={{ cursor: 'pointer', border: filterLowStock ? '2px solid #e74c3c' : '1px solid #eee' }}
-          onClick={() => { setFilterLowStock(!filterLowStock); setPage(0); }}
-        >
-          <div className={styles.statIcon} style={{ color: '#e74c3c', background: '#fadbd8' }}>
-            <AlertCircle size={40} />
-          </div>
-          <div className={styles.statContent}>
-            <div className={styles.statValue} style={{ color: '#e74c3c' }}>
-              {lowStockCount}
+        <h1><Package size={20} className={styles.iconRed} /> Quản lý Sản phẩm</h1>
+        <div className={styles.statsRibbon}>
+          <div className={`${styles.statCard} ${filterLowStock ? styles.active : ''}`} onClick={() => setFilterLowStock(!filterLowStock)}>
+            <div className={styles.statIcon}><AlertCircle size={16} /></div>
+            <div>
+              <div className={styles.statValue}>{lowStockCount}</div>
+              <div className={styles.statLabel}>Sắp hết hàng</div>
             </div>
-            <div className={styles.statLabel}>Sản phẩm sắp hết (≤10)</div>
+          </div>
+          <div className={styles.statCard}>
+            <div className={styles.statIcon} style={{ background: '#eff6ff', color: '#2563eb' }}><Package size={16} /></div>
+            <div>
+              <div className={styles.statValue}>{dataPage?.totalElements || 0}</div>
+              <div className={styles.statLabel}>Tổng sản phẩm</div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Filter Bar */}
-      <div className={styles.filtersBar}>
-        <Filter size={20} color="#666" />
-        <select
-          className={styles.filterSelect}
-          value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}
-        >
-          <option value="ACTIVE_ONLY">Đang hoạt động</option>
-          <option value="DELETED_ONLY">Thùng rác (Đã xóa)</option>
-          <option value="ALL">Tất cả trạng thái</option>
-        </select>
+      {/* 2. Unified Toolbar */}
+      <div className={styles.toolbar}>
+        <div className={styles.searchWrapper} ref={searchContainerRef}>
+          <Search className={styles.searchIcon} size={16} />
+          <input
+            className={styles.searchInput}
+            placeholder="Tìm tên, danh mục..."
+            value={searchInput}
+            onChange={e => setSearchInput(e.target.value)}
+            onFocus={() => searchHints.length > 0 && setShowHints(true)}
+          />
+          {showHints && (
+            <div className={styles.hintsDropdown}>
+              {searchHints.map((h, i) => (
+                <div key={i} className={styles.hintItem} onClick={() => { setSearchInput(h); setShowHints(false); }}>
+                  <Search size={12} /> {h}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-        <select
-          className={styles.filterSelect}
-          value={sortOrder}
-          onChange={(e) => { setSortOrder(e.target.value); setPage(0); }}
-        >
+        <Filter size={16} color="#6b7280" />
+        <select className={styles.filterSelect} value={statusFilter} onChange={e => { setStatusFilter(e.target.value); setPage(0); }}>
+          <option value="ACTIVE_ONLY">Đang bán</option>
+          <option value="DELETED_ONLY">Thùng rác</option>
+          <option value="ALL">Tất cả</option>
+        </select>
+        <select className={styles.filterSelect} value={sortOrder} onChange={e => { setSortOrder(e.target.value); setPage(0); }}>
           <option value="newest">Mới nhất</option>
-          <option value="best_selling">Bán chạy nhất</option>
-          <option value="price_asc">Giá tăng dần</option>
-          <option value="price_desc">Giá giảm dần</option>
-          <option value="name_asc">Tên A-Z</option>
+          <option value="best_selling">Bán chạy</option>
+          <option value="price_asc">Giá tăng</option>
+          <option value="price_desc">Giá giảm</option>
         </select>
+
+        <div style={{ flex: 1 }}></div>
+        <button onClick={() => fetchProducts()} className={styles.btnOutline}><RefreshCw size={14} /> Làm mới</button>
+        <Link href="/admin/products/new" className={styles.btnPrimary}><Plus size={14} /> Thêm mới</Link>
       </div>
 
-      {/* Search Bar with Hints */}
-      <div className={styles.searchBar}>
-        <form onSubmit={handleSearchSubmit} className={styles.searchForm}>
-          <div className={styles.searchWrapper} ref={searchContainerRef}>
-            <input
-              type="text"
-              placeholder="Tìm kiếm sản phẩm (Tên, danh mục)..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onFocus={() => { if (searchHints.length > 0) setShowHints(true); }}
-              className={styles.searchInput}
-            />
-
-            {/* Dropdown Gợi ý */}
-            {showHints && searchHints.length > 0 && (
-              <ul className={styles.suggestionsList}>
-                {searchHints.map((hint, index) => (
-                  <li
-                    key={index}
-                    className={styles.suggestionItem}
-                    onClick={() => handleHintClick(hint)}
-                  >
-                    <Search size={14} style={{ marginRight: 8, display: 'inline' }} color="#999" />
-                    {hint}
-                  </li>
+      {/* 3. Compact Table */}
+      <div className={styles.tableWrapper}>
+        <table className={styles.compactTable}>
+          <thead>
+            <tr>
+              <th style={{ width: 50 }}>ID</th>
+              <th style={{ width: 50 }}>Img</th>
+              <th>Tên sản phẩm / Danh mục</th>
+              <th>Giá bán</th>
+              <th>Kho / Đã bán</th>
+              <th>Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? <tr><td colSpan={6} style={{ textAlign: 'center' }}>Đang tải...</td></tr> :
+              (!dataPage || dataPage.content.length === 0) ? <tr><td colSpan={6} style={{ textAlign: 'center' }}>Không có dữ liệu</td></tr> :
+                dataPage.content.map(p => (
+                  <tr key={p.id} className={p.deleted ? styles.deletedRow : ''}>
+                    <td>#{p.id}</td>
+                    <td>
+                      {p.images?.[0] ? <img src={p.images[0].imageUrl} className={styles.productImg} /> : <div className={styles.productImg} style={{ background: '#eee' }} />}
+                    </td>
+                    <td>
+                      <Link href={`/admin/products/${p.id}`} className={styles.productName} title={p.name}>{p.name}</Link>
+                      <div className={styles.subText}>
+                        <span style={{ background: '#f3f4f6', padding: '1px 4px', borderRadius: 3 }}>{p.category?.name}</span>
+                        {p.deleted && <span style={{ color: 'red' }}>(Đã xóa)</span>}
+                      </div>
+                    </td>
+                    <td>
+                      {p.onSale ? (
+                        <div>
+                          <span className={styles.priceFinal}>{fmt(p.finalPrice)}</span>
+                          <br />
+                          <span className={styles.priceOriginal}>{fmt(p.basePrice)}</span>
+                          <span style={{ color: 'red', fontSize: '0.75rem' }}>-{p.discountPercentage}%</span>
+                        </div>
+                      ) : <span style={{ fontWeight: 600 }}>{fmt(p.basePrice)}</span>}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                        <span className={`${styles.badge} ${p.stockQuantity === 0 ? styles.badgeOut : p.stockQuantity < 10 ? styles.badgeLow : styles.badgeStock}`}>
+                          Kho: {p.stockQuantity}
+                        </span>
+                        <span style={{ fontSize: '0.75rem', color: '#666' }}>Bán: {p.soldCount}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: 4 }}>
+                        {!p.deleted ? (
+                          <>
+                            <Link href={`/admin/products/${p.id}`}><button className={styles.actionBtn} title="Sửa"><Edit size={16} /></button></Link>
+                            <button onClick={() => handleDelete(p.id)} className={`${styles.actionBtn} ${styles.delete}`} title="Xóa"><Trash2 size={16} /></button>
+                          </>
+                        ) : (
+                          <button onClick={() => handleRestore(p.id)} className={styles.actionBtn} style={{ color: '#059669' }} title="Khôi phục"><RotateCcw size={16} /></button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
                 ))}
-              </ul>
-            )}
-          </div>
-
-          <button type="submit" className={styles.searchButton}>
-            <Search size={18} style={{ marginRight: 8 }} /> Tìm kiếm
-          </button>
-        </form>
-      </div>
-
-      {/* Table */}
-      <div className={styles.tableContainer}>
-        <div className={styles.tableWrapper}>
-          <table className={styles.productsTable}>
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Ảnh</th>
-                <th>Thông tin sản phẩm</th>
-                <th>Danh mục</th>
-                <th>Giá bán</th>
-                <th>Tồn kho</th>
-                <th>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {renderTableBody()}
-            </tbody>
-          </table>
-        </div>
+          </tbody>
+        </table>
       </div>
 
       {/* Pagination */}
-      {!loading && dataPage && dataPage.totalPages > 1 && (
+      {dataPage && dataPage.totalPages > 1 && (
         <div className={styles.pagination}>
-          <button
-            onClick={() => handlePageChange(page - 1)}
-            disabled={dataPage.first}
-            className={styles.pageButton}
-          >
-            <ChevronLeft size={16} /> Trước
-          </button>
-          <span className={styles.pageInfo}>
-            Trang {dataPage.number + 1} / {dataPage.totalPages}
-          </span>
-          <button
-            onClick={() => handlePageChange(page + 1)}
-            disabled={dataPage.last}
-            className={styles.pageButton}
-          >
-            Sau <ChevronRight size={16} />
-          </button>
+          <span>Trang {dataPage.number + 1} / {dataPage.totalPages}</span>
+          <button className={styles.pageBtn} disabled={dataPage.first} onClick={() => setPage(p => p - 1)}><ChevronLeft size={14} /></button>
+          <button className={styles.pageBtn} disabled={dataPage.last} onClick={() => setPage(p => p + 1)}><ChevronRight size={14} /></button>
         </div>
       )}
     </div>

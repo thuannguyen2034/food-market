@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { InventoryAdjustmentDTO, PageResponse } from '../types';
-import styles from '@/styles/admin/Inventory.module.css';
+import styles from '../InventoryPage.module.css'; // Dùng styles chung
 
 export default function AdjustmentHistory() {
     const { authedFetch } = useAuth();
@@ -11,56 +11,25 @@ export default function AdjustmentHistory() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
     const [selectedBatchId, setSelectedBatchId] = useState<string>('');
-
-    const pageSize = 10;
+    
+    // Tăng page size vì view compact
+    const pageSize = 20;
 
     const fetchAdjustments = useCallback(async () => {
         setLoading(true);
         try {
-            let url = '/api/v1/admin/inventory';
-
-            // If specific batch selected, fetch adjustments for that batch
+            let url;
+            // LOGIC FIX: Gọi đúng endpoint backend đã có
             if (selectedBatchId) {
                 url = `/api/v1/admin/inventory/${selectedBatchId}/adjustments?page=${page}&size=${pageSize}`;
             } else {
-                // For all adjustments, we need to fetch all batches and aggregate
-                // This is a simplified approach - in production, you'd have a dedicated endpoint
-                url = `/api/v1/admin/inventory?page=${page}&size=100`;
+                url = `/api/v1/admin/inventory/adjustments?page=${page}&size=${pageSize}`;
             }
 
             const response = await authedFetch(url);
-
             if (response.ok) {
                 const data = await response.json();
-
-                if (selectedBatchId) {
-                    // Direct adjustment data
-                    setDataPage(data);
-                } else {
-                    // Extract adjustments from batches
-                    const allAdjustments: InventoryAdjustmentDTO[] = [];
-                    data.content?.forEach((batch: any) => {
-                        if (batch.adjustments && batch.adjustments.length > 0) {
-                            allAdjustments.push(...batch.adjustments);
-                        }
-                    });
-
-                    // Sort by date descending
-                    allAdjustments.sort((a, b) =>
-                        new Date(b.adjustmentDate).getTime() - new Date(a.adjustmentDate).getTime()
-                    );
-
-                    // Create pseudo-page response
-                    setDataPage({
-                        content: allAdjustments.slice(0, pageSize),
-                        totalPages: Math.ceil(allAdjustments.length / pageSize),
-                        totalElements: allAdjustments.length,
-                        number: page,
-                        size: pageSize,
-                        first: page === 0,
-                        last: page >= Math.ceil(allAdjustments.length / pageSize) - 1,
-                    });
-                }
+                setDataPage(data);
             }
         } catch (error) {
             console.error('Failed to fetch adjustments:', error);
@@ -72,136 +41,99 @@ export default function AdjustmentHistory() {
         fetchAdjustments();
     }, [fetchAdjustments]);
 
-    const handlePageChange = (newPage: number) => {
-        if (newPage >= 0 && (!dataPage || newPage < dataPage.totalPages)) {
-            setPage(newPage);
-        }
-    };
-
     const handleFilterSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        setPage(0);
+        setPage(0); // Reset về trang 0 khi search
         fetchAdjustments();
     };
 
-    const renderTableBody = () => {
-        if (loading) {
-            return (
-                <tr>
-                    <td colSpan={6} className={styles.centerText}>
-                        Đang tải dữ liệu...
-                    </td>
-                </tr>
-            );
-        }
-
-        if (!dataPage || dataPage.content.length === 0) {
-            return (
-                <tr>
-                    <td colSpan={6} className={styles.centerText}>
-                        Chưa có lịch sử điều chỉnh nào.
-                    </td>
-                </tr>
-            );
-        }
-
-        return dataPage.content.map((adjustment, index) => (
-            <tr key={adjustment.adjustmentId || index}>
-                <td>{adjustment.adjustmentId || 'N/A'}</td>
-                <td>Lô #{adjustment.batchId}</td>
-                <td>
-                    <span
-                        className={
-                            adjustment.adjustmentQuantity > 0
-                                ? styles.positiveAdjustment
-                                : styles.negativeAdjustment
-                        }
-                    >
-                        {adjustment.adjustmentQuantity > 0 ? '+' : ''}
-                        {adjustment.adjustmentQuantity}
-                    </span>
-                </td>
-                <td>{adjustment.reason}</td>
-                <td>
-                    <small>{adjustment.adjustedByUserId.substring(0, 8)}...</small>
-                </td>
-                <td>
-                    {new Date(adjustment.adjustmentDate).toLocaleString('vi-VN')}
-                </td>
-            </tr>
-        ));
+    // Helper render màu sắc cho số lượng
+    const renderQuantity = (qty: number) => {
+        const color = qty > 0 ? '#10b981' : qty < 0 ? '#ef4444' : '#6b7280';
+        return <span style={{ color, fontWeight: 600 }}>{qty > 0 ? `+${qty}` : qty}</span>;
     };
 
     return (
-        <div className={styles.historyContainer}>
-            <h2 className={styles.formTitle}>📜 Lịch sử điều chỉnh</h2>
-
-            {/* Filter */}
+        <div className={styles.tableContainer}>
+            {/* Filter Bar Compact */}
             <form onSubmit={handleFilterSubmit} className={styles.filterBar}>
-                <div className={styles.filterGroup}>
-                    <label>Lọc theo lô hàng:</label>
-                    <input
-                        type="text"
-                        placeholder="Nhập ID lô hàng"
-                        value={selectedBatchId}
-                        onChange={(e) => setSelectedBatchId(e.target.value)}
-                        className={styles.filterInput}
-                    />
-                </div>
-                <button type="submit" className={styles.filterButton}>
-                    Áp dụng
-                </button>
+                <input
+                    type="text"
+                    placeholder="Lọc theo ID lô hàng..."
+                    value={selectedBatchId}
+                    onChange={(e) => setSelectedBatchId(e.target.value)}
+                    className={styles.filterInput}
+                    style={{ width: '200px' }}
+                />
+                <button type="submit" className={styles.refreshButton}>Tìm kiếm</button>
                 {selectedBatchId && (
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setSelectedBatchId('');
-                            setPage(0);
-                        }}
-                        className={styles.clearButton}
+                    <button 
+                        type="button" 
+                        onClick={() => { setSelectedBatchId(''); setPage(0); }}
+                        style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem' }}
                     >
-                        Xóa bộ lọc
+                        Xóa lọc
                     </button>
                 )}
             </form>
 
-            {/* Table */}
+            {/* Table Area */}
             <div className={styles.tableWrapper}>
-                <table className={styles.historyTable}>
+                <table className={styles.compactTable}>
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Lô hàng</th>
-                            <th>Thay đổi</th>
+                            <th style={{width: '60px'}}>ID</th>
+                            <th style={{width: '100px'}}>Lô hàng</th>
+                            <th style={{width: '100px'}}>Thay đổi</th>
                             <th>Lý do</th>
-                            <th>Người thực hiện</th>
-                            <th>Thời gian</th>
+                            <th style={{width: '150px'}}>Người thực hiện</th>
+                            <th style={{width: '140px'}}>Thời gian</th>
                         </tr>
                     </thead>
-                    <tbody>{renderTableBody()}</tbody>
+                    <tbody>
+                        {loading ? (
+                            <tr><td colSpan={6} style={{textAlign: 'center'}}>Đang tải...</td></tr>
+                        ) : (!dataPage || dataPage.content.length === 0) ? (
+                            <tr><td colSpan={6} style={{textAlign: 'center'}}>Chưa có dữ liệu</td></tr>
+                        ) : (
+                            dataPage.content.map((adj) => (
+                                <tr key={adj.adjustmentId}>
+                                    <td>#{adj.adjustmentId}</td>
+                                    <td>
+                                        <span 
+                                            style={{cursor: 'pointer', color: '#2563eb'}}
+                                            onClick={() => {setSelectedBatchId(adj.batchId.toString()); setPage(0);}}
+                                            title="Click để lọc theo lô này"
+                                        >
+                                            #{adj.batchId}
+                                        </span>
+                                    </td>
+                                    <td>{renderQuantity(adj.adjustmentQuantity)}</td>
+                                    <td>{adj.reason}</td>
+                                    <td>
+                                        {/* Ưu tiên hiện tên, fallback về ID */}
+                                        <small>{adj.adjustedByUserName || adj.adjustedByUserId?.substring(0,8)}</small>
+                                    </td>
+                                    <td>
+                                        {new Date(adj.adjustmentDate).toLocaleString('vi-VN', {
+                                            hour: '2-digit', minute:'2-digit', day:'2-digit', month:'2-digit'
+                                        })}
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
                 </table>
             </div>
 
-            {/* Pagination */}
-            {!loading && dataPage && dataPage.totalPages > 1 && (
+            {/* Pagination Logic similar to other tables */}
+            {!loading && dataPage && (
                 <div className={styles.pagination}>
-                    <button
-                        onClick={() => handlePageChange(page - 1)}
-                        disabled={dataPage.first}
-                        className={styles.pageButton}
-                    >
-                        &laquo; Trước
-                    </button>
-                    <span className={styles.pageInfo}>
-                        Trang {dataPage.number + 1} / {dataPage.totalPages}
-                    </span>
-                    <button
-                        onClick={() => handlePageChange(page + 1)}
-                        disabled={dataPage.last}
-                        className={styles.pageButton}
-                    >
-                        Sau &raquo;
-                    </button>
+                   <span>Trang {dataPage.number + 1} / {dataPage.totalPages}</span>
+                   <div style={{display:'flex', gap: '4px'}}>
+                       <button className={styles.pageBtn} disabled={dataPage.first} onClick={() => setPage(p => p-1)}>&lt;</button>
+                       <button className={styles.pageBtn} disabled={dataPage.last} onClick={() => setPage(p => p+1)}>&gt;</button>
+                   </div>
                 </div>
             )}
         </div>

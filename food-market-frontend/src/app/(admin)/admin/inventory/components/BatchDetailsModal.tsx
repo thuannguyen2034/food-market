@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Package, X } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { InventoryBatchDTO } from '../types';
-import styles from '@/styles/admin/Inventory.module.css';
+import styles from './InventoryModals.module.css'; // Dùng file css chung
 
 type Props = {
     batch: InventoryBatchDTO;
@@ -17,128 +17,101 @@ export default function BatchDetailsModal({ batch, onClose }: Props) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchBatchDetails();
-    }, [batch.batchId]);
-
-    const fetchBatchDetails = async () => {
-        try {
-            const response = await authedFetch(`/api/v1/admin/inventory/${batch.batchId}`);
-            if (response.ok) {
-                const data = await response.json();
-                setDetailedBatch(data);
+        const fetchBatchDetails = async () => {
+            try {
+                const response = await authedFetch(`/api/v1/admin/inventory/${batch.batchId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    setDetailedBatch(data);
+                }
+            } catch (error) {
+                console.error('Failed to fetch details:', error);
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            console.error('Failed to fetch batch details:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+        };
+        fetchBatchDetails();
+    }, [batch.batchId, authedFetch]);
 
-    const getDaysUntilExpiry = (expirationDate: string) => {
-        return Math.ceil(
-            (new Date(expirationDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
-        );
+    const getDaysText = (dateStr: string) => {
+        const days = Math.ceil((new Date(dateStr).getTime() - new Date().getTime()) / (86400000));
+        return days < 0 ? `(Hết hạn ${Math.abs(days)} ngày)` : `(Còn ${days} ngày)`;
     };
 
     return (
-        <div className={styles.modalOverlay} onClick={onClose}>
-            <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-                <div className={styles.modalHeader}>
-                    <h2><Package size={24} /> Chi tiết lô hàng #{batch.batchId}</h2>
-                    <button onClick={onClose} className={styles.closeButton}>
-                        <X size={20} />
-                    </button>
+        <div className={styles.overlay} onClick={onClose}>
+            <div className={styles.content} onClick={e => e.stopPropagation()}>
+                <div className={styles.header}>
+                    <h2><Package size={18} /> Chi tiết lô #{batch.batchId}</h2>
+                    <button onClick={onClose} className={styles.closeBtn}><X size={18} /></button>
                 </div>
 
-                <div className={styles.modalBody}>
+                <div className={styles.body}>
                     {loading ? (
-                        <div className={styles.centerText}>Đang tải...</div>
+                        <div style={{textAlign:'center', padding:'20px'}}>Đang tải...</div>
                     ) : detailedBatch ? (
                         <>
-                            <div className={styles.detailsGrid}>
-                                <div className={styles.detailItem}>
-                                    <label>Mã lô:</label>
-                                    <span>{detailedBatch.batchCode || 'N/A'}</span>
+                            {/* Grid Info Compact */}
+                            <div className={styles.grid}>
+                                <div><span className={styles.label}>Mã lô</span><div className={styles.value}>{detailedBatch.batchCode || 'N/A'}</div></div>
+                                <div><span className={styles.label}>Sản phẩm</span><div className={styles.value} title={detailedBatch.productName}>{detailedBatch.productName}</div></div>
+                                
+                                <div>
+                                    <span className={styles.label}>Tồn kho / Tổng nhập</span>
+                                    <div className={styles.value}>
+                                        <span className={styles.highlight}>{detailedBatch.currentQuantity}</span> 
+                                        <span style={{color:'#9ca3af'}}> / {detailedBatch.quantityReceived}</span>
+                                    </div>
                                 </div>
-                                <div className={styles.detailItem}>
-                                    <label>Sản phẩm:</label>
-                                    <span>Product #{detailedBatch.productId}</span>
-                                </div>
-                                <div className={styles.detailItem}>
-                                    <label>Số lượng nhập:</label>
-                                    <span>{detailedBatch.quantityReceived}</span>
-                                </div>
-                                <div className={styles.detailItem}>
-                                    <label>Số lượng hiện tại:</label>
-                                    <span className={styles.highlight}>
-                                        {detailedBatch.currentQuantity}
-                                    </span>
-                                </div>
-                                <div className={styles.detailItem}>
-                                    <label>Ngày nhập:</label>
-                                    <span>
-                                        {new Date(detailedBatch.entryDate).toLocaleDateString('vi-VN')}
-                                    </span>
-                                </div>
-                                <div className={styles.detailItem}>
-                                    <label>Hạn sử dụng:</label>
-                                    <span>
-                                        {new Date(detailedBatch.expirationDate).toLocaleDateString('vi-VN')}
-                                        {' '}
-                                        <small>
-                                            ({getDaysUntilExpiry(detailedBatch.expirationDate)} ngày)
-                                        </small>
-                                    </span>
+                                <div><span className={styles.label}>Ngày nhập</span><div className={styles.value}>{new Date(detailedBatch.entryDate).toLocaleDateString('vi-VN')}</div></div>
+                                
+                                <div className={styles.fullWidth}>
+                                    <span className={styles.label}>Hạn sử dụng</span>
+                                    <div className={styles.value}>
+                                        {new Date(detailedBatch.expirationDate).toLocaleDateString('vi-VN')} 
+                                        <span style={{marginLeft:'8px', fontSize:'0.8em', color: getDaysText(detailedBatch.expirationDate).includes('Hết')?'red':'green'}}>
+                                            {getDaysText(detailedBatch.expirationDate)}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Adjustments History */}
+                            {/* Adjustment History Scrollable Area */}
                             {detailedBatch.adjustments && detailedBatch.adjustments.length > 0 && (
-                                <div className={styles.adjustmentsSection}>
-                                    <h3>Lịch sử điều chỉnh</h3>
-                                    <table className={styles.miniTable}>
-                                        <thead>
-                                            <tr>
-                                                <th>Thay đổi</th>
-                                                <th>Lý do</th>
-                                                <th>Thời gian</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {detailedBatch.adjustments.map((adj, idx) => (
-                                                <tr key={idx}>
-                                                    <td>
-                                                        <span
-                                                            className={
-                                                                adj.adjustmentQuantity > 0
-                                                                    ? styles.positiveAdjustment
-                                                                    : styles.negativeAdjustment
-                                                            }
-                                                        >
-                                                            {adj.adjustmentQuantity > 0 ? '+' : ''}
-                                                            {adj.adjustmentQuantity}
-                                                        </span>
-                                                    </td>
-                                                    <td>{adj.reason}</td>
-                                                    <td>
-                                                        {new Date(adj.adjustmentDate).toLocaleString('vi-VN')}
-                                                    </td>
+                                <div style={{marginTop:'8px'}}>
+                                    <span className={styles.label}>Lịch sử điều chỉnh gần đây</span>
+                                    <div className={styles.scrollArea}>
+                                        <table className={styles.miniTable}>
+                                            <thead>
+                                                <tr>
+                                                    <th>SL</th>
+                                                    <th>Lý do</th>
+                                                    <th>Ngày</th>
                                                 </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                            </thead>
+                                            <tbody>
+                                                {detailedBatch.adjustments.map((adj, idx) => (
+                                                    <tr key={idx}>
+                                                        <td style={{color: adj.adjustmentQuantity > 0 ? '#10b981' : '#ef4444', fontWeight:600}}>
+                                                            {adj.adjustmentQuantity > 0 ? '+' : ''}{adj.adjustmentQuantity}
+                                                        </td>
+                                                        <td>{adj.reason}</td>
+                                                        <td>{new Date(adj.adjustmentDate).toLocaleDateString('vi-VN')}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             )}
                         </>
                     ) : (
-                        <div className={styles.centerText}>Không tìm thấy dữ liệu.</div>
+                        <div style={{textAlign:'center'}}>Không có dữ liệu.</div>
                     )}
                 </div>
 
-                <div className={styles.modalFooter}>
-                    <button onClick={onClose} className={styles.cancelButton}>
-                        Đóng
-                    </button>
+                <div className={styles.footer}>
+                    <button onClick={onClose} className={`${styles.btn} ${styles.btnCancel}`}>Đóng</button>
                 </div>
             </div>
         </div>

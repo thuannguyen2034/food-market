@@ -1,0 +1,489 @@
+/* AdminProduct.module.css */
+.container {
+    padding: 12px 16px;
+    height: calc(100vh - 60px);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background-color: #f8f9fa;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* --- Header & Stats Ribbon --- */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0;
+}
+
+.header h1 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.statsRibbon {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.statCard {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 160px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.statCard:hover {
+    border-color: #e72a2a;
+}
+
+.statCard.active {
+    border-color: #e72a2a;
+    background-color: #fef2f2;
+}
+
+.statIcon {
+    color: #e72a2a;
+    padding: 6px;
+    background: #fee2e2;
+    border-radius: 4px;
+}
+
+.statValue {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #e72a2a;
+    line-height: 1;
+}
+
+.statLabel {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+/* --- Toolbar (Search + Filter) --- */
+.toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    background: #fff;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #e5e7eb;
+}
+
+.searchWrapper {
+    position: relative;
+    flex: 1;
+    max-width: 400px;
+    display: flex;
+    align-items: center;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 6px 10px;
+    padding-left: 32px;
+    font-size: 0.85rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    outline: none;
+    transition: border 0.2s;
+}
+
+.searchInput:focus {
+    border-color: #e72a2a;
+}
+
+.searchIcon {
+    position: absolute;
+    left: 8px;
+    color: #9ca3af;
+}
+
+.filterSelect {
+    padding: 6px 24px 6px 10px;
+    font-size: 0.85rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    background-color: white;
+    color: #374151;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 10px;
+}
+
+.filterSelect:focus {
+    border-color: #e72a2a;
+}
+
+.btnPrimary {
+    background: #e72a2a;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btnPrimary:hover {
+    background: #c0392b;
+}
+
+.btnOutline {
+    background: white;
+    color: #374151;
+    border: 1px solid #d1d5db;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btnOutline:hover {
+    background: #f3f4f6;
+}
+
+/* --- Compact Table --- */
+.tableWrapper {
+    flex: 1;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+}
+
+.compactTable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.85rem;
+}
+
+.compactTable th {
+    position: sticky;
+    top: 0;
+    background: #f3f4f6;
+    color: #374151;
+    font-weight: 600;
+    padding: 8px 10px;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+    z-index: 10;
+}
+
+.compactTable td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+    color: #4b5563;
+}
+
+.compactTable tr:hover td {
+    background-color: #fff1f1;
+}
+
+/* Highlight đỏ nhạt khi hover */
+.deletedRow td {
+    opacity: 0.6;
+    background-color: #f9fafb;
+    text-decoration: line-through;
+}
+
+/* Table Elements */
+.productName {
+    font-weight: 600;
+    color: #111827;
+    display: block;
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.subText {
+    font-size: 0.75rem;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 2px;
+}
+
+.productImg {
+    width: 36px;
+    height: 36px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #eee;
+}
+
+.badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badgeStock {
+    background: #ecfdf5;
+    color: #059669;
+}
+
+.badgeLow {
+    background: #fffbeb;
+    color: #d97706;
+}
+
+.badgeOut {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.priceFinal {
+    color: #e72a2a;
+    font-weight: 700;
+}
+
+.priceOriginal {
+    text-decoration: line-through;
+    color: #9ca3af;
+    font-size: 0.75rem;
+    margin-right: 4px;
+}
+
+/* Actions */
+.actionBtn {
+    padding: 4px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: #6b7280;
+    border-radius: 4px;
+}
+
+.actionBtn:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.actionBtn.delete:hover {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+/* --- FORM STYLES (Compact Grid) --- */
+.formContainer {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 12px;
+    height: 100%;
+    overflow: hidden;
+}
+
+.formScroll {
+    overflow-y: auto;
+    padding-right: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    height: 100%;
+}
+
+.card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.card h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 6px;
+}
+
+.grid2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.grid3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+}
+
+.formGroup {
+    margin-bottom: 10px;
+}
+
+.label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #4b5563;
+    margin-bottom: 4px;
+}
+
+.input,
+.textarea {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 0.85rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.input:focus,
+.textarea:focus {
+    border-color: #e72a2a;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(231, 42, 42, 0.1);
+}
+
+.error {
+    color: #dc2626;
+    font-size: 0.75rem;
+    margin-top: 2px;
+}
+
+/* Overrides for Libraries to make them compact */
+.reactSelectControl {
+    min-height: 32px !important;
+    border-color: #d1d5db !important;
+    font-size: 0.85rem;
+}
+
+.quillWrapper .ql-editor {
+    min-height: 100px;
+    max-height: 200px;
+    font-size: 0.9rem;
+}
+
+.quillWrapper .ql-toolbar {
+    padding: 4px !important;
+}
+
+/* Image Grid Compact */
+.imgGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.imgItem {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    border: 1px solid #eee;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.imgItem img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.removeImgBtn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* Pagination Compact */
+.pagination {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+    margin-top: 4px;
+}
+
+.pageBtn {
+    padding: 2px 8px;
+    border: 1px solid #d1d5db;
+    background: white;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.pageBtn:disabled {
+    opacity: 0.5;
+}
+
+/* Hints Dropdown */
+.hintsDropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    z-index: 50;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.hintItem {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.hintItem:hover {
+    background: #f3f4f6;
+    color: #e72a2a;
+}

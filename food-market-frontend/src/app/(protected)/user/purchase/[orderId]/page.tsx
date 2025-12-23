@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft, MapPin, Phone, Calendar, Clock, AlertTriangle } from 'lucide-react';
-import styles from './page.module.css';
+import { ChevronLeft, Calendar, Clock, AlertTriangle, CreditCard, Banknote, AlertCircle,CheckCircle2 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+import styles from './CustomerOrderDetail.module.css';
 import { useAuth } from '@/context/AuthContext';
-import { OrderDTO, OrderStatus } from '@/app/type/Order';
+import { OrderDTO, OrderStatus, PaymentStatus, PaymentMethod } from '@/app/type/Order';
 import OrderItem from '../OrderItem';
 export const formatCurrency = (amount: number): string => {
   return new Intl.NumberFormat('vi-VN', {
@@ -42,42 +43,53 @@ export default function OrderDetailPage() {
   const { orderId } = useParams(); // Lấy orderId từ URL
   const router = useRouter();
   const { authedFetch } = useAuth();
-  
+
   const [order, setOrder] = useState<OrderDTO | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isPayLoading, setIsPayLoading] = useState(false);
   const [error, setError] = useState('');
 
   // Lấy chi tiết đơn hàng
   useEffect(() => {
     if (!orderId) return;
     fetchOrderDetail();
-  }, [orderId]);
+    const interval = setInterval(() => {
+      if (order?.status === OrderStatus.PENDING && order?.paymentMethod === 'VNPAY' && order?.paymentStatus !== 'PAID') {
+        fetchOrderDetail(true); // true = silent reload (không hiện loading)
+      }
+    }, 10000);
 
-  const fetchOrderDetail = async () => {
+    return () => clearInterval(interval);
+  }, [orderId, order?.status, order?.paymentMethod, order?.paymentStatus]);
+
+  const fetchOrderDetail = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       const res = await authedFetch(`/api/v1/orders/${orderId}`);
       if (res.ok) {
         const data = await res.json();
         setOrder(data);
       } else {
-        setError('Không tìm thấy đơn hàng hoặc bạn không có quyền truy cập.');
+        if (!silent) setError('Không tìm thấy đơn hàng hoặc bạn không có quyền truy cập.');
       }
     } catch (err) {
-      setError('Đã xảy ra lỗi kết nối.');
+      if (!silent) setError('Đã xảy ra lỗi kết nối.');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
   // Xử lý Hủy đơn hàng
   const handleCancelOrder = async () => {
     if (!order) return;
-
-    // Prompt đơn giản để lấy lý do (có thể nâng cấp lên Modal đẹp hơn sau)
+    // Chặn hủy nếu đã thanh toán (Logic business)
+    if (order.paymentStatus === PaymentStatus.PAID) {
+      alert('Đơn hàng đã thanh toán. Vui lòng liên hệ CSKH để được hỗ trợ hủy và hoàn tiền.');
+      return;
+    }
     const reason = window.prompt('Vui lòng nhập lý do hủy đơn hàng:', 'Đổi ý không muốn mua nữa');
-    
-    if (reason === null) return; // User ấn Cancel
+
+    if (reason === null) return;
     if (reason.trim() === '') {
       alert('Vui lòng nhập lý do!');
       return;
@@ -97,7 +109,6 @@ export default function OrderDetailPage() {
         fetchOrderDetail(); // Reload lại data
       } else {
         const errorData = await res.json();
-        // Backend có thể trả về lỗi logic (VD: Đã thanh toán online)
         alert(`Không thể hủy đơn: ${errorData.message || 'Lỗi không xác định'}`);
       }
     } catch (err) {
@@ -105,99 +116,179 @@ export default function OrderDetailPage() {
       alert('Có lỗi xảy ra khi hủy đơn.');
     }
   };
-
+  // 2. Xử lý Thanh toán lại (Retry Payment)
+  const handleRetryPayment = async () => {
+    if (!order) return;
+    setIsPayLoading(true);
+    try {
+      // Gọi API lấy link thanh toán
+      const res = await authedFetch(`/api/payment/create_payment?orderId=${order.orderId}`);
+      if (res.ok) {
+        const data = await res.json();
+        // Redirect sang VNPAY
+        window.location.href = data.url;
+      } else {
+        const err = await res.json();
+        toast.error(err.message || 'Không thể tạo link thanh toán');
+      }
+    } catch (error) {
+      toast.error('Lỗi kết nối server');
+    } finally {
+      setIsPayLoading(false);
+    }
+  };
   if (loading) return <div className={styles.container}>Đang tải...</div>;
   if (error) return <div className={styles.container}>{error}</div>;
   if (!order) return null;
 
   const statusStyle = getStatusColor(order.status);
-  
-  // Logic hiển thị nút hủy: Chỉ PENDING hoặc CONFIRMED
-  const canCancel = [OrderStatus.PENDING, OrderStatus.CONFIRMED].includes(order.status);
 
+  // Logic check điều kiện hiển thị
+  const isVnPay = order.paymentMethod === 'VNPAY';
+  const isUnpaid = order.paymentStatus !== PaymentStatus.PAID;
+  const isCancelled = order.status === OrderStatus.CANCELLED;
+
+  // Điều kiện hiện nút Thanh toán lại: Là VNPAY + Chưa trả + Chưa hủy
+  const showRetryPayment = isVnPay && isUnpaid && !isCancelled;
+
+  // Điều kiện hiện nút Hủy: PENDING/CONFIRMED + Chưa trả tiền (Nếu trả rồi thì ẩn)
+  const canCancel = [OrderStatus.PENDING, OrderStatus.CONFIRMED].includes(order.status) && !isCancelled && order.paymentStatus !== PaymentStatus.PAID;
   return (
     <div className={styles.container}>
-      {/* 1. Nút Back */}
+      {/* Nút Back */}
       <Link href="/user/purchase" className={styles.backLink}>
-        <ChevronLeft size={16} />
-        Trở lại danh sách
+        <ChevronLeft size={16} /> Trở lại danh sách
       </Link>
 
-      {/* 2. Header: Mã đơn + Trạng thái */}
+      {/* HEADER ĐƠN HÀNG */}
       <div className={styles.header}>
         <div>
           <h1 className={styles.orderId}>Đơn hàng #{order.orderId.substring(0, 8).toUpperCase()}</h1>
           <span className={styles.metaDate}>Ngày đặt: {formatDate(order.createdAt)}</span>
         </div>
-        <div 
-          className={styles.statusBadge}
-          style={{ backgroundColor: statusStyle.bg, color: statusStyle.color }}
-        >
+        <div className={styles.statusBadge} style={{ backgroundColor: statusStyle.bg, color: statusStyle.color }}>
           {statusStyle.label}
         </div>
       </div>
 
-      {/* 3. Thông tin giao hàng & Người nhận */}
+      {/* --- BANNER TRẠNG THÁI THANH TOÁN (MỚI) --- */}
+      <div className={styles.paymentBanner}>
+        {/* Case 1: VNPAY + Đã thanh toán */}
+        {isVnPay && order.paymentStatus === 'PAID' && (
+          <div className={`${styles.alert} ${styles.alertSuccess}`}>
+            <CheckCircle2 size={20} />
+            <span>Đơn hàng đã được thanh toán thành công qua VNPAY.</span>
+          </div>
+        )}
+
+        {/* Case 2: VNPAY + Chưa thanh toán + Chưa hủy */}
+        {showRetryPayment && (
+          <div className={`${styles.alert} ${styles.alertWarning}`}>
+            <AlertTriangle size={20} />
+            <div className="flex flex-col">
+              <span className="font-bold">Đơn hàng chưa được thanh toán!</span>
+              <span className="text-sm">Vui lòng thanh toán trong vòng 15 phút để tránh bị hệ thống tự động hủy.</span>
+            </div>
+            {/* Nút thanh toán nhanh trên banner */}
+            <button
+              onClick={handleRetryPayment}
+              disabled={isPayLoading}
+              className={styles.retryButtonSmall}
+            >
+              {isPayLoading ? 'Đang xử lý...' : 'Thanh toán ngay'}
+            </button>
+          </div>
+        )}
+
+        {/* Case 3: VNPAY + Đã Hủy + Chưa thanh toán (Case khách hủy hoặc timeout) */}
+        {isVnPay && isCancelled && isUnpaid && (
+          <div className={`${styles.alert} ${styles.alertError}`}>
+            <AlertCircle size={20} />
+            <span>Đơn hàng đã bị hủy do chưa hoàn tất thanh toán.</span>
+          </div>
+        )}
+
+        {/* Case 4: COD */}
+        {!isVnPay && (
+          <div className={`${styles.alert} ${styles.alertInfo}`}>
+            <Banknote size={20} />
+            <span>Phương thức thanh toán: Tiền mặt khi nhận hàng (COD).</span>
+          </div>
+        )}
+      </div>
+
+
+      {/* INFO GRID (GIỮ NGUYÊN) */}
       <div className={styles.infoGrid}>
-        {/* Cột trái: Thông tin giao hàng */}
+        {/* ... (Code hiển thị địa chỉ giống cũ) ... */}
         <div className={styles.card}>
-          <h3 className={styles.cardTitle}>Địa chỉ nhận hàng</h3>
-          
+          <h3 className={styles.cardTitle}>Thông tin thanh toán</h3>
           <div className={styles.infoRow}>
-            <span className={styles.infoLabel}><MapPin size={14}/> Địa chỉ:</span>
-            <span className={styles.infoValue}>{order.deliveryAddress}</span>
+            <span className={styles.infoLabel}><CreditCard size={14} /> Phương thức:</span>
+            <span className={styles.infoValue}>{isVnPay ? 'VNPAY (Ví/Thẻ)' : 'Tiền mặt (COD)'}</span>
           </div>
           <div className={styles.infoRow}>
-            <span className={styles.infoLabel}><Phone size={14}/> Số điện thoại:</span>
-            <span className={styles.infoValue}>{order.deliveryPhone}</span>
+            <span className={styles.infoLabel}>Trạng thái:</span>
+            <span className={styles.infoValue} style={{
+              color: order.paymentStatus === 'PAID' ? 'green' :
+                order.paymentStatus === 'FAILED' ? 'red' : 'orange',
+              fontWeight: 600
+            }}>
+              {order.paymentStatus === 'PAID' ? 'Đã thanh toán' :
+                order.paymentStatus === 'FAILED' ? 'Thất bại' :
+                  order.paymentStatus === 'CANCELLED' ? 'Đã hủy' : 'Chờ thanh toán'}
+            </span>
           </div>
-           {/* Note nếu có */}
-           {order.note && (
-            <div className={styles.infoRow} style={{marginTop: '0.5rem', fontStyle: 'italic', color: '#666'}}>
-               <span className={styles.infoLabel}>Ghi chú:</span>
-               <span>{order.note}</span>
+          {order.paymentDate && (
+            <div className={styles.infoRow}>
+              <span className={styles.infoLabel}>Ngày thanh toán:</span>
+              <span className={styles.infoValue}>{formatDate(order.paymentDate)}</span>
             </div>
           )}
         </div>
 
-        {/* Cột phải: Thời gian giao dự kiến */}
+        {/* ... (Code hiển thị thời gian giao hàng giống cũ) ... */}
         <div className={styles.card}>
           <h3 className={styles.cardTitle}>Thời gian giao hàng</h3>
-          
           <div className={styles.infoRow}>
-            <span className={styles.infoLabel}><Calendar size={14}/> Ngày giao:</span>
+            <span className={styles.infoLabel}><Calendar size={14} /> Ngày giao:</span>
             <span className={styles.infoValue}>{order.deliveryDate}</span>
           </div>
           <div className={styles.infoRow}>
-            <span className={styles.infoLabel}><Clock size={14}/> Khung giờ:</span>
+            <span className={styles.infoLabel}><Clock size={14} /> Khung giờ:</span>
             <span className={styles.infoValue}>{order.deliveryTimeSlot}</span>
           </div>
-           <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: '#f59e0b', display: 'flex', gap: '5px' }}>
-              <AlertTriangle size={16} />
-              <span>Vui lòng chú ý điện thoại vào thời gian này.</span>
-           </div>
         </div>
       </div>
 
-      {/* 4. Danh sách sản phẩm */}
+      {/* ITEMS SECTION (GIỮ NGUYÊN) */}
       <div className={styles.itemsSection}>
+        {/* ... */}
         <h3 className={styles.cardTitle}>Sản phẩm ({order.items.length})</h3>
         {order.items.map((item) => (
-          <OrderItem key={item.id}
-            item={item}
-            orderId={order.orderId}
-            orderStatus={order.status}
-          />
+          <OrderItem key={item.id} item={item} orderId={order.orderId} orderStatus={order.status} />
         ))}
       </div>
 
-      {/* 5. Footer: Tổng tiền & Action */}
+      {/* FOOTER ACTIONS (CẬP NHẬT) */}
       <div className={styles.footer}>
-        <div>
-          {/* Nút hủy chỉ hiện khi trạng thái hợp lệ */}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {/* Nút Hủy Đơn */}
           {canCancel && (
             <button onClick={handleCancelOrder} className={styles.cancelButton}>
               Hủy đơn hàng
+            </button>
+          )}
+
+          {/* Nút Thanh Toán Lại (Nằm ở footer) */}
+          {showRetryPayment && (
+            <button
+              onClick={handleRetryPayment}
+              disabled={isPayLoading}
+              className={styles.payNowButton}
+            >
+              <CreditCard size={16} style={{ marginRight: '5px' }} />
+              {isPayLoading ? 'Đang chuyển hướng...' : 'Thanh toán lại ngay'}
             </button>
           )}
         </div>

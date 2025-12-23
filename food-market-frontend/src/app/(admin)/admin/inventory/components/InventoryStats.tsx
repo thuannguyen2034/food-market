@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Package, AlertTriangle, Boxes, TrendingDown } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import styles from '@/styles/admin/Inventory.module.css';
+import styles from '../InventoryPage.module.css';
 
 type StatsData = {
     totalBatches: number;
@@ -69,58 +69,41 @@ export default function InventoryStats() {
         }
     };
 
-    if (loading) {
-        return (
-            <div className={styles.statsContainer}>
-                <div className={styles.statCard}>
-                    <div className={styles.skeleton}></div>
-                </div>
-                <div className={styles.statCard}>
-                    <div className={styles.skeleton}></div>
-                </div>
-                <div className={styles.statCard}>
-                    <div className={styles.skeleton}></div>
-                </div>
-                <div className={styles.statCard}>
-                    <div className={styles.skeleton}></div>
-                </div>
-            </div>
-        );
-    }
+    if (loading) return <div className={styles.statsRibbon}>Loading...</div>;
 
     return (
-        <div className={styles.statsContainer}>
+        <div className={styles.statsRibbon}>
             <div className={`${styles.statCard} ${styles.primary}`}>
-                <div className={styles.statIcon}><Package size={24} /></div>
+                <div className={styles.statIcon}><Package size={18} /></div>
                 <div className={styles.statContent}>
                     <div className={styles.statValue}>{stats.totalBatches}</div>
-                    <div className={styles.statLabel}>Tổng số lô hàng</div>
+                    <div className={styles.statLabel}>Lô hàng</div>
                 </div>
             </div>
 
             <div className={`${styles.statCard} ${styles.warning}`}>
-                <div className={styles.statIcon}><AlertTriangle size={24} /></div>
+                <div className={styles.statIcon}><AlertTriangle size={18} /></div>
                 <div className={styles.statContent}>
                     <div className={styles.statValue}>{stats.expiringSoon}</div>
-                    <div className={styles.statLabel}>Sắp hết hạn (&lt; 7 ngày)</div>
+                    <div className={styles.statLabel}>Sắp hết hạn</div>
                 </div>
             </div>
 
             <div className={`${styles.statCard} ${styles.success}`}>
-                <div className={styles.statIcon}><Boxes size={24} /></div>
+                <div className={styles.statIcon}><Boxes size={18} /></div>
                 <div className={styles.statContent}>
                     <div className={styles.statValue}>
-                        {new Intl.NumberFormat('vi-VN').format(stats.totalValue)}
+                        {new Intl.NumberFormat('vi-VN', { notation: "compact" }).format(stats.totalValue)}
                     </div>
-                    <div className={styles.statLabel}>Tổng số lượng</div>
+                    <div className={styles.statLabel}>Tổng tồn</div>
                 </div>
             </div>
 
             <div className={`${styles.statCard} ${styles.danger}`}>
-                <div className={styles.statIcon}><TrendingDown size={24} /></div>
+                <div className={styles.statIcon}><TrendingDown size={18} /></div>
                 <div className={styles.statContent}>
                     <div className={styles.statValue}>{stats.lowStock}</div>
-                    <div className={styles.statLabel}>Tồn kho thấp (&lt; 10)</div>
+                    <div className={styles.statLabel}>Low Stock</div>
                 </div>
             </div>
         </div>

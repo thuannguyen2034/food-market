@@ -1,7 +1,7 @@
 'use client';
 
-import ProductForm from '@/components/Admin/ProductForm';
-import styles from '@/styles/admin/Products.module.css';
+import ProductForm from '@/app/(admin)/admin/products/components/ProductForm';
+import styles from '../AdminProduct.module.css';
 import { Plus } from 'lucide-react';
 
 export default function NewProductPage() {

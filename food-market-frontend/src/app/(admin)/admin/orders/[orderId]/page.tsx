@@ -2,33 +2,51 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import {
-    ArrowLeft,
-    MapPin,
-    Phone,
-    Calendar,
-    FileText,
-    DollarSign,
-    Package
+    ArrowLeft, MapPin, Phone, FileText, DollarSign, Package,
+    CreditCard, CheckCircle, Wallet, Truck, User
 } from 'lucide-react';
 import { format } from 'date-fns';
-import { vi } from 'date-fns/locale';
 import Link from 'next/link';
-import styles from '@/styles/admin/Orders.module.css';
-import { OrderDTO, OrderStatus, getOrderStatusLabel, getValidNextStatuses } from '@/app/type/Order';
+import styles from './OrderDetailAdmin.module.css';
+import { OrderDTO, OrderStatus, PaymentStatus, getOrderStatusLabel, getValidNextStatuses } from '@/app/type/Order';
 import OrderStatusBadge from '../components/OrderStatusBadge';
+
+// Helper color
+const getPaymentStatusColor = (status: PaymentStatus) => {
+    switch (status) {
+        case PaymentStatus.PAID: return '#16a34a';
+        case PaymentStatus.PENDING: return '#d97706';
+        case PaymentStatus.FAILED: return '#dc2626';
+        case PaymentStatus.CANCELLED: return '#4b5563';
+        default: return '#000';
+    }
+};
+
+const getPaymentStatusLabel = (status: PaymentStatus) => {
+    switch (status) {
+        case PaymentStatus.PAID: return 'Đã thanh toán';
+        case PaymentStatus.PENDING: return 'Chờ thanh toán';
+        case PaymentStatus.FAILED: return 'Thất bại';
+        case PaymentStatus.CANCELLED: return 'Đã hủy';
+        default: return status;
+    }
+};
 
 export default function OrderDetailPage() {
     const { authedFetch } = useAuth();
     const params = useParams();
-    const router = useRouter();
     const orderId = params.orderId as string;
 
     const [loading, setLoading] = useState(true);
     const [order, setOrder] = useState<OrderDTO | null>(null);
+
+    // Update States
     const [selectedStatus, setSelectedStatus] = useState<OrderStatus | ''>('');
     const [updating, setUpdating] = useState(false);
+    const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<PaymentStatus | ''>('');
+    const [updatingPayment, setUpdatingPayment] = useState(false);
 
     useEffect(() => {
         fetchOrderDetail();
@@ -42,8 +60,7 @@ export default function OrderDetailPage() {
                 const data: OrderDTO = await response.json();
                 setOrder(data);
                 setSelectedStatus('');
-            } else {
-                console.error('Order not found');
+                setSelectedPaymentStatus('');
             }
         } catch (error) {
             console.error('Error fetching order detail:', error);
@@ -54,12 +71,7 @@ export default function OrderDetailPage() {
 
     const handleUpdateStatus = async () => {
         if (!selectedStatus || !order) return;
-
-        const confirmed = window.confirm(
-            `Bạn có chắc muốn cập nhật trạng thái đơn hàng thành "${getOrderStatusLabel(selectedStatus)}"?`
-        );
-
-        if (!confirmed) return;
+        if (!window.confirm(`Xác nhận đổi trạng thái thành "${getOrderStatusLabel(selectedStatus)}"?`)) return;
 
         setUpdating(true);
         try {
@@ -68,250 +80,267 @@ export default function OrderDetailPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ newStatus: selectedStatus })
             });
-
             if (response.ok) {
-                alert('Cập nhật trạng thái thành công!');
-                fetchOrderDetail(); // Refresh order data
+                fetchOrderDetail();
             } else {
-                alert('Cập nhật thất bại. Vui lòng thử lại.');
+                alert('Cập nhật thất bại.');
             }
-        } catch (error) {
-            console.error('Error updating status:', error);
-            alert('Đã có lỗi xảy ra. Vui lòng thử lại.');
         } finally {
             setUpdating(false);
         }
     };
 
-    const formatCurrency = (val: number) =>
-        new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-            maximumFractionDigits: 0
-        }).format(val);
+    const handleUpdatePaymentStatus = async () => {
+        if (!selectedPaymentStatus || !order) return;
+        if (!window.confirm(`ADMIN WARNING: Cập nhật tiền thành "${getPaymentStatusLabel(selectedPaymentStatus)}"?`)) return;
 
-    if (loading) {
-        return (
-            <div className={styles.detailContainer}>
-                <div className={styles.loadingState}>
-                    <p>Đang tải chi tiết đơn hàng...</p>
-                </div>
-            </div>
-        );
-    }
+        setUpdatingPayment(true);
+        try {
+            const response = await authedFetch(`/api/v1/admin/orders/${orderId}/payment-status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ paymentStatus: selectedPaymentStatus })
+            });
+            if (response.ok) {
+                fetchOrderDetail();
+            } else {
+                alert('Cập nhật thất bại.');
+            }
+        } finally {
+            setUpdatingPayment(false);
+        }
+    };
+
+    const formatCurrency = (val: number) =>
+        new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(val);
+
+    if (loading) return <div className={styles.container}><div className={styles.loadingState}>Đang tải...</div></div>;
 
     if (!order) {
         return (
-            <div className={styles.detailContainer}>
+            <div className={styles.container}>
                 <div className={styles.emptyState}>
                     <Package size={48} />
                     <h3>Không tìm thấy đơn hàng</h3>
-                    <Link href="/admin/orders" className={styles.backBtn}>
-                        <ArrowLeft size={16} />
-                        Quay lại danh sách
-                    </Link>
+                    <Link href="/admin/orders" className={styles.backBtn}><ArrowLeft size={16} /> Quay lại</Link>
                 </div>
             </div>
         );
     }
 
     const validNextStatuses = getValidNextStatuses(order.status);
+    const paymentStatusOptions: PaymentStatus[] = [PaymentStatus.PENDING, PaymentStatus.PAID, PaymentStatus.FAILED];
 
     return (
-        <div className={styles.detailContainer}>
-            {/* Header */}
-            <div className={styles.detailHeader}>
-                <div>
+        <div className={styles.container}>
+            {/* 1. Header Compact */}
+            <div className={styles.header}>
+                <div className={styles.titleGroup}>
                     <div className={styles.breadcrumb}>
-                        <Link href="/admin/orders">Đơn hàng</Link>
-                        <span>/</span>
-                        <span>#{order.orderId.slice(0, 8)}</span>
+                        <Link href="/admin/orders">Đơn hàng</Link> / <span>#{order.orderId.slice(0, 8)}</span>
                     </div>
-                    <h1 className={styles.orderTitle}>Chi tiết đơn hàng #{order.orderId.slice(0, 8)}</h1>
+                    <h1>Chi tiết #{order.orderId.slice(0, 8)}</h1>
                 </div>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                     <OrderStatusBadge status={order.status} />
                     <Link href="/admin/orders" className={styles.backBtn}>
-                        <ArrowLeft size={16} />
-                        Quay lại
+                        <ArrowLeft size={16} /> Thoát
                     </Link>
                 </div>
             </div>
 
-            {/* Order Information Cards */}
-            <div className={styles.infoGrid}>
-                {/* Order Info Card */}
-                <div className={styles.card}>
-                    <div className={styles.cardHeader}>
-                        <Package size={18} style={{ display: 'inline', marginRight: 8 }} />
-                        Thông tin đơn hàng
+            <div className={styles.layoutGrid}>
+                {/* --- CỘT TRÁI: DANH SÁCH SẢN PHẨM (Chiếm diện tích lớn) --- */}
+                <div className={styles.mainColumn}>
+                    <div className={styles.card}>
+                        <div className={styles.cardHeader}>
+                            <Package size={16} /> Sản phẩm ({order.items.reduce((sum, item) => sum + item.quantity, 0)})
+                        </div>
+                        <div className={styles.tableWrapper}>
+                            <table className={styles.itemsTable}>
+                                <thead>
+                                    <tr>
+                                        <th style={{ width: '45%' }}>Sản phẩm</th>
+                                        <th style={{ width: '15%' }}>Giá</th>
+                                        <th style={{ width: '10%' }}>SL</th>
+                                        <th style={{ width: '15%' }}>Batch</th>
+                                        <th style={{ width: '15%', textAlign: 'right' }}>Tổng</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {order.items.map((item) => (
+                                        <tr key={item.id}>
+                                            <td>
+                                                <div className={styles.productCell}>
+                                                    <img src={item.productThumbnailSnapshot || '/placeholder.png'} alt="" className={styles.productImg} />
+                                                    <span className={styles.productName}>{item.productNameSnapshot}</span>
+                                                </div>
+                                            </td>
+                                            <td>{formatCurrency(item.priceAtPurchase)}</td>
+                                            <td>x{item.quantity}</td>
+                                            <td><code>{item.batchCode}</code></td>
+                                            <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                                                {formatCurrency(item.priceAtPurchase * item.quantity)}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Mã đơn hàng</span>
-                        <span className={styles.infoValue}>#{order.orderId}</span>
-                    </div>
-                    <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>
-                            <Calendar size={14} style={{ display: 'inline', marginRight: 4 }} />
-                            Ngày tạo
-                        </span>
-                        <span className={styles.infoValue}>
-                            {format(new Date(order.createdAt), 'HH:mm - dd/MM/yyyy', { locale: vi })}
-                        </span>
-                    </div>
-                    <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Khung giờ giao</span>
-                        <span className={styles.infoValue}>{order.deliveryTimeSlot}</span>
-                    </div>
+                    
+                    {/* Ghi chú nếu có (Để bên trái cho đỡ chật cột phải) */}
                     {order.note && (
-                        <div className={styles.infoRow}>
-                            <span className={styles.infoLabel}>
-                                <FileText size={14} style={{ display: 'inline', marginRight: 4 }} />
-                                Ghi chú
-                            </span>
-                            <span className={styles.infoValue}>{order.note}</span>
+                        <div className={styles.card}>
+                            <div className={styles.cardHeader}><FileText size={16} /> Ghi chú khách hàng</div>
+                            <div className={styles.cardBody} style={{ fontSize: '0.9rem', fontStyle: 'italic', color: '#475569' }}>
+                                "{order.note}"
+                            </div>
                         </div>
                     )}
                 </div>
 
-                {/* Delivery Info Card */}
-                <div className={styles.card}>
-                    <div className={styles.cardHeader}>
-                        <MapPin size={18} style={{ display: 'inline', marginRight: 8 }} />
-                        Thông tin giao hàng
-                    </div>
-                    <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>
-                            <Phone size={14} style={{ display: 'inline', marginRight: 4 }} />
-                            Số điện thoại
-                        </span>
-                        <span className={styles.infoValue}>{order.deliveryPhone}</span>
-                    </div>
-                    <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>
-                            <MapPin size={14} style={{ display: 'inline', marginRight: 4 }} />
-                            Địa chỉ
-                        </span>
-                        <span className={styles.infoValue} style={{ textAlign: 'right', maxWidth: '60%' }}>
-                            {order.deliveryAddress}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Summary Card */}
-                <div className={styles.card}>
-                    <div className={styles.cardHeader}>
-                        <DollarSign size={18} style={{ display: 'inline', marginRight: 8 }} />
-                        Tổng quan
-                    </div>
-                    <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Trạng thái</span>
-                        <span className={styles.infoValue}>
-                            {getOrderStatusLabel(order.status)}
-                        </span>
-                    </div>
-                    <div className={styles.infoRow}>
-                        <span className={styles.infoLabel}>Tổng số sản phẩm</span>
-                        <span className={styles.infoValue}>
-                            {order.items.reduce((sum, item) => sum + item.quantity, 0)} sản phẩm
-                        </span>
-                    </div>
-                    <div className={styles.infoRow}>
-                        <span className={styles.infoLabel} style={{ fontSize: '1rem', fontWeight: 700 }}>
-                            Tổng tiền
-                        </span>
-                        <span className={styles.infoValue} style={{ fontSize: '1.1rem', fontWeight: 700, color: '#2e7d32' }}>
-                            {formatCurrency(order.totalAmount)}
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Order Items Table */}
-            <div className={styles.card}>
-                <div className={styles.cardHeader}>Sản phẩm trong đơn hàng</div>
-                <table className={styles.itemsTable}>
-                    <thead>
-                        <tr>
-                            <th>Sản phẩm</th>
-                            <th>Số lượng</th>
-                            <th>Đơn giá</th>
-                            <th>Batch Code</th>
-                            <th>Thành tiền</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {order.items.map((item) => (
-                            <tr key={item.id}>
-                                <td>
-                                    <div className={styles.productCell}>
-                                        <img
-                                            src={item.productThumbnailSnapshot || '/placeholder-food.png'}
-                                            alt={item.productNameSnapshot}
-                                            className={styles.productImg}
-                                        />
-                                        <span className={styles.productName}>{item.productNameSnapshot}</span>
-                                    </div>
-                                </td>
-                                <td>{item.quantity}</td>
-                                <td>{formatCurrency(item.priceAtPurchase)}</td>
-                                <td>
-                                    <code style={{
-                                        fontSize: '0.85rem',
-                                        background: '#f1f1f1',
-                                        padding: '2px 6px',
-                                        borderRadius: '4px'
-                                    }}>
-                                        {item.batchCode}
-                                    </code>
-                                </td>
-                                <td style={{ fontWeight: 600, color: '#2e7d32' }}>
-                                    {formatCurrency(item.priceAtPurchase * item.quantity)}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-
-            {/* Status Update Section */}
-            {validNextStatuses.length > 0 && (
-                <div className={styles.statusUpdateCard}>
-                    <div className={styles.cardHeader}>Cập nhật trạng thái đơn hàng</div>
-                    <div className={styles.statusUpdateForm}>
-                        <div className={styles.formGroup}>
-                            <label>Chọn trạng thái mới</label>
-                            <select
-                                value={selectedStatus}
-                                onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
-                                disabled={updating}
-                            >
-                                <option value="">-- Chọn trạng thái --</option>
-                                {validNextStatuses.map((status) => (
-                                    <option key={status} value={status}>
-                                        {getOrderStatusLabel(status)}
-                                    </option>
-                                ))}
-                            </select>
+                {/* --- CỘT PHẢI: ACTIONS & INFO (Sidebar Compact) --- */}
+                <div className={styles.sidebarColumn}>
+                    
+                    {/* A. ACTION CARD - QUAN TRỌNG NHẤT */}
+                    <div className={styles.card} style={{ borderColor: '#bfdbfe', boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.1)' }}>
+                        <div className={styles.cardHeader} style={{ background: '#eff6ff', color: '#1e40af' }}>
+                            <CheckCircle size={16} /> Xử lý đơn hàng
                         </div>
-                        <button
-                            className={styles.btnUpdate}
-                            onClick={handleUpdateStatus}
-                            disabled={!selectedStatus || updating}
-                        >
-                            {updating ? 'Đang cập nhật...' : 'Cập nhật trạng thái'}
-                        </button>
-                    </div>
-                </div>
-            )}
+                        <div className={styles.cardBody}>
+                            {/* 1. Status Update */}
+                            <div className={styles.actionGroup}>
+                                <label className={styles.actionLabel}>Tiến độ giao vận</label>
+                                {validNextStatuses.length > 0 ? (
+                                    <>
+                                        <select
+                                            className={styles.selectInput}
+                                            value={selectedStatus}
+                                            onChange={(e) => setSelectedStatus(e.target.value as OrderStatus)}
+                                            disabled={updating}
+                                        >
+                                            <option value="">-- Chọn tiếp theo --</option>
+                                            {validNextStatuses.map(st => (
+                                                <option key={st} value={st}>{getOrderStatusLabel(st)}</option>
+                                            ))}
+                                        </select>
+                                        <button 
+                                            className={styles.updateBtn} 
+                                            onClick={handleUpdateStatus} 
+                                            disabled={!selectedStatus || updating}
+                                        >
+                                            <Truck size={14}/> {updating ? 'Đang lưu...' : 'Cập nhật tiến độ'}
+                                        </button>
+                                    </>
+                                ) : (
+                                    <div style={{ fontSize: '0.85rem', color: '#16a34a', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <CheckCircle size={14} /> Đơn đã hoàn tất
+                                    </div>
+                                )}
+                            </div>
 
-            {validNextStatuses.length === 0 && (
-                <div className={styles.card}>
-                    <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
-                        <p>Đơn hàng đã ở trạng thái cuối. Không thể cập nhật thêm.</p>
+                            <hr style={{ margin: '12px 0', border: 0, borderTop: '1px dashed #cbd5e1' }} />
+
+                            {/* 2. Payment Update */}
+                            <div className={styles.actionGroup}>
+                                <label className={styles.actionLabel}>Trạng thái thanh toán</label>
+                                <select
+                                    className={styles.selectInput}
+                                    value={selectedPaymentStatus}
+                                    onChange={(e) => setSelectedPaymentStatus(e.target.value as PaymentStatus)}
+                                    disabled={updatingPayment}
+                                >
+                                    <option value="">-- Đổi thủ công --</option>
+                                    {paymentStatusOptions
+                                        .filter(s => s !== order.paymentStatus)
+                                        .map(st => (
+                                            <option key={st} value={st}>{getPaymentStatusLabel(st)}</option>
+                                        ))}
+                                </select>
+                                <button 
+                                    className={`${styles.updateBtn} ${styles.paymentBtn}`}
+                                    onClick={handleUpdatePaymentStatus}
+                                    disabled={!selectedPaymentStatus || updatingPayment}
+                                >
+                                    <Wallet size={14} /> {updatingPayment ? 'Lưu...' : 'Cập nhật tiền'}
+                                </button>
+                            </div>
+                        </div>
                     </div>
+
+                    {/* B. SUMMARY CARD */}
+                    <div className={styles.card}>
+                        <div className={styles.cardHeader}><DollarSign size={16} /> Tổng quan</div>
+                        <div className={styles.cardBody}>
+                            <div className={styles.infoRow}>
+                                <span className={styles.infoLabel}>Tạm tính</span>
+                                <span className={styles.infoValue}>{formatCurrency(order.totalAmount)}</span>
+                            </div>
+                            {/* Thêm phí ship/discount nếu có logic đó sau này */}
+                            <hr style={{ margin: '8px 0', borderColor: '#f1f5f9' }}/>
+                            <div className={styles.infoRow}>
+                                <span className={styles.infoLabel} style={{ fontWeight: 700, color: '#0f172a' }}>Thành tiền</span>
+                                <span className={styles.infoValue} style={{ fontSize: '1.1rem', fontWeight: 700, color: '#e72a2a' }}>
+                                    {formatCurrency(order.totalAmount)}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* C. CUSTOMER & DELIVERY CARD */}
+                    <div className={styles.card}>
+                        <div className={styles.cardHeader}><User size={16} /> Khách hàng & Giao nhận</div>
+                        <div className={styles.cardBody}>
+                             <div className={styles.infoRow}>
+                                <span className={styles.infoLabel}>Ngày đặt</span>
+                                <span className={styles.infoValue}>{format(new Date(order.createdAt), 'dd/MM/yyyy HH:mm')}</span>
+                            </div>
+                            <div className={styles.infoRow}>
+                                <span className={styles.infoLabel}>Khung giờ</span>
+                                <span className={styles.infoValue}>{order.deliveryTimeSlot}</span>
+                            </div>
+                            <hr style={{ margin: '8px 0', borderColor: '#f1f5f9' }}/>
+                            <div className={styles.infoRow}>
+                                <span className={styles.infoLabel}><Phone size={12}/> SĐT</span>
+                                <span className={styles.infoValue}>{order.deliveryPhone}</span>
+                            </div>
+                            <div className={styles.infoRow} style={{ alignItems: 'flex-start' }}>
+                                <span className={styles.infoLabel} style={{ marginTop: 2 }}><MapPin size={12}/> Đ/C</span>
+                                <span className={styles.infoValue}>{order.deliveryAddress}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* D. PAYMENT INFO CARD */}
+                    <div className={styles.card}>
+                        <div className={styles.cardHeader}><CreditCard size={16} /> Thông tin thanh toán</div>
+                        <div className={styles.cardBody}>
+                            <div className={styles.infoRow}>
+                                <span className={styles.infoLabel}>Phương thức</span>
+                                <span className={styles.infoValue}>
+                                    {order.paymentMethod === 'VNPAY' ? 'VNPAY' : 'Tiền mặt (COD)'}
+                                </span>
+                            </div>
+                            <div className={styles.infoRow}>
+                                <span className={styles.infoLabel}>Trạng thái</span>
+                                <span className={styles.infoValue} style={{ color: getPaymentStatusColor(order.paymentStatus) }}>
+                                    {getPaymentStatusLabel(order.paymentStatus)}
+                                </span>
+                            </div>
+                            {order.paymentDate && (
+                                <div className={styles.infoRow}>
+                                    <span className={styles.infoLabel}>Ngày TT</span>
+                                    <span className={styles.infoValue}>
+                                        {format(new Date(order.paymentDate), 'HH:mm dd/MM/yyyy')}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                 </div>
-            )}
+            </div>
         </div>
     );
 }

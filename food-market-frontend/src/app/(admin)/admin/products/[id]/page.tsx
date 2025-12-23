@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import ProductForm, { AdminProductResponse } from '@/components/Admin/ProductForm';
-import styles from '@/styles/admin/Products.module.css';
+import ProductForm, { AdminProductResponse } from '@/app/(admin)/admin/products/components/ProductForm';
+import styles from '../AdminProduct.module.css';
 import { Edit, Loader2, AlertCircle } from 'lucide-react';
 
 export default function EditProductPage() {

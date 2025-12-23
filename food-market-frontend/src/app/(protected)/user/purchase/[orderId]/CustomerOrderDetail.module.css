@@ -150,3 +150,83 @@
   font-weight: 600;
   text-transform: uppercase;
 }
+
+/* Banner Styles */
+.paymentBanner {
+    margin-bottom: 20px;
+}
+
+.alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: flex-start; /* Để icon căn chỉnh với dòng đầu */
+    gap: 12px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.alertSuccess {
+    background-color: #ecfdf5;
+    color: #047857;
+    border: 1px solid #a7f3d0;
+}
+
+.alertWarning {
+    background-color: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+    align-items: center; /* Căn giữa dọc cho đẹp */
+}
+
+.alertError {
+    background-color: #fef2f2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+
+.alertInfo {
+    background-color: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+/* Button Styles */
+.retryButtonSmall {
+    margin-left: auto; /* Đẩy nút sang phải cùng */
+    background-color: #ea580c;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.retryButtonSmall:hover {
+    background-color: #c2410c;
+}
+
+.payNowButton {
+    display: flex;
+    align-items: center;
+    background-color: #0070f3;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.payNowButton:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.payNowButton:hover:not(:disabled) {
+    background-color: #005bb5;
+    transform: translateY(-1px);
+}

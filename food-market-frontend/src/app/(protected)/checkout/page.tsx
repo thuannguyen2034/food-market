@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, addDays, getHours, isSameDay } from 'date-fns';
-import { Plus, X, CheckCircle2 } from 'lucide-react'; // Import thêm icon
+import { Plus, X, CheckCircle2,Banknote,CreditCard } from 'lucide-react'; // Import thêm icon
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import toast from 'react-hot-toast';
@@ -32,7 +32,7 @@ export default function CheckoutPage() {
     // --- State Management ---
     const [addresses, setAddresses] = useState<UserAddress[]>([]);
     const [selectedAddressId, setSelectedAddressId] = useState<number | null>(null);
-    
+
     // UI State
     const [showSelectionModal, setShowSelectionModal] = useState(false); // Popup danh sách
     const [showAddressModal, setShowAddressModal] = useState(false);     // Popup Thêm/Sửa
@@ -44,6 +44,7 @@ export default function CheckoutPage() {
     const [note, setNote] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    const [paymentMethod, setPaymentMethod] = useState<'COD' | 'VNPAY'>('COD');
     // --- Helpers ---
     const formatPrice = (price: number) =>
         new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price);
@@ -58,7 +59,7 @@ export default function CheckoutPage() {
             if (res.ok) {
                 const data: UserAddress[] = await res.json();
                 setAddresses(data);
-                
+
                 // Nếu chưa chọn, tự động chọn Mặc định hoặc cái đầu tiên
                 if (!selectedAddressId && data.length > 0) {
                     const defaultAddr = data.find(a => a.default);
@@ -119,10 +120,10 @@ export default function CheckoutPage() {
     };
 
     const handleSaveAddress = (savedAddress: UserAddress) => {
-        setShowAddressModal(false); 
-        fetchAddresses();           
-        setSelectedAddressId(savedAddress.id); 
-        setShowSelectionModal(false); 
+        setShowAddressModal(false);
+        fetchAddresses();
+        setSelectedAddressId(savedAddress.id);
+        setShowSelectionModal(false);
     };
 
     // 4. Place Order
@@ -140,7 +141,7 @@ export default function CheckoutPage() {
         const formattedDate = format(deliveryDate, 'yyyy-MM-dd');
         const payload = {
             addressId: selectedAddressId,
-            paymentMethod: 'COD',
+            paymentMethod: paymentMethod,
             deliveryDate: formattedDate,
             deliveryTimeslot: selectedSlot,
             note: note
@@ -156,8 +157,32 @@ export default function CheckoutPage() {
             if (res.ok) {
                 const orderData = await res.json();
                 if (clearCartLocal) clearCartLocal();
-                toast.success('Đặt hàng thành công!');
-                router.push(`/user/purchase/${orderData.orderId}`);
+                if (paymentMethod === 'VNPAY') {
+                    // --- LUỒNG VNPAY ---
+                    toast.loading('Đang chuyển hướng sang VNPAY...');
+                    try {
+                        // Gọi API lấy link thanh toán (đã thêm ở Backend turn trước)
+                        const payRes = await authedFetch(`/api/payment/create_payment?orderId=${orderData.orderId}`);
+
+                        if (payRes.ok) {
+                            const payData = await payRes.json();
+                            // Chuyển hướng trình duyệt
+                            window.location.href = payData.url;
+                        } else {
+                            toast.error('Không thể tạo link thanh toán.');
+                            // Nếu lỗi lấy link, vẫn đẩy về trang chi tiết đơn (ở trạng thái chưa thanh toán)
+                            router.push(`/user/purchase/${orderData.orderId}`);
+                        }
+                    } catch (err) {
+                        toast.error('Lỗi kết nối đến cổng thanh toán.');
+                        router.push(`/user/purchase/${orderData.orderId}`);
+                    }
+
+                } else {
+                    // --- LUỒNG COD ---
+                    toast.success('Đặt hàng thành công!');
+                    router.push(`/user/purchase/${orderData.orderId}`);
+                }
             } else {
                 const errData = await res.json();
                 if (res.status === 409 || errData.message?.includes('giá') || errData.message?.includes('kho')) {
@@ -171,7 +196,7 @@ export default function CheckoutPage() {
             console.error(error);
             toast.error('Lỗi kết nối');
         } finally {
-            setIsSubmitting(false);
+            if (paymentMethod === 'COD') setIsSubmitting(false);
         }
     };
 
@@ -188,17 +213,17 @@ export default function CheckoutPage() {
             <div className={styles.layout}>
                 {/* --- CỘT TRÁI --- */}
                 <div className={styles.leftColumn}>
-                    
+
                     {/* SECTION 1: ĐỊA CHỈ (UI Mới) */}
                     <section className={styles.section}>
                         <h2 className={styles.sectionTitle}>1. Địa chỉ nhận hàng</h2>
-                        
+
                         {currentAddress ? (
                             // TRƯỜNG HỢP 1: Đã có địa chỉ được chọn
                             <div className={styles.selectedAddressContainer}>
                                 {/* Hiển thị AddressCard nhưng ẩn bớt nút xóa/default nếu muốn, 
                                     ở đây ta dùng component có sẵn */}
-                                <AddressCard 
+                                <AddressCard
                                     address={currentAddress}
                                     onEdit={() => {
                                         setEditingAddress(currentAddress);
@@ -207,9 +232,9 @@ export default function CheckoutPage() {
                                     onDelete={() => handleDeleteAddress(currentAddress.id)}
                                     onSetDefault={() => handleSetDefaultAddress(currentAddress.id)}
                                 />
-                                
+
                                 {/* Nút Thay đổi -> Mở Popup List */}
-                                <button 
+                                <button
                                     className={styles.changeAddressBtn}
                                     onClick={() => setShowSelectionModal(true)}
                                 >
@@ -218,10 +243,10 @@ export default function CheckoutPage() {
                             </div>
                         ) : (
                             // TRƯỜNG HỢP 2: Chưa có địa chỉ nào
-                            <div style={{textAlign: 'center', padding: '1rem'}}>
-                                <p style={{color: '#666', marginBottom: '1rem'}}>Bạn chưa có địa chỉ nhận hàng.</p>
-                                <button 
-                                    className={styles.addAddressBtn} 
+                            <div style={{ textAlign: 'center', padding: '1rem' }}>
+                                <p style={{ color: '#666', marginBottom: '1rem' }}>Bạn chưa có địa chỉ nhận hàng.</p>
+                                <button
+                                    className={styles.addAddressBtn}
                                     onClick={() => {
                                         setEditingAddress(null);
                                         setShowAddressModal(true);
@@ -237,13 +262,13 @@ export default function CheckoutPage() {
                     <section className={styles.section}>
                         <h2 className={styles.sectionTitle}>2. Thời gian giao hàng</h2>
                         <div className={styles.dateSelection}>
-                            <div 
+                            <div
                                 className={`${styles.dateOption} ${isSameDay(deliveryDate, today) ? styles.active : ''}`}
                                 onClick={() => setDeliveryDate(today)}
                             >
                                 Hôm nay ({format(today, 'dd/MM')})
                             </div>
-                            <div 
+                            <div
                                 className={`${styles.dateOption} ${isSameDay(deliveryDate, tomorrow) ? styles.active : ''}`}
                                 onClick={() => setDeliveryDate(tomorrow)}
                             >
@@ -253,7 +278,7 @@ export default function CheckoutPage() {
                         <div className={styles.formGroup}>
                             <label className={styles.label}>Khung giờ khả dụng:</label>
                             {availableSlots.length > 0 ? (
-                                <select 
+                                <select
                                     className={styles.select}
                                     value={selectedSlot}
                                     onChange={(e) => setSelectedSlot(e.target.value)}
@@ -266,7 +291,7 @@ export default function CheckoutPage() {
                                     ))}
                                 </select>
                             ) : (
-                                <p style={{color: '#d32f2f'}}>Hết khung giờ giao hôm nay. Vui lòng chọn ngày mai.</p>
+                                <p style={{ color: '#d32f2f' }}>Hết khung giờ giao hôm nay. Vui lòng chọn ngày mai.</p>
                             )}
                         </div>
                     </section>
@@ -276,16 +301,49 @@ export default function CheckoutPage() {
                         <h2 className={styles.sectionTitle}>3. Thanh toán & Ghi chú</h2>
                         <div className={styles.formGroup}>
                             <label className={styles.label}>Phương thức thanh toán:</label>
-                            <div className={styles.paymentOption}>
-                                <input type="radio" checked readOnly style={{accentColor: '#0070f3'}} />
-                                <span>Thanh toán khi nhận hàng (COD)</span>
+
+                            {/* Option COD */}
+                            <div
+                                className={`${styles.paymentOption} ${paymentMethod === 'COD' ? styles.activePayment : ''}`}
+                                onClick={() => setPaymentMethod('COD')}
+                                style={{
+                                    border: paymentMethod === 'COD' ? '2px solid #0070f3' : '1px solid #ddd',
+                                    padding: '12px', borderRadius: '8px', marginBottom: '10px', cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', gap: '10px'
+                                }}
+                            >
+                                <Banknote size={24} color={paymentMethod === 'COD' ? '#0070f3' : '#666'} />
+                                <div>
+                                    <div style={{ fontWeight: 500 }}>Thanh toán khi nhận hàng (COD)</div>
+                                    <div style={{ fontSize: '0.85rem', color: '#666' }}>Thanh toán tiền mặt cho shipper</div>
+                                </div>
+                                {paymentMethod === 'COD' && <CheckCircle2 size={20} color="#0070f3" style={{ marginLeft: 'auto' }} />}
                             </div>
+
+                            {/* Option VNPAY */}
+                            <div
+                                className={`${styles.paymentOption} ${paymentMethod === 'VNPAY' ? styles.activePayment : ''}`}
+                                onClick={() => setPaymentMethod('VNPAY')}
+                                style={{
+                                    border: paymentMethod === 'VNPAY' ? '2px solid #0070f3' : '1px solid #ddd',
+                                    padding: '12px', borderRadius: '8px', cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', gap: '10px'
+                                }}
+                            >
+                                <CreditCard size={24} color={paymentMethod === 'VNPAY' ? '#0070f3' : '#666'} />
+                                <div>
+                                    <div style={{ fontWeight: 500 }}>Ví điện tử VNPAY / Ngân hàng</div>
+                                    <div style={{ fontSize: '0.85rem', color: '#666' }}>Quét mã QR hoặc thẻ ATM nội địa</div>
+                                </div>
+                                {paymentMethod === 'VNPAY' && <CheckCircle2 size={20} color="#0070f3" style={{ marginLeft: 'auto' }} />}
+                            </div>
+
                         </div>
                         <div className={styles.formGroup}>
                             <label className={styles.label}>Ghi chú:</label>
-                            <textarea 
+                            <textarea
                                 className={styles.textarea}
-                                placeholder="Lời nhắn..."
+                                placeholder="Lời nhắn cho cửa hàng/shipper..."
                                 value={note}
                                 onChange={(e) => setNote(e.target.value)}
                             />
@@ -297,15 +355,15 @@ export default function CheckoutPage() {
                 <div className={styles.rightColumn}>
                     <div className={styles.summaryBox}>
                         <h3 className={styles.sectionTitle}>Đơn hàng ({cartData.items.length} món)</h3>
-                        <div style={{maxHeight: '300px', overflowY: 'auto', marginBottom: '1rem'}}>
+                        <div style={{ maxHeight: '300px', overflowY: 'auto', marginBottom: '1rem' }}>
                             {cartData.items.map(item => (
                                 <div key={item.cartItemId} className={styles.summaryItem}>
                                     <div className={styles.itemName}>
                                         <b>{item.quantity}x</b> {item.product.name}
                                     </div>
-                                    <div style={{textAlign: 'right'}}>
+                                    <div style={{ textAlign: 'right' }}>
                                         {item.totalBasePrice > item.totalItemPrice && (
-                                            <div style={{fontSize: '0.8rem', textDecoration: 'line-through', color: '#999'}}>
+                                            <div style={{ fontSize: '0.8rem', textDecoration: 'line-through', color: '#999' }}>
                                                 {formatPrice(item.totalBasePrice)}
                                             </div>
                                         )}
@@ -314,7 +372,7 @@ export default function CheckoutPage() {
                                 </div>
                             ))}
                         </div>
-                        
+
                         <div className={styles.row}>
                             <span>Tạm tính:</span>
                             <span>{formatPrice(cartData.grandTotal)}</span>
@@ -330,8 +388,8 @@ export default function CheckoutPage() {
                             <span>{formatPrice(cartData.grandTotal)}</span>
                         </div>
 
-                        <button 
-                            className={styles.checkoutBtn} 
+                        <button
+                            className={styles.checkoutBtn}
                             onClick={handlePlaceOrder}
                             disabled={isSubmitting || !selectedAddressId || !selectedSlot}
                         >
@@ -353,7 +411,7 @@ export default function CheckoutPage() {
                         </div>
                         <div className={styles.modalBody}>
                             {addresses.map(addr => (
-                                <div 
+                                <div
                                     key={addr.id}
                                     // Click vào card để chọn ngay
                                     className={`${styles.addressOption} ${selectedAddressId === addr.id ? styles.selected : ''}`}
@@ -370,7 +428,7 @@ export default function CheckoutPage() {
                                     {/* Dùng lại AddressCard để hiển thị thông tin đẹp mắt */}
                                     {/* Chặn sự kiện click vào các nút Sửa/Xóa để không kích hoạt 'Chọn' */}
                                     <div onClick={e => e.stopPropagation()}>
-                                        <AddressCard 
+                                        <AddressCard
                                             address={addr}
                                             onEdit={() => {
                                                 setEditingAddress(addr);
@@ -384,8 +442,8 @@ export default function CheckoutPage() {
                                 </div>
                             ))}
 
-                            <button 
-                                className={styles.addAddressBtn} 
+                            <button
+                                className={styles.addAddressBtn}
                                 onClick={() => {
                                     setEditingAddress(null);
                                     setShowAddressModal(true);
@@ -401,7 +459,7 @@ export default function CheckoutPage() {
 
             {/* --- POPUP 2: MODAL THÊM/SỬA (AddressModal) --- */}
             {showAddressModal && (
-                <AddressModal 
+                <AddressModal
                     initialData={editingAddress}
                     onClose={() => setShowAddressModal(false)}
                     onSave={handleSaveAddress}

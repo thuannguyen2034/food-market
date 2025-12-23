@@ -30,6 +30,7 @@ export type InventoryAdjustmentDTO = {
     adjustmentId: number;
     batchId: number;
     adjustedByUserId: string;
+    adjustedByUserName: string;
     adjustmentQuantity: number;
     reason: string;
     adjustmentDate: string; // OffsetDateTime from backend

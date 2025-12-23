@@ -9,6 +9,19 @@ export enum OrderStatus {
     CANCELLED = 'CANCELLED'
 }
 
+export enum PaymentMethod {
+    COD = 'COD',
+    VNPay = 'VNPAY'
+}
+
+export enum PaymentStatus {
+    PENDING = 'PENDING',
+    PAID = 'PAID',
+    FAILED = 'FAILED',
+    CANCELLED = 'CANCELLED',
+    REFUNDED = 'REFUNDED'
+}
+
 export type OrderItemDTO = {
     id: number;
     quantity: number;
@@ -34,6 +47,9 @@ export type OrderDTO = {
     deliveryTimeSlot: string;
     note?: string;
     items: OrderItemDTO[];
+    paymentMethod: PaymentMethod;
+    paymentStatus: PaymentStatus;
+    paymentDate?: string;
 };
 
 export type OrderFilter = {
@@ -72,8 +88,8 @@ export const getValidNextStatuses = (currentStatus: OrderStatus): OrderStatus[] 
         [OrderStatus.CONFIRMED]: [OrderStatus.PROCESSING, OrderStatus.CANCELLED],
         [OrderStatus.PROCESSING]: [OrderStatus.OUT_FOR_DELIVERY, OrderStatus.CANCELLED],
         [OrderStatus.OUT_FOR_DELIVERY]: [OrderStatus.DELIVERED, OrderStatus.CANCELLED],
-        [OrderStatus.DELIVERED]: [], // Terminal state
-        [OrderStatus.CANCELLED]: [] // Terminal state
+        [OrderStatus.DELIVERED]: [], 
+        [OrderStatus.CANCELLED]: [] 
     };
     return transitions[currentStatus] || [];
 };
