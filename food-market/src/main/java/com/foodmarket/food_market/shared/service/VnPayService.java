@@ -14,31 +14,23 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class VnPayService {
-
-    // Lưu ý: Cần inject config hoặc lấy từ file properties để linh động domain
-    // String appBaseUrl = "https://your-ngrok-domain.ngrok-free.app";
-    // Tốt nhất là truyền dynamic từ Client hoặc cấu hình trong application.properties
-
+    private final VnPayConfig vnPayConfig;
     public String createPaymentUrl(Order order, HttpServletRequest request) {
-        String vnp_Version = "2.1.0";
-        String vnp_Command = "pay";
         String vnp_TxnRef = order.getId().toString(); // Dùng UUID của Order làm mã giao dịch [cite: 81]
         String vnp_IpAddr = VnPayConfig.getIpAddress(request);
-        String vnp_TmnCode = VnPayConfig.vnp_TmnCode;
-
         // Số tiền bắt buộc nhân 100 [cite: 84]
         long amount = order.getTotalAmount().longValue() * 100;
 
         Map<String, String> vnp_Params = new HashMap<>();
-        vnp_Params.put("vnp_Version", vnp_Version);
-        vnp_Params.put("vnp_Command", vnp_Command);
-        vnp_Params.put("vnp_TmnCode", vnp_TmnCode);
+        vnp_Params.put("vnp_Version", vnPayConfig.getVersion());
+        vnp_Params.put("vnp_Command", vnPayConfig.getCommand());
+        vnp_Params.put("vnp_TmnCode", vnPayConfig.getTmnCode());
         vnp_Params.put("vnp_Amount", String.valueOf(amount));
-        vnp_Params.put("vnp_CurrCode", "VND");
+        vnp_Params.put("vnp_CurrCode", vnPayConfig.getCurrCode());
         vnp_Params.put("vnp_TxnRef", vnp_TxnRef);
         vnp_Params.put("vnp_OrderInfo", "Thanh toan don hang:" + vnp_TxnRef);
         vnp_Params.put("vnp_OrderType", "other");
-        vnp_Params.put("vnp_Locale", "vn");
+        vnp_Params.put("vnp_Locale", vnPayConfig.getLocale());
 
         // Return URL: Nơi trình duyệt user chuyển về sau khi thanh toán
         // URL này trỏ về Frontend (Next.js)
@@ -81,10 +73,10 @@ public class VnPayService {
         }
 
         String queryUrl = query.toString();
-        String vnp_SecureHash = VnPayConfig.hmacSHA512(VnPayConfig.vnp_HashSecret, hashData.toString());
+        String vnp_SecureHash = VnPayConfig.hmacSHA512(vnPayConfig.getHashSecret(), hashData.toString());
         queryUrl += "&vnp_SecureHash=" + vnp_SecureHash;
 
-        return VnPayConfig.vnp_PayUrl + "?" + queryUrl;
+        return vnPayConfig.getPayUrl() + "?" + queryUrl;
     }
 
     public int verifyIpn(HttpServletRequest request) {
@@ -142,6 +134,6 @@ public class VnPayService {
                 sb.append("&");
             }
         }
-        return VnPayConfig.hmacSHA512(VnPayConfig.vnp_HashSecret, sb.toString());
+        return VnPayConfig.hmacSHA512(vnPayConfig.getHashSecret(), sb.toString());
     }
 }

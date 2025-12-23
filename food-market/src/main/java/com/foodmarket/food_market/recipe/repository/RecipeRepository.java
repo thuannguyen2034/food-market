@@ -7,5 +7,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface RecipeRepository extends JpaRepository<Recipe, Long>, JpaSpecificationExecutor<Recipe> {
-    // JpaSpecificationExecutor cung cấp sẵn findAll(Specification, Pageable)
 }

@@ -31,7 +31,6 @@ public class AiTagService {
         // Converter này vẫn cần để lấy Schema và Parse JSON sau này
         var outputConverter = new BeanOutputConverter<>(AiResult.class);
 
-        // 1. Tạo nội dung Prompt (Lưu ý: dùng {{ }} cho JSON ví dụ để tránh lỗi Template)
         String promptText = """
             ### Instructions
             Analyze the input recipe and return a JSON object with a single key "tags".

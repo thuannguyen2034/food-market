@@ -1,20 +1,28 @@
 package com.foodmarket.food_market.shared.config;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-
 @Configuration
+@ConfigurationProperties(prefix = "vnp")
+@Getter
+@Setter
 public class VnPayConfig {
-    public static String vnp_PayUrl = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html"; // [cite: 71]
-    public static String vnp_ReturnUrl = "/payment-return"; // Đường dẫn FE nhận kết quả
-    public static String vnp_TmnCode = "9F8393U9"; // Lấy từ email
-    public static String vnp_HashSecret = "CYWM1SD1FIRRFU80AQGSKMJKWHCU0P0M"; // Lấy từ email
-    public static String vnp_ApiUrl = "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction";
+    private String tmnCode;
+    private String hashSecret;
+    private String payUrl;
+    private String returnUrl;
+    private String version;
+    private String command;
+    private String currCode;
+    private String locale;
 
     // Mã hóa dữ liệu (Checksum) theo tài liệu
     public static String hmacSHA512(final String key, final String data) {
@@ -50,16 +58,5 @@ public class VnPayConfig {
             ipAdress = "Invalid IP:" + e.getMessage();
         }
         return ipAdress;
-    }
-
-    // Tiện ích random số (để làm TxnRef nếu cần)
-    public static String getRandomNumber(int len) {
-        Random rnd = new Random();
-        String chars = "0123456789";
-        StringBuilder sb = new StringBuilder(len);
-        for (int i = 0; i < len; i++) {
-            sb.append(chars.charAt(rnd.nextInt(chars.length())));
-        }
-        return sb.toString();
     }
 }
