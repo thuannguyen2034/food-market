@@ -22,16 +22,17 @@ export interface ProductResponse {
     id: number;
     name: string;
     description: string;
-    specifications?: Record<string, string>; // Map<String, String> from backend
+    specifications?: Record<string, string>; 
     images: ProductImage[];
     unit: string;
     basePrice: number;
     finalPrice: number;
     slug: string;
     stockQuantity: number;
+    soldCount: number;
     category: CategorySummary;
     tags: TagDTO[];
-    averageRating?: number; // Product rating
+    rating?: number; 
 }
 
 // Review interface
@@ -55,7 +56,6 @@ export interface CategoryResponse {
     children: CategoryResponse[];
 }
 
-// Page response for pagination
 export interface PageResponse<T> {
     content: T[];
     totalPages: number;

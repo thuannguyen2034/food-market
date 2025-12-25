@@ -27,7 +27,6 @@ public class ProductEventListener {
     public void handleOrderStatusChanged(OrderStatusChangedEvent event) {
 
         if (event.getNewStatus() == OrderStatus.CONFIRMED) {
-            // Query lại Item từ DB để đảm bảo an toàn (tránh lỗi Lazy Loading)
             List<OrderItem> items = orderItemRepository.findByOrderId(event.getOrder().getId());
 
             items.forEach(item ->

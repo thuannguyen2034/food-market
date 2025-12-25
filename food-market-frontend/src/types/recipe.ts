@@ -6,9 +6,9 @@ export interface RecipeResponse {
     imageUrl: string;
     cookingSteps: string;
     ingredients: string;
-    tags: string; // Chuỗi "TAG1,TAG2"
+    tags: string; 
     productIds: number[];
-    matchScore?: number; // Dùng cho trang Search (Scoring)
+    matchScore?: number; 
 }
 export interface RecipeDetailDTO {
     recipeInfo: RecipeResponse;

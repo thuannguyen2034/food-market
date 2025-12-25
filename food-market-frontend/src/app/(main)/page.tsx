@@ -1,4 +1,3 @@
-// src/app/page.tsx
 import Link from 'next/link';
 import { ChevronRight, Zap, ChefHat, Soup, Leaf } from 'lucide-react';
 import ProductCard from '@/components/ProductCard';
@@ -6,14 +5,13 @@ import { HomePageData } from '@/app/type/Home';
 import styles from './HomePage.module.css';
 import { RecipeResponse } from '@/types/recipe';
 import RecipeCarousel from '@/components/RecipeCarousel';
-// Hàm gọi API (Server Side)
+import FlashSaleTimer from './components/FlashSaleTimer';
 async function getHomeData(): Promise<HomePageData | null> {
-  // Thay URL này bằng biến môi trường trong thực tế
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 
   try {
     const res = await fetch(`${API_URL}/storefront/home`, {
-      next: { revalidate: 60 } // Cache 60s (ISR)
+      next: { revalidate: 60 }
     });
 
     if (!res.ok) {
@@ -29,9 +27,8 @@ async function getHomeData(): Promise<HomePageData | null> {
 async function getFeaturedRecipes(role: string): Promise<RecipeResponse[]> {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
   try {
-    // Gọi endpoint /featured mà ta đã viết ở Controller
     const res = await fetch(`${API_URL}/storefront/recipes/featured?role=${role}`, {
-      next: { revalidate: 120 } // Cache lâu hơn chút (2 phút)
+      next: { revalidate: 120 }
     });
     if (!res.ok) return [];
     return res.json();
@@ -84,24 +81,22 @@ export default async function HomePage() {
     <main className={styles.container}>
       <section className={styles.bannerSection}>
         <div className={styles.bannerGrid}>
-          {/* Ảnh lớn bên trái */}
           <div className={styles.mainBannerWrapper}>
             <img
-              src="/banner.png" // Thay ảnh của bạn vào đây
+              src="https://res.cloudinary.com/dawfvgap0/image/upload/v1766648603/food_market/Banners/banner-main2_myvdsg.png" // Thay ảnh của bạn vào đây
               alt="Khuyến mãi hot nhất"
               className={styles.mainBannerImg}
             />
           </div>
-          {/* Cột 2 ảnh nhỏ bên phải */}
           <div className={styles.sideBannersCol}>
             <img
-              src="/banner-sub-1.png" // Thay ảnh phụ 1
+              src="https://res.cloudinary.com/dawfvgap0/image/upload/v1766647721/food_market/Banners/banner-main_kwv0uu.png" // Thay ảnh phụ 1
               alt="Rau củ tươi"
               className={styles.sideBannerImg}
             />
             <img
-              src="/banner-sub-2.png" // Thay ảnh phụ 2
-              alt="Thịt cá sạch"
+              src="https://res.cloudinary.com/dawfvgap0/image/upload/v1766647720/food_market/Banners/banner-sub-2_evlup2.png" // Thay ảnh phụ 2
+              alt="Giao hàng siêu tốc"
               className={styles.sideBannerImg}
             />
           </div>
@@ -111,11 +106,13 @@ export default async function HomePage() {
       {flashSaleProducts && flashSaleProducts.length > 0 && (
         <div className={styles.sectionContainer}>
           <div className={styles.flashSaleWrapper}>
-            <div className={styles.sectionHeader} style={{ borderBottom: 'none', marginBottom: '8px' }}>
-              {/* Bỏ border bottom trong khung flashsale cho liền mạch */}
+            <div className={styles.sectionHeader}>
+              <div className={styles.headerLeft}>
               <div className={styles.flashSaleTitle}>
                 <Zap className={styles.flashIcon} fill="#e72a2a" size={24} />
                 FLASH SALE
+              </div>
+              <FlashSaleTimer />
               </div>
               <Link href="/search?isOnSale=true" className={styles.viewAllBtn}>
                 Xem tất cả <ChevronRight size={16} />
@@ -124,22 +121,22 @@ export default async function HomePage() {
 
             <div className={styles.productGrid}>
               {flashSaleProducts.slice(0, 5).map((product) => (
-                <ProductCard key={product.id} product={product} />
+                <ProductCard key={product.id} product={product} variant="flash" />
               ))}
             </div>
           </div>
         </div>
       )}
       {/* --- GIAN BẾP (RECIPES) --- */}
+      <section className={styles.kitchenZone}>
       <div className={styles.kitchenHeader}>
-        <h2>🥗 Góc Yêu Bếp</h2>
-        <p>Hôm nay ăn gì? Để BonMi gợi ý nhé!</p>
+        <h2>Hôm nay ăn gì? Để BonMi gợi ý nhé!</h2>
+        <p className={styles.subHeader}>Khám phá công thức & Mua trọn bộ nguyên liệu chỉ với 1 cú click</p>
       </div>
-
-      {renderRecipeSection('Món Mặn Hao Cơm', <ChefHat color="#e74c3c" />, mainDishes, '#e74c3c')}
-      {renderRecipeSection('Canh Ngọt Mát Lành', <Soup color="#3498db" />, soupDishes, '#3498db')}
-      {renderRecipeSection('Rau Xanh Thanh Mát', <Leaf color="#2ecc71" />, sideDishes, '#2ecc71')}
-
+      {renderRecipeSection('Món Chính Mặn', <ChefHat color="#e74c3c" />, mainDishes, '#e74c3c')}
+      {renderRecipeSection('Món Canh', <Soup color="#3498db" />, soupDishes, '#3498db')}
+      {renderRecipeSection('Món Rau', <Leaf color="#2ecc71" />, sideDishes, '#2ecc71')}
+      </section>
       <hr className={styles.divider} />
       {/* Gian hàng */}
       <div className={styles.sectionContainer}>
@@ -158,7 +155,7 @@ export default async function HomePage() {
                   <ProductCard
                     key={product.id}
                     product={product}
-                    categorySlug={section.categorySlug} // Truyền slug root để link đúng
+                    categorySlug={section.categorySlug}
                   />
                 ))
               ) : (
@@ -170,7 +167,6 @@ export default async function HomePage() {
           </div>
         ))}
       </div>
-
     </main>
   );
 }

@@ -1,11 +1,8 @@
-/* src/app/[category]/CategoryPage.module.css */
-/* Lưu ý: Bạn cần chỉnh đường dẫn import styles trong file page.tsx cho đúng vị trí file css này */
-
 .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px 16px;
-  background-color: #f8f9fa; /* Nền xám nhạt để làm nổi bật thẻ trắng */
+  background-color: #f8f9fa;
   min-height: 100vh;
 }
 /* --- Breadcrumb --- */
@@ -67,15 +64,13 @@
   text-transform: capitalize;
 }
 
-/* --- Sibling Categories (Chips) --- */
-/* Thiết kế kiểu cuộn ngang trên mobile rất tiện */
 .siblingCategories {
   display: flex;
   gap: 10px;
-  overflow-x: auto; /* Cho phép cuộn ngang nếu nhiều mục */
-  padding-bottom: 8px; /* Chỗ cho thanh scrollbar */
+  overflow-x: auto;
+  padding-bottom: 8px;
   margin-bottom: 20px;
-  scrollbar-width: thin; /* Firefox */
+  scrollbar-width: thin;
 }
 
 .siblingCategories::-webkit-scrollbar {
@@ -97,7 +92,7 @@
   color: #555;
   text-decoration: none;
   font-size: 14px;
-  white-space: nowrap; /* Không xuống dòng */
+  white-space: nowrap;
   transition: all 0.2s;
 }
 
@@ -119,10 +114,9 @@
   object-fit: cover;
 }
 
-/* --- Sort Controls --- */
 .controls {
   display: flex;
-  justify-content: flex-end; /* Đẩy sang phải */
+  justify-content: flex-end;
   align-items: center;
   gap: 10px;
   margin-bottom: 16px;
@@ -143,23 +137,19 @@
   border-color: #e72a2a;
 }
 
-/* --- Product Grid (Responsive Core) --- */
 .productsGrid {
   display: grid;
-  /* Tự động chia cột: Tối thiểu 180px, còn lại chia đều */
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); 
   gap: 16px;
 }
 
-/* Responsive cho Mobile: Giảm kích thước tối thiểu để hiển thị 2 cột */
 @media (max-width: 480px) {
   .productsGrid {
-    grid-template-columns: repeat(2, 1fr); /* Bắt buộc 2 cột */
-    gap: 10px; /* Giảm khoảng cách */
+    grid-template-columns: repeat(2, 1fr); 
+    gap: 10px; 
   }
 }
 
-/* --- Loading & Empty States --- */
 .loading, .empty {
   text-align: center;
   padding: 40px;

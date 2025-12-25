@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search } from 'lucide-react'; // Icon
+import { Search } from 'lucide-react';
 import RecipeCard from '@/components/RecipeCard';
 import { RecipeSearchRequest, RecipeResponse } from '@/types/recipe';
 import { RECIPE_TAGS } from '@/constants/recipeTags';
@@ -11,10 +11,9 @@ import styles from './RecipePage.module.css';
 export default function RecipePage() {
     const searchParams = useSearchParams();
     const initialRole = searchParams.get('role') || 'DISH_MAIN';
-    // State Filter
     const [filter, setFilter] = useState<RecipeSearchRequest>({
         keyword: '',
-        role: initialRole, // Mặc định tìm món mặn
+        role: initialRole,
         isVegan: false,
         allergies: [],
         preferredFlavors: [],
@@ -27,10 +26,7 @@ export default function RecipePage() {
     const [loading, setLoading] = useState(false);
     const handleSearchSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        // Việc setFilter sẽ trigger useEffect fetch lại API
-        // Ở đây ta chỉ cần đảm bảo state keyword đã được cập nhật
     };
-    // Gọi API POST /suggest mỗi khi Filter thay đổi
     useEffect(() => {
         const fetchRecipes = async () => {
             setLoading(true);
@@ -41,10 +37,8 @@ export default function RecipePage() {
                     body: JSON.stringify(filter)
                 });
 
-                // Kiểm tra response trước khi parse JSON
                 if (!res.ok) {
                     console.error('API error:', res.status, res.statusText);
-                    // Nếu endpoint chưa implement, set empty array
                     setRecipes([]);
                     return;
                 }
@@ -59,11 +53,9 @@ export default function RecipePage() {
             }
         };
 
-        // Debounce nhẹ nếu cần, ở đây gọi luôn cho đơn giản
         fetchRecipes();
     }, [filter]);
 
-    // Handlers cập nhật Filter
     const toggleFlavor = (flavor: string) => {
         setFilter(prev => {
             const current = prev.preferredFlavors || [];
@@ -87,8 +79,6 @@ export default function RecipePage() {
                             placeholder="Tên món (vd: Thịt kho)..."
                             value={filter.keyword || ''}
                             onChange={(e) => setFilter({ ...filter, keyword: e.target.value })}
-                        // Lưu ý: onChange này sẽ trigger fetch liên tục. 
-                        // Nếu muốn tối ưu, hãy dùng thư viện 'use-debounce' hoặc chỉ setKeyword khi bấm Enter.
                         />
                         <button type="submit"><Search size={16} /></button>
                     </form>

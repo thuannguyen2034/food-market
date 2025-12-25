@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 // Đã xóa import Link vì ProductCard tự xử lý link
 import { CategoryResponse, ProductResponse, PageResponse } from '@/types/product';
@@ -21,6 +21,7 @@ export default function SearchPage() {
     const [page, setPage] = useState<number>(0);
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
+    const observerTarget = useRef(null);
 
     // Fetch Categories
     useEffect(() => {
@@ -116,7 +117,28 @@ export default function SearchPage() {
         updateUrl(undefined, undefined, newSort);
     };
 
-    const handleLoadMore = () => setPage(prev => prev + 1);
+    // Infinite scroll with Intersection Observer
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !loading) {
+                    setPage(prev => prev + 1);
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        const currentTarget = observerTarget.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+
+        return () => {
+            if (currentTarget) {
+                observer.unobserve(currentTarget);
+            }
+        };
+    }, [hasMore, loading]);
 
 
     return (
@@ -174,20 +196,21 @@ export default function SearchPage() {
                     <div className={styles.productsGrid}>
                         {products.map(product => (
                             // 2. Thay thế toàn bộ thẻ Link thủ công bằng ProductCard
-                            <ProductCard 
-                                key={product.id} 
-                                product={product} 
-                                // Có thể truyền categorySlug nếu muốn cố định URL theo filter hiện tại,
-                                // nhưng để null thì ProductCard sẽ dùng slug gốc của sản phẩm (tốt hơn).
+                            <ProductCard
+                                key={product.id}
+                                product={product}
+                            // Có thể truyền categorySlug nếu muốn cố định URL theo filter hiện tại,
+                            // nhưng để null thì ProductCard sẽ dùng slug gốc của sản phẩm (tốt hơn).
                             />
                         ))}
                     </div>
 
-                    {hasMore && (
+                    {/* Intersection Observer Target */}
+                    <div ref={observerTarget} style={{ height: '20px', margin: '20px 0' }} />
+
+                    {loading && page > 0 && (
                         <div className={styles.loadMore}>
-                            <button onClick={handleLoadMore} disabled={loading} className={styles.loadMoreButton}>
-                                {loading ? 'Đang tải...' : 'Xem thêm'}
-                            </button>
+                            <span>Đang tải...</span>
                         </div>
                     )}
                 </>

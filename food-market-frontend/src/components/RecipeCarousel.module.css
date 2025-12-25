@@ -3,23 +3,20 @@
 .wrapper {
     position: relative;
     width: 100%;
-    /* Khi hover vào vùng này thì mới hiện nút mũi tên (tuỳ chọn) */
+    padding: 10px 0;
 }
 
 /* Khung chứa danh sách cuộn */
 .scrollContainer {
     display: flex;
-    gap: 16px;
-    overflow-x: auto; /* Vẫn cho phép cuộn tự nhiên */
-    scroll-behavior: smooth; /* Quan trọng: tạo hiệu ứng trượt mượt */
+    gap: 16px; /* Khoảng cách giữa các card */
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding: 10px 4px; /* Padding để shadow của card không bị cắt */
     
-    /* Scroll Snap: Giúp các item tự động căn chỉnh ngay ngắn khi dừng cuộn */
-    scroll-snap-type: x mandatory;
-    padding: 4px 4px 16px 4px; /* Padding bottom để bóng đổ không bị cắt */
-
-    /* Ẩn thanh cuộn (cho đẹp) */
+    /* Ẩn thanh cuộn nhưng vẫn scroll được */
     scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE/Edge */
+    -ms-overflow-style: none;
 }
 
 .scrollContainer::-webkit-scrollbar {
@@ -27,9 +24,8 @@
 }
 
 .item {
-    flex: 0 0 auto;
-    width: 280px; /* Độ rộng cố định của card */
-    scroll-snap-align: start; /* Điểm neo khi dừng cuộn */
+   flex: 0 0 auto;
+    width: 220px; /* Điểm neo khi dừng cuộn */
 }
 
 /* --- Nút Mũi Tên --- */
@@ -37,23 +33,19 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    z-index: 10;
-    
     width: 40px;
     height: 40px;
     border-radius: 50%;
+    background-color: white;
     border: 1px solid #eee;
-    background: white;
-    color: #333;
-    
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    z-index: 10;
     transition: all 0.2s ease;
-    
-    opacity: 0.8;
+    color: #333;
 }
 
 .navBtn:hover:not(:disabled) {
@@ -88,6 +80,6 @@
     }
     
     .item {
-        width: 240px; /* Card nhỏ hơn chút trên mobile */
+        width: 180px; /* Card nhỏ hơn chút trên mobile */
     }
 }

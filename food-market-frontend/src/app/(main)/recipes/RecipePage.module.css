@@ -1,4 +1,3 @@
-/* --- Global Container --- */
 .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -6,21 +5,16 @@
     display: flex;
     gap: 32px;
     align-items: flex-start;
-    /* Để sidebar không bị giãn chiều cao theo main */
 }
 
-/* --- Sidebar (Bộ lọc) --- */
 .sidebar {
     width: 260px;
     flex-shrink: 0;
-    /* Giữ thanh lọc cố định khi cuộn trang danh sách dài */
     position: sticky;
-    top: 20px;
+    top: 185px;
     background: white;
-    /* Không cần border khung, chỉ cần khoảng trắng là đủ tách biệt */
 }
 
-/* 1. Search Box */
 .searchBox h3 {
     font-size: 16px;
     font-weight: 700;
@@ -82,7 +76,7 @@
     margin-bottom: 12px;
 }
 
-/* Radio Group (Custom Style đơn giản) */
+/* Radio Group*/
 .radioGroup {
     display: flex;
     flex-direction: column;
@@ -91,7 +85,6 @@
 
 .radioGroup label {
     font-weight: 400;
-    /* Reset weight */
     margin: 0;
     padding: 8px 12px;
     border-radius: 4px;
@@ -107,15 +100,12 @@
     background-color: #f5f5f5;
 }
 
-/* Trạng thái Active cho Radio */
 .activeRadio {
     background-color: #fff1f0 !important;
-    /* Nền đỏ nhạt */
     color: #e72a2a !important;
     font-weight: 600 !important;
 }
 
-/* Checkbox Items (Flavor) */
 .checkboxItem {
     display: flex;
     align-items: center;
@@ -129,10 +119,8 @@
 .checkboxItem input {
     cursor: pointer;
     accent-color: #e72a2a;
-    /* Đổi màu checkbox mặc định sang đỏ */
 }
 
-/* Select Box (Time) */
 .filterGroup select {
     width: 100%;
     padding: 8px;
@@ -147,10 +135,8 @@
     border-color: #e72a2a;
 }
 
-/* --- Main Content --- */
 .main {
     flex: 1;
-    /* Chiếm hết phần còn lại */
     min-height: 500px;
 }
 
@@ -173,25 +159,20 @@
     margin: 0;
 }
 
-/* Grid Layout cho Recipe Cards */
 .grid {
     display: grid;
-    /* Responsive Grid: Tự động chia cột, tối thiểu 220px một thẻ */
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 20px;
 }
 
-/* --- Responsive --- */
 @media (max-width: 768px) {
     .container {
         flex-direction: column;
-        /* Đẩy sidebar lên trên */
     }
 
     .sidebar {
         width: 100%;
         position: static;
-        /* Bỏ sticky trên mobile */
         margin-bottom: 20px;
         border-bottom: 1px solid #eee;
         padding-bottom: 20px;
@@ -199,7 +180,6 @@
 
     .radioGroup {
         flex-direction: row;
-        /* Xếp ngang các lựa chọn Role trên mobile cho gọn */
         flex-wrap: wrap;
     }
 

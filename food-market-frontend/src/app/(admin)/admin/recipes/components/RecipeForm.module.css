@@ -1,0 +1,314 @@
+/* AdminRecipe.module.css */
+.container {
+    padding: 12px 16px;
+    height: calc(100vh - 60px);
+    background: #f8f9fa;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* Header Compact */
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.headerTitle {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.btnBack {
+    background: white;
+    border: 1px solid #d1d5db;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #4b5563;
+}
+
+.btnBack:hover {
+    background: #f3f4f6;
+    color: #111827;
+}
+
+.formBody {
+    flex: 1;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 12px;
+    padding-right: 4px;
+}
+
+.card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+}
+
+.cardHeader {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 10px 0;
+    border-bottom: 1px solid #f3f4f6;
+    padding-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.formGroup {
+    margin-bottom: 10px;
+}
+
+.label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #4b5563;
+    margin-bottom: 4px;
+}
+
+.input {
+    width: 100%;
+    padding: 6px 8px;
+    font-size: 0.9rem;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+}
+
+.input:focus {
+    border-color: #e72a2a;
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(231, 42, 42, 0.1);
+}
+
+.dynamicList {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dynamicRow {
+    display: grid;
+    grid-template-columns: 30px 1fr 30px;
+    gap: 8px;
+    align-items: center;
+}
+
+.stepIndex {
+    background: #e72a2a;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.btnRemove {
+    background: transparent;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btnRemove:hover {
+    color: #dc2626;
+    background: #fee2e2;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+}
+
+.btnAddRow {
+    background: white;
+    border: 1px dashed #d1d5db;
+    color: #6b7280;
+    width: 100%;
+    padding: 6px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.btnAddRow:hover {
+    border-color: #e72a2a;
+    color: #e72a2a;
+    background: #fff5f5;
+}
+
+/* Image Upload Compact */
+.uploadBox {
+    width: 100%;
+    aspect-ratio: 16/9;
+    border: 1px dashed #d1d5db;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    background: #fafafa;
+}
+
+.uploadBox img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.uploadLabel {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-top: 8px;
+}
+
+.btnRemoveImg {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+/* Product Search */
+.searchWrapper {
+    position: relative;
+}
+
+.searchDropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    z-index: 50;
+    max-height: 200px;
+    overflow-y: auto;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.searchResult {
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.searchResult:hover {
+    background: #fff1f1;
+}
+
+.searchThumb {
+    width: 30px;
+    height: 30px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #eee;
+}
+
+.selectedList {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.selectedItem {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    padding: 6px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.selectedInfo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+}
+
+.footer {
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.btnPrimary {
+    background: #e72a2a;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.btnPrimary:hover {
+    background: #c0392b;
+}
+
+.btnAi {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}

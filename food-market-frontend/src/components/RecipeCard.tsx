@@ -4,6 +4,7 @@ import Link from 'next/link';
 import styles from './RecipeCard.module.css';
 import { RECIPE_TAGS, getTagLabel } from '@/constants/recipeTags';
 import { RecipeResponse } from '@/types/recipe';
+import { ShoppingBasket } from 'lucide-react';
 
 interface RecipeCardProps {
     recipe: RecipeResponse;
@@ -29,6 +30,9 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
                         {getTagLabel(roleTag)}
                     </span>
                 )}
+                <div className={styles.quickAction}>
+                   <ShoppingBasket size={18} /> Mua nguyên liệu
+                </div>
             </div>
             
             <div className={styles.content}>
@@ -40,10 +44,12 @@ export default function RecipeCard({ recipe }: RecipeCardProps) {
                         </span>
                     )}
                 </div>
-                {/* Nếu có điểm matchScore (Trang Search) thì hiển thị */}
-                {recipe.matchScore !== undefined && recipe.matchScore > 0 && (
-                   <div className={styles.matchScore}>Độ phù hợp: {recipe.matchScore}đ</div>
-                )}
+                <div className={styles.footerAction}>
+                    <div className={styles.shopBtn}>
+                        <ShoppingBasket size={16} /> 
+                        <span>Có sẵn nguyên liệu</span>
+                    </div>
+                </div>
             </div>
         </Link>
     );

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import RecipeForm from '@/components/Admin/RecipeForm';
+import RecipeForm from '@/app/(admin)/admin/recipes/components/RecipeForm';
 
 export default function EditRecipePage() {
   const { id } = useParams();
@@ -15,8 +15,7 @@ export default function EditRecipePage() {
     if (!id) return;
     const fetchDetail = async () => {
       try {
-        // Giả định có endpoint này hoặc dùng endpoint public
-        const res = await authedFetch(`/api/v1/admin/recipes/${id}`); // Cần đảm bảo BE có API này
+        const res = await authedFetch(`/api/v1/admin/recipes/${id}`);
         if (res.ok) {
           const data = await res.json();
           setRecipe(data);

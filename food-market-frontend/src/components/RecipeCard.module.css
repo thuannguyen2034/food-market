@@ -2,29 +2,31 @@
 .card {
     display: flex;
     flex-direction: column;
-    background-color: white;
-    border: 1px solid #eee; /* Viền mỏng nhẹ nhàng */
-    border-radius: 8px;
-    overflow: hidden; /* Để crop ảnh khi zoom */
     text-decoration: none;
-    transition: all 0.2s ease;
-    height: 100%; /* Đảm bảo chiều cao full trong grid */
-    position: relative;
+    color: inherit;
+    /* Loại bỏ border cũ nếu có, dùng shadow nhẹ thôi */
+    border: none; 
+    border-radius: 16px; /* Bo góc to hơn chút cho mềm mại */
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    background: #fff;
+    height: 100%; /* Đảm bảo thẻ căng đều chiều cao */
 }
 
 /* Hiệu ứng hover toàn card */
 .card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Bóng đổ mềm */
-    border-color: #ffccc7; /* Đổi màu viền sang đỏ nhạt */
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
 /* --- Phần hình ảnh --- */
 .imageWrapper {
     position: relative;
     width: 100%;
-    height: 180px; /* Chiều cao cố định cho ảnh để đồng bộ */
-    background-color: #f5f5f5; /* Màu nền placeholder khi chưa load ảnh */
+    /* QUAN TRỌNG: Thiết lập tỷ lệ 1:1 (vuông) hoặc 4:3 */
+    aspect-ratio: 4/3; 
     overflow: hidden;
+    background-color: #f5f5f5; /* Màu nền chờ khi ảnh chưa load */
 }
 
 .imageWrapper img {
@@ -94,14 +96,26 @@
     font-weight: 500;
 }
 
-/* Điểm phù hợp (cho trang search) */
-.matchScore {
-    margin-top: 8px;
-    font-size: 12px;
-    color: #27ae60; /* Màu xanh lá biểu thị sự phù hợp */
-    background-color: #f0fdf4;
-    padding: 4px 8px;
-    border-radius: 4px;
-    align-self: flex-start;
+.footerAction {
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px dashed #eee;
+}
+
+.shopBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #27ae60; /* Màu xanh lá tạo cảm giác "Mua được" */
+    font-size: 0.9rem;
     font-weight: 600;
+    padding: 6px 12px;
+    background-color: #eafaf1;
+    border-radius: 20px;
+    transition: all 0.2s ease;
+}
+
+.card:hover .shopBtn {
+    background-color: #27ae60;
+    color: white;
 }

@@ -1,18 +1,15 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext"; 
 import { CartProvider } from "@/context/CartContext";
 import { NotificationProvider } from "@/context/NotificationContext";
-import Navbar from "@/components/Navbar";
-const inter = Inter({ subsets: ["latin"] });
 import { Toaster } from 'react-hot-toast';
 import CustomerChat from "@/components/Chat/CustomerChat";
+import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Food Market",
-  description: "E-commerce Food Market Project",
+  title: "BonMi - Chợ thực phẩm tươi ngon"
 };
 
 export default function RootLayout({
@@ -22,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
+      <body>
         <AuthProvider>
           <CartProvider>
           <NotificationProvider>
@@ -32,6 +29,7 @@ export default function RootLayout({
           </NotificationProvider>
           </CartProvider>
         </AuthProvider>
+        <Footer />
       </body>
     </html>
   );

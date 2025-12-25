@@ -4,8 +4,9 @@
 .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 16px 60px;
+    padding: 0 16px 80px;
     width: 100%;
+    background-color: #fdfdfd;
 }
 
 .loadingContainer {
@@ -17,7 +18,6 @@
     font-size: 16px;
 }
 
-/* --- Banner Section (NEW: Bento Layout) --- */
 .bannerSection {
     margin-top: 20px;
     margin-bottom: 24px;
@@ -25,43 +25,46 @@
 
 .bannerGrid {
     display: grid;
-    /* Chia 3 phần: 2 phần cho ảnh lớn, 1 phần cho cột ảnh nhỏ */
     grid-template-columns: 2fr 1fr; 
-    gap: 10px;
-    height: 380px; /* Chiều cao cố định cho cụm banner */
+    gap: 8px;
+    align-items: stretch;
 }
 
-/* Ảnh lớn bên trái */
 .mainBannerWrapper {
-    position: relative;
     width: 100%;
-    height: 100%;
-    border-radius: 8px;
+    height: auto; 
+    border-radius: 16px;
     overflow: hidden;
+    display: flex; 
 }
 
 .mainBannerImg {
     width: 100%;
-    height: 100%;
-    object-fit: cover; /* Đảm bảo ảnh lấp đầy khung */
+    height: auto; 
+    display: block; 
 }
 
-/* Cột phải chứa 2 ảnh nhỏ */
 .sideBannersCol {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    height: 100%;
+    gap: 8px;
+    height: auto; 
+}
+
+.sideBannerWrapper {
+   flex: 1;
+   overflow: hidden;
+   border-radius: 16px;
 }
 
 .sideBannerImg {
-    flex: 1; /* Chia đôi chiều cao cột */
+    flex: 1;
     width: 100%;
-    object-fit: cover;
-    border-radius: 8px;
+    height: 100%; 
+    object-fit: cover; 
+    border-radius: 16px;
 }
 
-/* --- Shared Section Styles --- */
 .sectionContainer {
     margin-bottom: 32px;
 }
@@ -70,12 +73,11 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px; /* Giảm margin bottom để gọn hơn */
+    margin-bottom: 12px;
     padding-bottom: 8px;
     border-bottom: 1px solid #eee; 
 }
 
-/* Titles */
 .categoryTitle,
 .flashSaleTitle {
     font-size: 20px;
@@ -87,18 +89,47 @@
     margin: 0;
 }
 
-/* --- Flash Sale Specifics (COMPACT VERSION) --- */
 .flashSaleWrapper {
-    background: linear-gradient(to bottom, #fff0f0, #fff); /* Hiệu ứng nền nhẹ */
-    padding: 16px; /* Giảm padding */
-    border-radius: 8px;
-    border: 1px solid #ffccc7;
+    background: linear-gradient(90deg, #fff0e6 0%, #fff 100%); 
+    border: 1px solid #ffdccc;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 30px;
+    position: relative;
+    overflow: hidden;
+}
+.flashSaleWrapper::before {
+    content: "";
+    position: absolute;
+    top: -50px;
+    left: -50px;
+    width: 150px;
+    height: 150px;
+    background: radial-gradient(circle, rgba(231, 42, 42, 0.1) 0%, rgba(255,255,255,0) 70%);
+    z-index: 0;
+}
+.flashSaleHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    position: relative;
+    z-index: 1;
 }
 
+.headerLeft {
+    display: flex;
+    align-items: center;
+}
 .flashSaleTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.5rem;
+    font-weight: 800;
     color: #e72a2a;
-    font-size: 22px; /* To hơn chút để nổi bật */
-    font-style: italic; /* Nghiêng tạo cảm giác tốc độ */
+    font-style: italic;
+    text-transform: uppercase;
 }
 
 .flashIcon {
@@ -111,16 +142,18 @@
     100% { transform: scale(1); opacity: 1; }
 }
 
-/* View All Button */
 .viewAllBtn {
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #666;
+    font-size: 0.9rem;
+    color: #555;
     text-decoration: none;
     transition: color 0.2s;
+    background: #fff;
+    padding: 6px 12px;
+    border-radius: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 
 .viewAllBtn:hover {
@@ -128,21 +161,24 @@
     text-decoration: underline;
 }
 
-/* --- Product Grid --- */
 .productGrid {
     display: grid;
-    /* Desktop: 5 cột */
     grid-template-columns: repeat(5, 1fr); 
-    gap: 12px; /* Giảm khoảng cách giữa các thẻ để compact hơn */
+    gap: 12px;
 }
 
-/* --- Kitchen / Recipe Area --- */
 .kitchenHeader {
     text-align: center;
     margin-bottom: 24px;
     padding-top: 10px;
 }
-
+.kitchenZone {
+    background-color: #fff9f0;
+    margin: 30px -16px;
+    padding: 40px 16px;
+    border-radius: 20px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.02);
+}
 .kitchenHeader h2 {
     font-size: 24px;
     font-weight: 700;
@@ -155,7 +191,11 @@
     font-size: 14px;
     margin: 0;
 }
-
+.subHeader {
+    text-align: center;
+    color: #7f8c8d;
+    margin-bottom: 30px;
+}
 .divider {
     border: 0;
     height: 1px;
@@ -163,14 +203,12 @@
     margin: 40px 0;
 }
 
-/* --- Responsive Media Queries --- */
-
 @media (max-width: 1024px) {
     .productGrid {
         grid-template-columns: repeat(4, 1fr);
     }
     .bannerGrid {
-        height: 300px; /* Giảm chiều cao banner trên tablet */
+        height: 300px;
     }
 }
 
@@ -179,7 +217,6 @@
         grid-template-columns: repeat(3, 1fr);
     }
     
-    /* Trên mobile, banner chuyển thành xếp dọc */
     .bannerGrid {
         display: flex;
         flex-direction: column;
@@ -187,11 +224,11 @@
     }
     
     .mainBannerWrapper {
-        height: 200px; /* Chiều cao banner chính trên mobile */
+        height: 200px;
     }
     
     .sideBannersCol {
-        flex-direction: row; /* 2 ảnh nhỏ xếp ngang bên dưới */
+        flex-direction: row;
         height: 100px;
     }
 }

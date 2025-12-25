@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ProductCard from '@/components/ProductCard';
@@ -18,6 +18,7 @@ export default function CategoryPage() {
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
+    const observerTarget = useRef(null);
 
     // Fetch sibling categories (same root)
     useEffect(() => {
@@ -29,7 +30,7 @@ export default function CategoryPage() {
                 if (response.ok) {
                     const data: CategoryResponse[] = await response.json();
                     setSiblingCategories(data);
-                    // Find current category from siblings
+                        // Find current category from siblings
                     const current = data.find(cat => cat.slug === categorySlug);
                     if (current) {
                         setCurrentCategory(current);
@@ -79,9 +80,28 @@ export default function CategoryPage() {
         setPage(0);
     };
 
-    const handleLoadMore = () => {
-        setPage(prev => prev + 1);
-    };
+    // Infinite scroll with Intersection Observer
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && hasMore && !loading) {
+                    setPage(prev => prev + 1);
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        const currentTarget = observerTarget.current;
+        if (currentTarget) {
+            observer.observe(currentTarget);
+        }
+
+        return () => {
+            if (currentTarget) {
+                observer.unobserve(currentTarget);
+            }
+        };
+    }, [hasMore, loading]);
 
     return (
         <div className={styles.container}>
@@ -130,7 +150,7 @@ export default function CategoryPage() {
             </div>
 
             {/* Products Grid */}
-            {products.length === 0 ? (
+            {products.length === 0 && !loading ? (
                 <div className={styles.empty}>Không có sản phẩm nào</div>
             ) : (
                 <>
@@ -144,11 +164,12 @@ export default function CategoryPage() {
                         ))}
                     </div>
 
-                    {hasMore && (
+                    {/* Intersection Observer Target */}
+                    <div ref={observerTarget} style={{ height: '20px', margin: '20px 0' }} />
+
+                    {loading && (
                         <div className={styles.loadMore}>
-                            <button onClick={handleLoadMore} disabled={loading}>
-                                {loading ? 'Đang tải...' : 'Xem thêm'}
-                            </button>
+                            <span>Đang tải...</span>
                         </div>
                     )}
                 </>

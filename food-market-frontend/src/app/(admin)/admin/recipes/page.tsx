@@ -3,9 +3,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import styles from '@/styles/admin/Recipes.module.css'; // Sẽ tạo sau
+import styles from '@/styles/admin/Recipes.module.css'; 
 import {
-  ChefHat, // Thay Package bằng ChefHat
+  ChefHat,
   Plus,
   Search,
   Edit,
@@ -14,7 +14,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 
-// DTO Response từ backend
+
 type RecipeResponse = {
   id: number;
   name: string;
@@ -71,8 +71,8 @@ export default function RecipeListPage() {
   // Handle Search
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setPage(0); // Reset về trang 1 khi search
-    fetchRecipes(); // Gọi lại hàm fetch (hoặc để useEffect tự chạy nếu dependency keyword thay đổi)
+    setPage(0); 
+    fetchRecipes(); 
   };
 
   // UI Helper
@@ -169,7 +169,6 @@ export default function RecipeListPage() {
                     <Link href={`/admin/recipes/${recipe.id}`} className={styles.editBtn}>
                       <Edit size={16} /> Sửa
                     </Link>
-                    {/* Nút xóa có thể thêm sau nếu cần logic xóa */}
                   </td>
                 </tr>
               ))

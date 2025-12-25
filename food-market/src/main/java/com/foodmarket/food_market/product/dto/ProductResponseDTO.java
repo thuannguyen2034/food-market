@@ -22,6 +22,7 @@ public class ProductResponseDTO {
     private BigDecimal finalPrice; // Giá cuối cùng
     private String slug;
     private Integer stockQuantity;
+    private Integer soldCount;
     private double rating;
     private Integer reviewCount;
     private CategorySummaryDTO category;
@@ -44,6 +45,7 @@ public class ProductResponseDTO {
                 .finalPrice(product.getFinalPrice())
                 .slug(product.getSlug())
                 .stockQuantity(stockQuantity)
+                .soldCount(product.getSoldCount())
                 .rating(product.getAverageRating())
                 .reviewCount(product.getReviewCount())
                 .category(CategorySummaryDTO.fromEntity(product.getCategory()))

@@ -7,8 +7,7 @@
   background-color: #fff;
   border-bottom: 1px solid #eee;
   position: sticky;
-  /* Đổi thành sticky để menu luôn hiện khi cuộn */
-  top: 0;
+  top: -34px;
   z-index: 100;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
@@ -69,8 +68,7 @@
 
 /* --- 2. Main Navbar --- */
 .navbar {
-  padding: 16px 0;
-  /* Tăng padding chút cho thoáng */
+  padding: 8px 0; 
   background-color: #ffffff;
 }
 
@@ -88,7 +86,7 @@
 }
 
 .logo {
-  height: 50px;
+  height: 40px;
   width: auto;
   object-fit: contain;
   display: block;
@@ -97,8 +95,7 @@
 /* Search Section */
 .searchSection {
   flex: 1;
-  max-width: 550px;
-  /* Giới hạn max-width vừa phải */
+  max-width: 700px;
   position: relative;
 }
 
@@ -108,8 +105,7 @@
   border: 2px solid #e72a2a;
   border-radius: 4px;
   overflow: hidden;
-  height: 42px;
-  /* Cao hơn chút cho dễ bấm */
+  height: 36px;
   background: white;
 }
 
@@ -340,8 +336,7 @@
 .catBarFlex {
   display: flex;
   align-items: center;
-  height: 46px;
-  /* Chiều cao cố định cho thanh menu */
+  height: 38px;
 }
 
 /* Dropdown Danh Mục (Bên trái) */
@@ -367,7 +362,7 @@
   justify-content: space-between;
   font-weight: 700;
   text-transform: uppercase;
-  font-size: 14px;
+  font-size: 13px;
   cursor: pointer;
 }
 
@@ -382,6 +377,8 @@
   border-radius: 0 0 4px 4px;
   z-index: 150;
   border: 1px solid #eee;
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
 }
 
 .categoryGroup {
