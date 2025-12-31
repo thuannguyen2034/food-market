@@ -5,7 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useParams } from 'next/navigation';
 import {
     ArrowLeft, MapPin, Phone, FileText, DollarSign, Package,
-    CreditCard, CheckCircle, Wallet, Truck, User
+    CreditCard, CheckCircle, Wallet, Truck, User, XCircle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -59,8 +59,8 @@ export default function OrderDetailPage() {
             if (response.ok) {
                 const data: OrderDTO = await response.json();
                 setOrder(data);
-                setSelectedStatus('');
-                setSelectedPaymentStatus('');
+                setSelectedStatus(data.status);
+                setSelectedPaymentStatus(data.paymentStatus);
             }
         } catch (error) {
             console.error('Error fetching order detail:', error);
@@ -188,7 +188,7 @@ export default function OrderDetailPage() {
                             </table>
                         </div>
                     </div>
-                    
+
                     {/* Ghi chú nếu có (Để bên trái cho đỡ chật cột phải) */}
                     {order.note && (
                         <div className={styles.card}>
@@ -202,7 +202,7 @@ export default function OrderDetailPage() {
 
                 {/* --- CỘT PHẢI: ACTIONS & INFO (Sidebar Compact) --- */}
                 <div className={styles.sidebarColumn}>
-                    
+
                     {/* A. ACTION CARD - QUAN TRỌNG NHẤT */}
                     <div className={styles.card} style={{ borderColor: '#bfdbfe', boxShadow: '0 4px 6px -1px rgba(59, 130, 246, 0.1)' }}>
                         <div className={styles.cardHeader} style={{ background: '#eff6ff', color: '#1e40af' }}>
@@ -225,18 +225,24 @@ export default function OrderDetailPage() {
                                                 <option key={st} value={st}>{getOrderStatusLabel(st)}</option>
                                             ))}
                                         </select>
-                                        <button 
-                                            className={styles.updateBtn} 
-                                            onClick={handleUpdateStatus} 
+                                        <button
+                                            className={styles.updateBtn}
+                                            onClick={handleUpdateStatus}
                                             disabled={!selectedStatus || updating}
                                         >
-                                            <Truck size={14}/> {updating ? 'Đang lưu...' : 'Cập nhật tiến độ'}
+                                            <Truck size={14} /> {updating ? 'Đang lưu...' : 'Cập nhật tiến độ'}
                                         </button>
                                     </>
                                 ) : (
-                                    <div style={{ fontSize: '0.85rem', color: '#16a34a', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                        <CheckCircle size={14} /> Đơn đã hoàn tất
-                                    </div>
+                                    order.status === OrderStatus.DELIVERED ? (
+                                        <div style={{ fontSize: '0.85rem', color: '#16a34a', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <CheckCircle size={14} /> {getOrderStatusLabel(order.status)}
+                                        </div>
+                                    ) : (
+                                        <div style={{ fontSize: '0.85rem', color: '#ef4444', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                            <XCircle size={14} /> {getOrderStatusLabel(order.status)}
+                                        </div>
+                                    )
                                 )}
                             </div>
 
@@ -251,17 +257,14 @@ export default function OrderDetailPage() {
                                     onChange={(e) => setSelectedPaymentStatus(e.target.value as PaymentStatus)}
                                     disabled={updatingPayment}
                                 >
-                                    <option value="">-- Đổi thủ công --</option>
-                                    {paymentStatusOptions
-                                        .filter(s => s !== order.paymentStatus)
-                                        .map(st => (
-                                            <option key={st} value={st}>{getPaymentStatusLabel(st)}</option>
-                                        ))}
+                                    {paymentStatusOptions.map(st => (
+                                        <option key={st} value={st}>{getPaymentStatusLabel(st)}</option>
+                                    ))}
                                 </select>
-                                <button 
+                                <button
                                     className={`${styles.updateBtn} ${styles.paymentBtn}`}
                                     onClick={handleUpdatePaymentStatus}
-                                    disabled={!selectedPaymentStatus || updatingPayment}
+                                    disabled={!selectedPaymentStatus || selectedPaymentStatus === order.paymentStatus || updatingPayment}
                                 >
                                     <Wallet size={14} /> {updatingPayment ? 'Lưu...' : 'Cập nhật tiền'}
                                 </button>
@@ -278,7 +281,7 @@ export default function OrderDetailPage() {
                                 <span className={styles.infoValue}>{formatCurrency(order.totalAmount)}</span>
                             </div>
                             {/* Thêm phí ship/discount nếu có logic đó sau này */}
-                            <hr style={{ margin: '8px 0', borderColor: '#f1f5f9' }}/>
+                            <hr style={{ margin: '8px 0', borderColor: '#f1f5f9' }} />
                             <div className={styles.infoRow}>
                                 <span className={styles.infoLabel} style={{ fontWeight: 700, color: '#0f172a' }}>Thành tiền</span>
                                 <span className={styles.infoValue} style={{ fontSize: '1.1rem', fontWeight: 700, color: '#e72a2a' }}>
@@ -292,7 +295,7 @@ export default function OrderDetailPage() {
                     <div className={styles.card}>
                         <div className={styles.cardHeader}><User size={16} /> Khách hàng & Giao nhận</div>
                         <div className={styles.cardBody}>
-                             <div className={styles.infoRow}>
+                            <div className={styles.infoRow}>
                                 <span className={styles.infoLabel}>Ngày đặt</span>
                                 <span className={styles.infoValue}>{format(new Date(order.createdAt), 'dd/MM/yyyy HH:mm')}</span>
                             </div>
@@ -300,13 +303,13 @@ export default function OrderDetailPage() {
                                 <span className={styles.infoLabel}>Khung giờ</span>
                                 <span className={styles.infoValue}>{order.deliveryTimeSlot}</span>
                             </div>
-                            <hr style={{ margin: '8px 0', borderColor: '#f1f5f9' }}/>
+                            <hr style={{ margin: '8px 0', borderColor: '#f1f5f9' }} />
                             <div className={styles.infoRow}>
-                                <span className={styles.infoLabel}><Phone size={12}/> SĐT</span>
+                                <span className={styles.infoLabel}><Phone size={12} /> SĐT</span>
                                 <span className={styles.infoValue}>{order.deliveryPhone}</span>
                             </div>
                             <div className={styles.infoRow} style={{ alignItems: 'flex-start' }}>
-                                <span className={styles.infoLabel} style={{ marginTop: 2 }}><MapPin size={12}/> Đ/C</span>
+                                <span className={styles.infoLabel} style={{ marginTop: 2 }}><MapPin size={12} /> Đ/C</span>
                                 <span className={styles.infoValue}>{order.deliveryAddress}</span>
                             </div>
                         </div>

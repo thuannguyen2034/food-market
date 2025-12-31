@@ -4,13 +4,12 @@
     flex-direction: column;
     text-decoration: none;
     color: inherit;
-    /* Loại bỏ border cũ nếu có, dùng shadow nhẹ thôi */
     border: none; 
-    border-radius: 16px; /* Bo góc to hơn chút cho mềm mại */
+    border-radius: 16px; 
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     background: #fff;
-    height: 100%; /* Đảm bảo thẻ căng đều chiều cao */
+    height: 100%; 
 }
 
 /* Hiệu ứng hover toàn card */
@@ -23,17 +22,16 @@
 .imageWrapper {
     position: relative;
     width: 100%;
-    /* QUAN TRỌNG: Thiết lập tỷ lệ 1:1 (vuông) hoặc 4:3 */
-    aspect-ratio: 4/3; 
+    aspect-ratio: 1/1; 
     overflow: hidden;
-    background-color: #f5f5f5; /* Màu nền chờ khi ảnh chưa load */
+    background-color: #f5f5f5; 
 }
 
 .imageWrapper img {
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Đảm bảo ảnh luôn lấp đầy khung */
-    transition: transform 0.5s ease; /* Hiệu ứng zoom chậm */
+    object-fit: cover; 
+    transition: transform 0.5s ease; 
 }
 
 /* Badge Role (Món mặn, Canh...) */
@@ -56,8 +54,7 @@
     padding: 12px;
     display: flex;
     flex-direction: column;
-    flex: 1; /* Để nội dung giãn hết chiều cao còn lại */
-    gap: 8px;
+    flex: 1; 
 }
 
 .title {
@@ -97,8 +94,6 @@
 }
 
 .footerAction {
-    margin-top: 12px;
-    padding-top: 10px;
     border-top: 1px dashed #eee;
 }
 
@@ -106,16 +101,16 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    color: #27ae60; /* Màu xanh lá tạo cảm giác "Mua được" */
+    color: #e72a2a; 
     font-size: 0.9rem;
     font-weight: 600;
     padding: 6px 12px;
-    background-color: #eafaf1;
+    background-color: transparent;
     border-radius: 20px;
     transition: all 0.2s ease;
 }
 
 .card:hover .shopBtn {
-    background-color: #27ae60;
+    background-color: #e72a2a;
     color: white;
 }

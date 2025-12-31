@@ -6,7 +6,6 @@ import { CartProvider } from "@/context/CartContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { Toaster } from 'react-hot-toast';
 import CustomerChat from "@/components/Chat/CustomerChat";
-import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
   title: "BonMi - Chợ thực phẩm tươi ngon"
@@ -29,7 +28,6 @@ export default function RootLayout({
           </NotificationProvider>
           </CartProvider>
         </AuthProvider>
-        <Footer />
       </body>
     </html>
   );
