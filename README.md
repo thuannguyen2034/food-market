@@ -1,6 +1,6 @@
-# Food Market - Hệ thống TMĐT Thực phẩm Thông minh
+# BonMi Market - Hệ thống TMĐT Thực phẩm Thông minh
 
-Chào mừng bạn đến với dự án **Food Market**, một hệ thống TMĐT hiện đại giúp kết nối người dùng với các sản phẩm thực phẩm tươi sống và công thức nấu ăn thông minh.
+Chào mừng bạn đến với dự án **BonMi Market**, một hệ thống TMĐT hiện đại giúp kết nối người dùng với các sản phẩm thực phẩm tươi sống và công thức nấu ăn thông minh.
 
 ## 🏗 Cơ cấu dự án
 
