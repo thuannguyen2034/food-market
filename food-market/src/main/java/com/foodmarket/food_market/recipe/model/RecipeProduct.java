@@ -23,5 +23,5 @@ public class RecipeProduct {
     Recipe recipe;
 
     @Column(name = "product_id", nullable = false)
-    Long productId; // Chỉ lưu ID tham chiếu sang module Product
+    Long productId;
 }

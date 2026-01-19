@@ -3,12 +3,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import styles from './AdminProduct.module.css'; // Style mới
+import styles from './AdminProduct.module.css';
 import {
   Package, RefreshCw, Plus, Search, Edit, Trash2, RotateCcw, AlertCircle, Filter, ChevronLeft, ChevronRight
 } from 'lucide-react';
-
-// Giữ nguyên các Type Definitions
 type ProductImageDTO = { id: number; imageUrl: string; displayOrder: number; };
 type CategorySummaryDTO = { id: number; name: string; slug: string; };
 type AdminProductResponse = {
@@ -38,7 +36,7 @@ export default function ProductListPage() {
     try {
       const params = new URLSearchParams();
       params.append('page', page.toString());
-      params.append('size', '15'); // Tăng size vì view compact
+      params.append('size', '15');
       if (searchInput) params.append('searchTerm', searchInput);
       if (statusFilter) params.append('status', statusFilter);
       if (sortOrder) params.append('sort', sortOrder);
@@ -52,14 +50,12 @@ export default function ProductListPage() {
 
   useEffect(() => { fetchProducts(); }, [fetchProducts]);
 
-  // Fetch stats low stock
   useEffect(() => {
     authedFetch('/api/v1/admin/products/count-low-stock')
       .then(res => res.ok ? res.json() : 0)
       .then(setLowStockCount).catch(console.error);
   }, [authedFetch]);
 
-  // Logic Hints (Giữ nguyên logic cũ, chỉ đổi UI)
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (searchInput.length < 2) { setSearchHints([]); return; }
@@ -71,7 +67,6 @@ export default function ProductListPage() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Format currency
   const fmt = (p: number) => new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(p);
 
   const handleDelete = async (id: number) => {
@@ -90,7 +85,6 @@ export default function ProductListPage() {
 
   return (
     <div className={styles.container}>
-      {/* 1. Header & Stats Compact Ribbon */}
       <div className={styles.header}>
         <h1><Package size={20} className={styles.iconRed} /> Quản lý Sản phẩm</h1>
         <div className={styles.statsRibbon}>
@@ -111,7 +105,6 @@ export default function ProductListPage() {
         </div>
       </div>
 
-      {/* 2. Unified Toolbar */}
       <div className={styles.toolbar}>
         <div className={styles.searchWrapper} ref={searchContainerRef}>
           <Search className={styles.searchIcon} size={16} />

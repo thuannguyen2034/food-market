@@ -9,7 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface OrderItemRepository extends JpaRepository<OrderItem, Long> {
-    // Hiện tại không cần phương thức custom nào
-    // JpaRepository đã đủ (dùng saveAll trong OrderService)
     List<OrderItem> findByOrderId(UUID id);
 }

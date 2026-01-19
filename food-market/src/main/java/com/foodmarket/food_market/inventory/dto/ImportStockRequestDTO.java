@@ -13,7 +13,7 @@ public class ImportStockRequestDTO {
     @NotNull(message = "Product ID is required")
     private Long productId;
 
-    private String batchCode; // Mã lô (có thể là của NCC hoặc tự sinh)
+    private String batchCode; 
 
     @NotNull(message = "Expiration date is required")
     @Future(message = "Expiration date must be in the future")

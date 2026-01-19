@@ -53,7 +53,6 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Trả về quyền của user, Spring Security sẽ dùng tiền tố "ROLE_"
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
     }
 
@@ -69,21 +68,21 @@ public class User implements UserDetails {
 
     @Override
     public boolean isAccountNonExpired() {
-        return true; // Tài khoản không bao giờ hết hạn
+        return true; 
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return true; // Tài khoản không bị khóa
+        return true; 
     }
 
     @Override
     public boolean isCredentialsNonExpired() {
-        return true; // Mật khẩu không hết hạn
+        return true; 
     }
 
     @Override
     public boolean isEnabled() {
-        return true; // Tài khoản được kích hoạt
+        return true; 
     }
 }

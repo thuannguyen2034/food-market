@@ -16,7 +16,7 @@ public class RecipeResponseDTO {
     private String cookingSteps;
     private String ingredients;
     private String tags;
-    private List<Long> productIds; // Trả về list ID sản phẩm để FE map lại
+    private List<Long> productIds;
 
     public static RecipeResponseDTO fromEntity(Recipe recipe) {
         List<Long> linkedProductIds = recipe.getProducts().stream()

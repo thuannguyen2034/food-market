@@ -28,7 +28,6 @@ public class AiTagService {
     public AiResult analyzeRecipe(String recipeName, String ingredients) {
         log.info("Analyzing tags for recipe: {}", recipeName);
 
-        // Converter này vẫn cần để lấy Schema và Parse JSON sau này
         var outputConverter = new BeanOutputConverter<>(AiResult.class);
 
         String promptText = """
@@ -95,7 +94,6 @@ public class AiTagService {
 
         } catch (Exception e) {
             log.error("AI Tag Analysis failed: {}", e.getMessage());
-            // Fallback
             return new AiResult(List.of());
         }
     }

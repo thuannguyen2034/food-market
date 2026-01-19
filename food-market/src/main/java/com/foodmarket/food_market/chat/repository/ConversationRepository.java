@@ -18,10 +18,8 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
 
     long countByStatus(ConversationStatus status);
 
-    // count Active
     long countByStaffIdAndStatus(UUID staffId, ConversationStatus status);
 
-    //
     @Query("SELECT c FROM Conversation c JOIN c.customer u " +
             "WHERE (:status IS NULL OR c.status = :status) " +
             "AND (:keyword IS NULL OR :keyword = '' OR " +
@@ -33,7 +31,6 @@ public interface ConversationRepository extends JpaRepository<Conversation, UUID
             Pageable pageable
     );
 
-    // My Conversations
     @Query("SELECT c FROM Conversation c JOIN c.customer u " +
             "WHERE c.staffId = :staffId " +
             "AND c.status = 'ACTIVE' " +

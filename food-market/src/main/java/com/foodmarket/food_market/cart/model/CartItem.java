@@ -16,16 +16,14 @@ import java.math.BigDecimal;
 public class CartItem {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // BIGSERIAL
+    @GeneratedValue(strategy = GenerationType.IDENTITY) 
     @Column(name = "cart_item_id")
     private Long id;
 
-    // Mối quan hệ N-1 với Cart
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "cart_id", nullable = false)
     private Cart cart;
 
-    // Mối quan hệ N-1 với Product
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id", nullable = false)
     private Product product;

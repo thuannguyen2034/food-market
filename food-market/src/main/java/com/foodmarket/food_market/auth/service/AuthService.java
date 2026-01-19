@@ -5,27 +5,10 @@ import com.foodmarket.food_market.auth.dto.response.AuthResponseDTO;
 
 public interface AuthService {
 
-    /**
-     * Xử lý logic đăng ký user mới.
-     *
-     * @param request DTO chứa thông tin đăng ký
-     * @return DTO chứa JWT token
-     */
     AuthResponseDTO register(RegisterRequestDTO request);
 
-    /**
-     * Xử lý logic đăng nhập.
-     *
-     * @param request DTO chứa email và password
-     * @return DTO chứa JWT token
-     */
     AuthResponseDTO login(LoginRequestDTO request);
     AuthResponseDTO refreshToken(String refreshTokenString);
-    /**
-     * Xử lý yêu cầu "quên mật khẩu".
-     * Tạo token reset và gửi email.
-     * @param request DTO chứa email
-     */
     void forgotPassword(ForgotPasswordRequestDTO request);
 
     /**

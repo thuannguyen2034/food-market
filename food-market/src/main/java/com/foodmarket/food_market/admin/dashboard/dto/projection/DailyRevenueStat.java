@@ -4,6 +4,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public interface DailyRevenueStat {
-    LocalDate getDate();       // Ngày (ví dụ: "2023-11-20")
-    BigDecimal getTotalRevenue();  // Tổng tiền
+    LocalDate getDate();      
+    BigDecimal getTotalRevenue();  
 }

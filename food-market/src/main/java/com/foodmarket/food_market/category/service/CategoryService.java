@@ -7,9 +7,7 @@ import java.util.List;
 
 public interface CategoryService {
 
-    /**
-     * lấy cây danh mục
-     */
+   
     List<CategoryResponseDTO> getCategoryTree();
 
     List<CategoryResponseDTO> getAllCategoriesFlat();

@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AccessTokenResponseDTO {
-    // Chỉ chứa Access Token (ngắn hạn)
+    
     private String token;
 }

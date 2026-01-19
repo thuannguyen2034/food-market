@@ -48,8 +48,6 @@ public class StorefrontRecipeController {
     @PostMapping("/suggest")
     public ResponseEntity<PageImpl<RecipeResponseDTO>> suggestRecipes(
             @RequestBody RecipeSearchRequestDTO request) {
-        // Gọi hàm logic Scoring & Filter phức tạp
-        // Lưu ý: searchRecipes method cần public ở Service và giống code cũ bạn gửi
         return ResponseEntity.ok(storefrontService.searchRecipes(request));
     }
 }

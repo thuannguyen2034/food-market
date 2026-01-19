@@ -4,12 +4,12 @@ import java.util.EnumSet;
 import java.util.Set;
 
 public enum OrderStatus {
-    PENDING,        // Chờ xử lý (mới tạo)
-    CONFIRMED,      // Đã xác nhận (chờ đóng gói)
-    PROCESSING,     // Đang đóng gói
-    OUT_FOR_DELIVERY, // Đang giao hàng
-    DELIVERED,      // Đã giao thành công
-    CANCELLED;    // Đã hủy
+    PENDING,        
+    CONFIRMED,      
+    PROCESSING,     
+    OUT_FOR_DELIVERY, 
+    DELIVERED,      
+    CANCELLED;    
 
     public static final Set<OrderStatus> ACTIVE_STATUSES =
             EnumSet.of(CONFIRMED

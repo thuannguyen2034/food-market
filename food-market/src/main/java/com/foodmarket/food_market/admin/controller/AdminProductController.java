@@ -33,8 +33,8 @@ public class AdminProductController {
             @PageableDefault(size = 20) Pageable pageable,
             @RequestParam(required = false) String searchTerm,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) String sort, // Dùng custom sort: "newest", "price_asc"...
-            @RequestParam(defaultValue = "ACTIVE_ONLY") String status, // ACTIVE_ONLY, DELETED_ONLY, ALL
+            @RequestParam(required = false) String sort, 
+            @RequestParam(defaultValue = "ACTIVE_ONLY") String status, 
             @RequestParam(required = false) Boolean lowStock,
             @RequestParam(required = false) Boolean isOnSale
     ) {
@@ -42,7 +42,6 @@ public class AdminProductController {
         return ResponseEntity.ok(products);
     }
 
-    // ... (Các endpoint khác giữ nguyên) ...
     @GetMapping("/{id}")
     public ResponseEntity<AdminProductResponseDTO> getAdminProductDetails(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getAdminProductDetails(id));

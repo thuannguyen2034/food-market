@@ -12,13 +12,7 @@ import java.util.UUID;
 @Repository
 public interface CartItemRepository extends JpaRepository<CartItem, Long> {
 
-    /**
-     * Tìm một item cụ thể trong giỏ hàng
-     */
     Optional<CartItem> findByCartAndProduct(Cart cart, Product product);
 
-    /**
-     * Tìm item theo ID VÀ Cart ID (dùng để check bảo mật)
-     */
     Optional<CartItem> findByIdAndCart_Id(Long id, UUID cartId);
 }

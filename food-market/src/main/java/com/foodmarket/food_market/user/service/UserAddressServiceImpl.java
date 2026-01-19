@@ -42,7 +42,6 @@ public class UserAddressServiceImpl implements UserAddressService {
     public UserAddressResponseDTO createAddress(UUID userId, UserAddressSaveRequestDTO request) {
         User user = findUserById(userId);
 
-        // Nếu user muốn set đây là default, hãy unset các địa chỉ khác
         if (request.isDefault()) {
             unsetAllDefaultAddresses(userId);
         }
@@ -59,7 +58,6 @@ public class UserAddressServiceImpl implements UserAddressService {
     public UserAddressResponseDTO updateAddress(UUID userId, Long addressId, UserAddressSaveRequestDTO request) {
         UserAddress address = findAddressByIdAndUser(addressId, userId);
 
-        // Logic tương tự create
         if (request.isDefault()) {
             unsetAllDefaultAddresses(userId);
         }
@@ -73,8 +71,7 @@ public class UserAddressServiceImpl implements UserAddressService {
     public void deleteAddress(UUID userId, Long addressId) {
         UserAddress address = findAddressByIdAndUser(addressId, userId);
 
-        // Cẩn thận: Nếu xóa địa chỉ mặc định, nên chọn 1 cái khác làm mặc định (hoặc không)
-        // Hiện tại: Chỉ xóa
+        
         userAddressRepository.delete(address);
     }
 
@@ -83,21 +80,13 @@ public class UserAddressServiceImpl implements UserAddressService {
     public void setDefaultAddress(UUID userId, Long addressId) {
         UserAddress address = findAddressByIdAndUser(addressId, userId);
 
-        // 1. Bỏ tất cả default cũ
         unsetAllDefaultAddresses(userId);
 
-        // 2. Set default mới
         address.setDefault(true);
         userAddressRepository.save(address);
     }
 
-    // ==================================================================
-    // --- Private Helper Methods ---
-    // ==================================================================
-
-    /**
-     * Tìm địa chỉ (ném 404 nếu không thấy HOẶC không thuộc user)
-     */
+   
     private UserAddress findAddressByIdAndUser(Long addressId, UUID userId) {
         return userAddressRepository.findByIdAndUser_UserId(addressId, userId)
                 .orElseThrow(() -> new EntityNotFoundException(
@@ -105,22 +94,16 @@ public class UserAddressServiceImpl implements UserAddressService {
                 ));
     }
 
-    /**
-     * Tìm user (ném 404 nếu không thấy)
-     */
     private User findUserById(UUID userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy user: " + userId));
     }
 
-    /**
-     * Hàm quan trọng: Bỏ check "default" cho mọi địa chỉ của user.
-     */
     private void unsetAllDefaultAddresses(UUID userId) {
         List<UserAddress> addresses = userAddressRepository.findByUser_UserId(userId);
         for (UserAddress addr : addresses) {
             addr.setDefault(false);
         }
-        userAddressRepository.saveAllAndFlush(addresses); // Cập nhật ngay
+        userAddressRepository.saveAllAndFlush(addresses); 
     }
 }

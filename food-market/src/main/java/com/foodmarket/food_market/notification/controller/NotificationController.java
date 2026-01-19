@@ -18,14 +18,12 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/notifications")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('CUSTOMER')") // Chỉ user đã đăng nhập
+@PreAuthorize("hasRole('CUSTOMER')") 
 public class NotificationController {
 
     private final NotificationService notificationService;
 
-    /**
-     * Lấy danh sách thông báo (có phân trang)
-     */
+ 
     @GetMapping
     public ResponseEntity<Page<NotificationDTO>> getMyNotifications(
             Authentication authentication,
@@ -35,9 +33,7 @@ public class NotificationController {
         return ResponseEntity.ok(notificationService.getMyNotifications(user.getUserId(), pageable));
     }
 
-    /**
-     * Đánh dấu một thông báo là đã đọc
-     */
+    
     @PutMapping("/{notificationId}/read")
     public ResponseEntity<NotificationDTO> markAsRead(
             Authentication authentication,
@@ -47,9 +43,7 @@ public class NotificationController {
         return ResponseEntity.ok(notificationService.markAsRead(user.getUserId(), notificationId));
     }
 
-    /**
-     * Lấy số lượng chưa đọc (cho cái chuông 🔔)
-     */
+   
     @GetMapping("/unread-count")
     public ResponseEntity<Map<String, Long>> getUnreadCount(Authentication authentication) {
         User user = (User) authentication.getPrincipal();

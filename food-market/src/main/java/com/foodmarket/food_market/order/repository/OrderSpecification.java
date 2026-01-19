@@ -18,9 +18,6 @@ import java.util.UUID;
 
 public class OrderSpecification {
 
-    /**
-     * Hàm chính (Orchestrator): Kết hợp các điều kiện lại với nhau.
-     */
     public static Specification<Order> filterBy(OrderFilterDTO filter) {
         return Specification.allOf(hasStatusIn(filter.getStatuses()))
                 .and(createdBetween(filter.getDateFrom(), filter.getDateTo()))

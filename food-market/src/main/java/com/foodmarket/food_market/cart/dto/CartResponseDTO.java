@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class CartResponseDTO {
     private UUID cartId;
     private List<CartItemResponseDTO> items;
-    private BigDecimal grandTotal; // Tổng tiền của cả giỏ hàng
+    private BigDecimal grandTotal; 
     private BigDecimal baseGrandTotal;
     public static CartResponseDTO fromEntity(Cart cart, Map<Long,String> noteMap) {
         BigDecimal total = BigDecimal.ZERO;

@@ -22,7 +22,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/payment")
 @RequiredArgsConstructor
-@Slf4j // Dùng để log lỗi nếu cần debug
+@Slf4j 
 public class PaymentController {
 
     private final VnPayService vnPayService;
@@ -33,19 +33,15 @@ public class PaymentController {
             @RequestParam("orderId") UUID orderId,
             HttpServletRequest request
     ) {
-        // 1. Lấy thông tin đơn hàng
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
 
-        // 2. Kiểm tra trạng thái (chỉ cho thanh toán nếu chưa trả tiền)
         if (order.getPaymentStatus() == PaymentStatus.PAID) {
             return ResponseEntity.badRequest().body("Đơn hàng đã được thanh toán");
         }
 
-        // 3. Gọi Service để tạo URL thanh toán VNPAY
         String paymentUrl = vnPayService.createPaymentUrl(order, request);
 
-        // 4. Trả về URL cho Frontend (để Frontend redirect user)
         return ResponseEntity.ok(Collections.singletonMap("url", paymentUrl));
     }
 
@@ -53,7 +49,6 @@ public class PaymentController {
     @Transactional
     public ResponseEntity<IpnResponseDTO> vnpayIpn(HttpServletRequest request) {
         try {
-            // 1. Verify Checksum
             int checksumResult = vnPayService.verifyIpn(request);
             if (checksumResult != 1) {
                 return ResponseEntity.ok(new IpnResponseDTO("97", "Invalid Checksum"));
@@ -86,8 +81,7 @@ public class PaymentController {
                 return ResponseEntity.ok(new IpnResponseDTO("02", "Đơn hàng đã được thanh toán"));
             }
 
-            // 5. Xử lý kết quả (Logic chặt chẽ hơn)
-            // Cả ResponseCode và TransactionStatus đều phải là "00"
+            // 5. Xử lý kết quả 
             if ("00".equals(vnp_ResponseCode) && "00".equals(vnp_TransactionStatus)) {
 
                 order.setPaymentStatus(PaymentStatus.PAID);

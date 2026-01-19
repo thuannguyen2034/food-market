@@ -52,11 +52,9 @@ public class ProductServiceImpl implements ProductService {
                     .orElseThrow(() -> new EntityNotFoundException("Category not found"));
 
             if (category.getParent() == null) {
-                // CASE ROOT: Lấy ID của chính nó + tất cả category con
                 List<Category> children = categoryRepository.getCategoriesByParentId(category.getId());
                 categoryIds = children.stream().map(Category::getId).collect(Collectors.toList());
             } else {
-                // CASE SUB: Chỉ lấy đúng ID đó
                 categoryIds = List.of(category.getId());
             }
         }
@@ -93,14 +91,12 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     @Transactional(readOnly = true)
-    // SỬA: Thêm tham số sortParam và deletedMode (để lọc Active/Deleted)
     public Page<AdminProductResponseDTO> getAdminProducts(Pageable pageable, String searchTerm, Long categoryId, String sortParam, String deletedMode, Boolean isLowStock, Boolean isOnSale) {
 
         Sort sort = resolveSort(sortParam);
         Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
 
-        // Filter Deleted
-        Boolean includeSoftDeleted = false; // Mặc định chỉ lấy Active
+        Boolean includeSoftDeleted = false; 
         Boolean onlySoftDeleted = false;
 
         if ("ALL".equalsIgnoreCase(deletedMode)) {
@@ -112,7 +108,6 @@ public class ProductServiceImpl implements ProductService {
         if (Boolean.TRUE.equals(isLowStock)) {
             filterIds = productRepository.findProductIdsWithLowStock(10);
 
-            // Nếu không có sản phẩm nào sắp hết hàng, trả về trang rỗng
             if (filterIds.isEmpty()) {
                 return Page.empty(pageable);
             }
@@ -179,23 +174,19 @@ public class ProductServiceImpl implements ProductService {
         Category category = findCategoryById(request.getCategoryId());
         String name = request.getName().trim();
 
-        // Check đổi tên -> đổi slug
         if (!product.getName().equals(name)) {
             product.setSlug(generateUniqueSlug(name, id));
         }
 
         mapRequestToProduct(product, request, category);
 
-        // Lưu trước các thông tin text
         Product updatedProduct = productRepository.save(product);
 
-        // Xử lý ảnh thêm mới
         if (files != null && !files.isEmpty()) {
             List<ProductImage> newImages = addImagesToProduct(updatedProduct.getId(), files);
             updatedProduct.getImages().addAll(newImages);
         }
 
-        // Xử lý ảnh xóa
         if (request.getDeletedImageIds() != null && !request.getDeletedImageIds().isEmpty()) {
             List<ProductImage> imagesToDelete = updatedProduct.getImages().stream()
                     .filter(img -> request.getDeletedImageIds().contains(img.getId()))
@@ -207,7 +198,6 @@ public class ProductServiceImpl implements ProductService {
             }
         }
 
-        // Save lần cuối
         updatedProduct = productRepository.save(updatedProduct);
 
         ProductStockInfoDTO stockInfo = inventoryService.getProductStockInfo(updatedProduct.getId());
@@ -286,7 +276,6 @@ public class ProductServiceImpl implements ProductService {
         product.setTags(tags);
     }
 
-    // Helper sort logic (Tái sử dụng cho cả Public và Admin nếu cần sort custom string)
     private Sort resolveSort(String sortParam) {
         if (sortParam == null || sortParam.isEmpty()) return Sort.unsorted();
         return switch (sortParam) {

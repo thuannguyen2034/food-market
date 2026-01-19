@@ -24,40 +24,31 @@ export default function RecipeForm({ initialData, isEditMode = false }: RecipeFo
     const router = useRouter();
     const { authedFetch } = useAuth();
 
-    // --- State ---
     const [name, setName] = useState(initialData?.name || '');
 
-    // Ingredients: Split string by '|' to array
     const [ingredientsList, setIngredientsList] = useState<string[]>(
         initialData?.ingredients ? initialData.ingredients.split('|').filter(s => s.trim()) : ['']
     );
 
-    // Cooking Steps: Split string by '|' to array (NEW LOGIC)
     const [stepsList, setStepsList] = useState<string[]>(
         initialData?.cookingSteps ? initialData.cookingSteps.split('|').filter(s => s.trim()) : ['']
     );
 
     const [tags, setTags] = useState(initialData?.tags || '');
 
-    // Product Selection
     const [selectedProducts, setSelectedProducts] = useState<ProductSearchResult[]>([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState<ProductSearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
-    // Pagination cho tìm kiếm
     const [page, setPage] = useState(0);
     const [hasMore, setHasMore] = useState(true);
-    const PAGE_SIZE = 10; // Tăng lên 10 cho dễ nhìn
+    const PAGE_SIZE = 10;
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    // Image
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(initialData?.imageUrl || null);
-
-    // Loading
     const [loading, setLoading] = useState(false);
     const [aiLoading, setAiLoading] = useState(false);
 
-    // --- Effects ---
     useEffect(() => {
         if (initialData?.productIds?.length) {
             Promise.all(initialData.productIds.map(id =>
@@ -66,13 +57,11 @@ export default function RecipeForm({ initialData, isEditMode = false }: RecipeFo
         }
     }, [initialData, authedFetch]);
 
-    // Product Search Logic
     const fetchProducts = async (currentPage: number, keyword: string, isNewSearch: boolean) => {
         if (!keyword.trim()) return;
 
         setIsSearching(true);
         try {
-            // Gọi API với page và size
             const res = await authedFetch(
                 `/api/v1/admin/products?searchTerm=${encodeURIComponent(keyword)}&page=${currentPage}&size=${PAGE_SIZE}`
             );
@@ -165,7 +154,6 @@ export default function RecipeForm({ initialData, isEditMode = false }: RecipeFo
         e.preventDefault();
         setLoading(true);
 
-        // Filter empty entries before joining
         const cleanIngredients = ingredientsList.map(s => s.trim()).filter(s => s);
         const cleanSteps = stepsList.map(s => s.trim()).filter(s => s);
 

@@ -17,7 +17,6 @@ public class DailyRevenueResponseDTO {
     private LocalDate date;
     private BigDecimal totalRevenue;
 
-    // Constructor tiện ích để map từ Interface sang Class
     public static DailyRevenueResponseDTO fromProjection(DailyRevenueStat stat) {
         return DailyRevenueResponseDTO.builder()
                 .date(stat.getDate())

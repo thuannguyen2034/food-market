@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class OrderStatusResponseDTO {
-    private String status; // Trả về String cho FE dễ hiển thị
+    private String status;
     private Long count;
 
     public static OrderStatusResponseDTO fromProjection(OrderStatusStat stat) {

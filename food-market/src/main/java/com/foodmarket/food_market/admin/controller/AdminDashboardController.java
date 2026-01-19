@@ -21,16 +21,13 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/v1/admin/dashboard")
-@PreAuthorize("hasRole('ADMIN')") // Chỉ Admin mới được xem thống kê
+@PreAuthorize("hasRole('ADMIN')")
 @RequiredArgsConstructor
 public class AdminDashboardController {
 
     private final OrderService orderService;
     private final UserService userService;
-    /**
-     * API Tổng quan: Trả về Doanh thu và Số lượng đơn trong khoảng thời gian
-     * Dùng cho các thẻ Stats Card ở đầu Dashboard
-     */
+
     @GetMapping("/summary")
     public ResponseEntity<DashboardSummaryDTO> getSummary(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
@@ -39,10 +36,6 @@ public class AdminDashboardController {
         return ResponseEntity.ok(orderService.getDashboardSummary(startDate, endDate));
     }
 
-    /**
-     * Biểu đồ doanh thu theo ngày
-     * Endpoint: /api/v1/admin/dashboard/revenue-chart
-     */
     @GetMapping("/revenue-chart")
     public ResponseEntity<List<ChartDataDTO>> getRevenueChart(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) OffsetDateTime startDate,
@@ -51,10 +44,6 @@ public class AdminDashboardController {
         return ResponseEntity.ok(orderService.getComparisonChart(startDate, endDate));
     }
 
-    /**
-     * Biểu đồ phân bổ trạng thái đơn hàng (Pie Chart)
-     * Endpoint: /api/v1/admin/dashboard/order-status
-     */
     @PreAuthorize("hasAnyRole('ADMIN','STAFF')")
     @GetMapping("/order-status")
     public ResponseEntity<List<OrderStatusResponseDTO>> getOrderStatusDistribution() {
@@ -65,15 +54,11 @@ public class AdminDashboardController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * Top sản phẩm bán chạy
-     * Endpoint: /api/v1/admin/dashboard/top-products
-     */
     @GetMapping("/top-products")
     public ResponseEntity<List<TopProductResponseDTO>> getTopSellingProducts(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
-            @PageableDefault(size = 5) Pageable pageable // Mặc định lấy top 5
+            @PageableDefault(size = 5) Pageable pageable
     ) {
         OffsetDateTime start = convertToOffset(startDate);
         OffsetDateTime end = convertToOffset(endDate);

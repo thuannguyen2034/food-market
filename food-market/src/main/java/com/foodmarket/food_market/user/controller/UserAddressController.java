@@ -15,25 +15,19 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/users/addresses") // Đặt prefix là /users/ (tài nguyên của user)
+@RequestMapping("/api/v1/users/addresses") 
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('CUSTOMER')") // Chỉ customer mới được quản lý địa chỉ
+@PreAuthorize("hasRole('CUSTOMER')") 
 public class UserAddressController {
 
     private final UserAddressService userAddressService;
 
-    /**
-     * Lấy tất cả địa chỉ đã lưu của user
-     */
     @GetMapping
     public ResponseEntity<List<UserAddressResponseDTO>> getMyAddresses(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         return ResponseEntity.ok(userAddressService.getMyAddresses(user.getUserId()));
     }
 
-    /**
-     * Thêm một địa chỉ mới
-     */
     @PostMapping
     public ResponseEntity<UserAddressResponseDTO> createAddress(
             Authentication authentication,
@@ -44,9 +38,6 @@ public class UserAddressController {
         return ResponseEntity.status(HttpStatus.CREATED).body(newAddress);
     }
 
-    /**
-     * Lấy chi tiết 1 địa chỉ
-     */
     @GetMapping("/{addressId}")
     public ResponseEntity<UserAddressResponseDTO> getAddressById(
             Authentication authentication,
@@ -56,9 +47,6 @@ public class UserAddressController {
         return ResponseEntity.ok(userAddressService.getAddressById(user.getUserId(), addressId));
     }
 
-    /**
-     * Cập nhật 1 địa chỉ
-     */
     @PutMapping("/{addressId}")
     public ResponseEntity<UserAddressResponseDTO> updateAddress(
             Authentication authentication,
@@ -70,9 +58,6 @@ public class UserAddressController {
         return ResponseEntity.ok(updatedAddress);
     }
 
-    /**
-     * Xóa 1 địa chỉ
-     */
     @DeleteMapping("/{addressId}")
     public ResponseEntity<Void> deleteAddress(
             Authentication authentication,
@@ -80,12 +65,9 @@ public class UserAddressController {
     ) {
         User user = (User) authentication.getPrincipal();
         userAddressService.deleteAddress(user.getUserId(), addressId);
-        return ResponseEntity.noContent().build(); // 204 No Content
+        return ResponseEntity.noContent().build(); 
     }
 
-    /**
-     * API chuyên dụng để set default (tiện lợi cho client)
-     */
     @PutMapping("/{addressId}/default")
     public ResponseEntity<Void> setDefaultAddress(
             Authentication authentication,

@@ -8,7 +8,6 @@ import java.util.Optional;
 
 @Repository
 public interface TagRepository extends JpaRepository<Tag, Long> {
-    // Tìm tag bằng tên (để tránh tạo trùng)
     Optional<Tag> findByName(String name);
     Optional<Tag> findBySlug(String slug);
 }

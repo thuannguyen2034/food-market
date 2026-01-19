@@ -24,16 +24,12 @@ import java.util.UUID;
 
 public interface OrderService {
 
-    /** Đặt hàng (chuyển từ Cart -> Order) */
     OrderResponseDTO placeOrder(UUID userId, CheckoutRequestDTO request);
 
-    /** Lấy lịch sử đơn hàng */
     Page<OrderResponseDTO> getOrderHistory(UUID userId, OrderStatus status, Pageable pageable);
 
-    /** Lấy chi tiết 1 đơn hàng */
     OrderResponseDTO getOrderDetails(UUID userId, UUID orderId);
 
-    //Admin
     void updateOrderStatus(UUID orderId, OrderStatus newStatus);
 
 

@@ -16,23 +16,18 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/cart")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('CUSTOMER')") // CHỈ Customer mới được dùng
+@PreAuthorize("hasRole('CUSTOMER')") 
 public class CartController {
 
     private final CartService cartService;
 
-    /**
-     * Lấy giỏ hàng hiện tại của người dùng
-     */
     @GetMapping
     public ResponseEntity<CartResponseDTO> getMyCart(Authentication authentication) {
         User user = (User) authentication.getPrincipal();
         return ResponseEntity.ok(cartService.getCart(user.getUserId()));
     }
 
-    /**
-     * Thêm một sản phẩm (hoặc cập nhật số lượng) vào giỏ
-     */
+    
     @PostMapping("/items")
     public ResponseEntity<CartResponseDTO> addItemToMyCart(
             Authentication authentication,
@@ -42,9 +37,7 @@ public class CartController {
         return ResponseEntity.ok(cartService.addItemToCart(user.getUserId(), request));
     }
 
-    /**
-     * Cập nhật số lượng của một item cụ thể trong giỏ
-     */
+   
     @PutMapping("/items/{cartItemId}")
     public ResponseEntity<CartResponseDTO> updateMyCartItem(
             Authentication authentication,
@@ -55,9 +48,7 @@ public class CartController {
         return ResponseEntity.ok(cartService.updateCartItem(user.getUserId(), cartItemId, request));
     }
 
-    /**
-     * Xóa một item khỏi giỏ
-     */
+  
     @DeleteMapping("/items/{cartItemId}")
     public ResponseEntity<CartResponseDTO> removeMyCartItem(
             Authentication authentication,

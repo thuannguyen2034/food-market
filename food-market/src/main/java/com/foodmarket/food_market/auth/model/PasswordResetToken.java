@@ -30,7 +30,6 @@ public class PasswordResetToken {
     public PasswordResetToken(User user) {
         this.user = user;
         this.token = UUID.randomUUID().toString();
-        // Set hết hạn sau 15 phút
-        this.expiryDate = Instant.now().plusMillis(900000); // 15 phút
+        this.expiryDate = Instant.now().plusMillis(900000); 
     }
 }

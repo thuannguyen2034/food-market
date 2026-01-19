@@ -189,7 +189,6 @@ export default function OrderDetailPage() {
                         </div>
                     </div>
 
-                    {/* Ghi chú nếu có (Để bên trái cho đỡ chật cột phải) */}
                     {order.note && (
                         <div className={styles.card}>
                             <div className={styles.cardHeader}><FileText size={16} /> Ghi chú khách hàng</div>
@@ -280,7 +279,6 @@ export default function OrderDetailPage() {
                                 <span className={styles.infoLabel}>Tạm tính</span>
                                 <span className={styles.infoValue}>{formatCurrency(order.totalAmount)}</span>
                             </div>
-                            {/* Thêm phí ship/discount nếu có logic đó sau này */}
                             <hr style={{ margin: '8px 0', borderColor: '#f1f5f9' }} />
                             <div className={styles.infoRow}>
                                 <span className={styles.infoLabel} style={{ fontWeight: 700, color: '#0f172a' }}>Thành tiền</span>

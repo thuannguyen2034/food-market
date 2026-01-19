@@ -77,7 +77,6 @@ public class Product {
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt;
 
-    // --------- Soft Delete ----------
     @Column(name = "is_deleted", nullable = false)
     private boolean isDeleted = false;
 

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { useAuth } from '@/context/AuthContext';
 import { useDropzone } from 'react-dropzone';
-import { Upload, X, Plus, Trash2, Tag } from 'lucide-react'; // Thêm icon Tag
+import { Upload, X, Plus, Trash2 } from 'lucide-react';
 import Select from 'react-select';
 import CreatableSelect from 'react-select/creatable';
 import CategoryFormModal from '../../categories/components/CategoryFormModal';
@@ -21,7 +21,6 @@ const selectCustomStyles = {
 };
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
-// --- Types ---
 type ProductImage = {
   id: number;
   imageUrl: string;
@@ -36,10 +35,8 @@ export type AdminProductResponse = {
   images: ProductImage[];
   unit: string;
   basePrice: number;
-  // --- Fields mới từ DTO ---
   salePrice?: number;
   onSale?: boolean;
-  // -------------------------
   stockQuantity: number;
   category: { id: number; name: string };
   tags: { id: number; name: string }[];
@@ -50,10 +47,8 @@ type ProductSaveInputs = {
   name: string;
   description: string;
   basePrice: number;
-  // --- Fields mới ---
   salePrice: number;
   isOnSale: boolean;
-  // -----------------
   unit: string;
   categoryId: number | null;
   tags: string[];
@@ -77,21 +72,17 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   const [loading, setLoading] = useState(false);
   const isEditMode = !!initialData;
 
-  // State dropdowns
   const [categoryOptions, setCategoryOptions] = useState<SelectOption[]>([]);
   const [tagOptions, setTagOptions] = useState<SelectOption[]>([]);
 
-  // State modal & UI
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  // State quản lý ảnh
   const [existingImages, setExistingImages] = useState<ProductImage[]>([]);
   const [deletedImageIds, setDeletedImageIds] = useState<number[]>([]);
   const [newImages, setNewImages] = useState<File[]>([]);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
 
-  // State specifications
   const [specs, setSpecs] = useState<SpecItem[]>([]);
 
   const {
@@ -100,7 +91,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     control,
     setValue,
     reset,
-    watch, // Dùng watch để theo dõi giá trị realtime
+    watch, 
     formState: { errors },
   } = useForm<ProductSaveInputs>({
     defaultValues: {
@@ -115,11 +106,9 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     },
   });
 
-  // Theo dõi giá trị để xử lý logic UI
   const isOnSale = watch('isOnSale');
   const basePrice = watch('basePrice');
 
-  // --- 1. Fetch Meta Data ---
   useEffect(() => {
     const fetchMeta = async () => {
       try {
@@ -150,7 +139,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         name: initialData.name,
         description: initialData.description || '',
         basePrice: initialData.basePrice,
-        // Map data khuyến mãi
         salePrice: initialData.salePrice || 0,
         isOnSale: initialData.onSale || false,
 
@@ -173,7 +161,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     }
   }, [initialData, reset]);
 
-  // Handlers cho Specifications
   const addSpecRow = () => {
     setSpecs(prev => [...prev, { id: Date.now(), key: '', value: '' }]);
   };
@@ -186,7 +173,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     ));
   };
 
-  // Handlers cho Images
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const validFiles = acceptedFiles.filter(file => file.type.startsWith('image/'));
     if (validFiles.length > 0) {
@@ -220,7 +206,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     };
   }, []);
 
-  // --- 5. Submit Handler ---
   const onSubmit: SubmitHandler<ProductSaveInputs> = async (data) => {
     setLoading(true);
 
@@ -243,8 +228,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         name: data.name,
         description: data.description,
         basePrice: data.basePrice,
-        // Gửi thông tin khuyến mãi
-        salePrice: data.isOnSale ? data.salePrice : null, // Nếu tắt thì gửi null hoặc 0
+        salePrice: data.isOnSale ? data.salePrice : null,
         isOnSale: data.isOnSale,
 
         unit: data.unit,

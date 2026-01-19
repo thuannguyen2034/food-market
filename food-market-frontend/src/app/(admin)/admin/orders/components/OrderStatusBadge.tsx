@@ -1,4 +1,3 @@
-// src/app/(admin)/admin/orders/components/OrderStatusBadge.tsx
 
 import { OrderStatus, getOrderStatusLabel } from '@/app/type/Order';
 import {

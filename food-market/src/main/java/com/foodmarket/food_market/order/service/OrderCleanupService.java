@@ -22,9 +22,7 @@ public class OrderCleanupService {
     private final OrderRepository orderRepository;
     private final OrderService orderService;
 
-    /**
-     * Tìm các đơn hàng thanh toán Online (VNPAY) đang PENDING quá 15 phút chưa thanh toán để huỷ.
-     */
+   
     @Scheduled(fixedRate = 300000)
     @Transactional
     public void cancelUnpaidOrders() {

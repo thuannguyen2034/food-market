@@ -11,6 +11,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class AuthResponseDTO {
 
-    private String token; // Access Token (ngắn hạn, 15 phút)
-    private String refreshToken; // Refresh Token (dài hạn, 7 ngày)
+    private String token; 
+    private String refreshToken; 
 }

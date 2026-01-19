@@ -14,7 +14,7 @@ import lombok.Setter;
 public class UserAddress {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // BIGSERIAL
+    @GeneratedValue(strategy = GenerationType.IDENTITY) 
     @Column(name = "address_id")
     private Long id;
 
@@ -23,26 +23,26 @@ public class UserAddress {
     private User user;
 
     @Column(name = "recipient_name", nullable = false, length = 255)
-    private String recipientName; // Tên người nhận (Họ và tên)
+    private String recipientName; 
 
     @Column(name = "recipient_phone", nullable = false, length = 20)
-    private String recipientPhone; // Số điện thoại người nhận
+    private String recipientPhone; 
 
     @Column(name = "province", nullable = false, length = 100)
-    private String province; // Tỉnh/Thành phố
+    private String province; 
 
     @Column(name = "district", nullable = false, length = 100)
-    private String district; // Quận/Huyện
+    private String district; 
 
     @Column(name = "ward", nullable = false, length = 100)
-    private String ward; // Phường/Xã
+    private String ward; 
 
     @Column(name = "street_address", nullable = false, length = 255)
-    private String streetAddress; // Địa chỉ cụ thể (Số nhà, tên đường, thôn xóm)
+    private String streetAddress; 
 
     @Column(name = "address_type", length = 20)
     @Enumerated(EnumType.STRING)
-    private AddressType addressType; // Enum: HOME, OFFICE
+    private AddressType addressType; 
 
     @Column(name = "is_default", nullable = false)
     private boolean isDefault = false;

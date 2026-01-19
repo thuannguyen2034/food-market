@@ -26,22 +26,22 @@ public class AdminProductResponseDTO {
     private String unit;
 
     // --- Giá & Khuyến mãi ---
-    private BigDecimal basePrice;       // Giá gốc
-    private BigDecimal salePrice;       // Giá giảm (nếu có set trong DB)
-    private BigDecimal finalPrice;      // Giá thực tế bán (đã tính toán)
-    private boolean onSale;           // Trạng thái đang giảm giá
-    private int discountPercentage;     // % giảm giá (tính toán để hiển thị label)
+    private BigDecimal basePrice;       
+    private BigDecimal salePrice;       
+    private BigDecimal finalPrice;      
+    private boolean onSale;           
+    private int discountPercentage;     
 
     // --- Kho & Thống kê ---
     private int stockQuantity;
-    private int soldCount;              // Số lượng đã bán
-    private Double averageRating;       // Đánh giá trung bình
-    private Integer reviewCount;        // Tổng số đánh giá
+    private int soldCount;              
+    private Double averageRating;       
+    private Integer reviewCount;        
 
     // --- Thông tin liên quan ---
     private CategorySummaryDTO category;
     private List<TagDTO> tags;
-    private LocalDate soonestExpirationDate; // Date hết hạn gần nhất của lô hàng
+    private LocalDate soonestExpirationDate; 
 
     // --- Trạng thái hệ thống ---
     private boolean deleted;
@@ -53,7 +53,6 @@ public class AdminProductResponseDTO {
             int stockQuantity,
             LocalDate soonestExpirationDate
     ) {
-        // Tính toán % giảm giá cho Admin dễ nhìn
         int discountPercent = 0;
         BigDecimal finalPrice = product.getBasePrice();
 
@@ -79,27 +78,25 @@ public class AdminProductResponseDTO {
                         .collect(Collectors.toList()))
                 .unit(product.getUnit())
 
-                // Pricing info
                 .basePrice(product.getBasePrice())
                 .salePrice(product.getSalePrice())
                 .onSale(product.isOnSale())
                 .finalPrice(finalPrice)
                 .discountPercentage(discountPercent)
 
-                // Stats
                 .stockQuantity(stockQuantity)
                 .soldCount(product.getSoldCount() != null ? product.getSoldCount() : 0)
                 .averageRating(product.getAverageRating())
                 .reviewCount(product.getReviewCount())
 
-                // Relations
+                
                 .category(CategorySummaryDTO.fromEntity(product.getCategory()))
                 .tags(product.getTags().stream()
                         .map(TagDTO::fromEntity)
                         .collect(Collectors.toList()))
                 .soonestExpirationDate(soonestExpirationDate)
 
-                // System info
+                
                 .deleted(product.isDeleted())
                 .createdAt(product.getCreatedAt())
                 .deletedAt(product.getDeletedAt())

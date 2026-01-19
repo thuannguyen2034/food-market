@@ -14,22 +14,10 @@ import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User,UUID>, JpaSpecificationExecutor<User> {
 
-    /**
-     * Tìm kiếm user bằng email.
-     * Rất quan trọng cho UserDetailsServiceImpl khi đăng nhập.
-     */
     Optional<User> findByEmail(String email);
 
-    /**
-     * Kiểm tra xem email đã tồn tại hay chưa.
-     * Hữu ích khi đăng ký.
-     */
     boolean existsByEmail(String email);
 
-    /**
-     * Kiểm tra xem SĐT đã tồn tại hay chưa.
-     * Hữu ích khi đăng ký.
-     */
     boolean existsByPhone(String phone);
 
     // KPI: Đếm khách hàng đăng ký mới trong ngày
@@ -37,9 +25,7 @@ public interface UserRepository extends JpaRepository<User,UUID>, JpaSpecificati
     long countNewUsers(@Param("start") OffsetDateTime start,
                        @Param("end") OffsetDateTime end);
 
-    // Đếm theo Role
     long countByRole(Role role);
 
-    // Đếm user mới tạo sau thời điểm X
     long countByCreatedAtAfter(OffsetDateTime date);
 }

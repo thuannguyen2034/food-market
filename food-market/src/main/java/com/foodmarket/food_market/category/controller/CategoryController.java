@@ -25,7 +25,6 @@ public class CategoryController {
 
     @GetMapping("/search")
     public ResponseEntity<List<CategoryResponseDTO>> getSearch(@RequestParam String keyword) {
-        // Gọi service trả về các Keyword gợi ý
         return ResponseEntity.ok(categoryService.getSearchCategories(keyword));
     }
 

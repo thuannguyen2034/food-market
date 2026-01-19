@@ -27,7 +27,7 @@ import java.io.IOException;
 public class AdminRecipeController {
 
     private final AdminRecipeService adminRecipeService;
-    private final AiTagService aiTagService;    // GET /api/v1/admin/recipes?keyword=bo&page=0&size=10
+    private final AiTagService aiTagService;   
 
     @GetMapping
     public ResponseEntity<Page<RecipeResponseDTO>> getRecipes(
@@ -47,7 +47,6 @@ public class AdminRecipeController {
         return ResponseEntity.ok(result);
     }
 
-    // PUT /api/v1/admin/recipes/{id}
     @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<RecipeResponseDTO> updateRecipe(
             @PathVariable Long id,

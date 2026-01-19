@@ -29,7 +29,6 @@ public class StorefrontService {
     private  final InventoryBatchRepository  inventoryBatchRepository;
     @Transactional(readOnly = true)
     public HomePageDataDTO getHomePageData() {
-        // 1. Lấy Flash Sale (Top 8 sản phẩm giảm giá bán chạy nhất)
         Pageable saleLimit = PageRequest.of(0, 10);
         List<Product> saleProducts = productRepository.findOnSaleProducts(saleLimit);
         List<ProductResponseDTO> saleDTOs = saleProducts.stream()
@@ -39,7 +38,6 @@ public class StorefrontService {
                 })
                 .collect(Collectors.toList());
 
-        // 2. Lấy các Section theo Root Category
         List<HomeSectionDTO> sections = new ArrayList<>();
         List<Category> rootCategories = categoryRepository.findByParentIdIsNull();
         Pageable sectionLimit = PageRequest.of(0, 10);

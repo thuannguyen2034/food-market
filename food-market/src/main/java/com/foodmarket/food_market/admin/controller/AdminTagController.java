@@ -20,27 +20,16 @@ public class AdminTagController {
 
     private final TagService tagService;
 
-    /**
-     * API 1 (Admin): Lấy tất cả tag
-     * Dùng để hiển thị trong bảng quản lý tag.
-     */
     @GetMapping
     public ResponseEntity<List<TagDTO>> getAllTagsForAdmin() {
         return ResponseEntity.ok(tagService.getAllTags());
     }
-
-    /**
-     * API 2 (Admin): Lấy chi tiết 1 tag
-     * Dùng khi admin click "Sửa" để load data vào form.
-     */
+     
     @GetMapping("/{id}")
     public ResponseEntity<TagDTO> getTagById(@PathVariable Long id) {
         return ResponseEntity.ok(tagService.getTagById(id));
     }
 
-    /**
-     * API 3 (Admin): Tạo tag mới
-     */
     @PostMapping
     public ResponseEntity<TagDTO> createTag(
             @Valid @RequestBody TagSaveRequestDTO request) {
@@ -49,9 +38,6 @@ public class AdminTagController {
         return new ResponseEntity<>(newTag, HttpStatus.CREATED);
     }
 
-    /**
-     * API 4 (Admin): Cập nhật tag
-     */
     @PutMapping("/{id}")
     public ResponseEntity<TagDTO> updateTag(
             @PathVariable Long id,
@@ -61,12 +47,9 @@ public class AdminTagController {
         return ResponseEntity.ok(updatedTag);
     }
 
-    /**
-     * API 5 (Admin): Xóa tag
-     */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteTag(@PathVariable Long id) {
         tagService.deleteTag(id);
-        return ResponseEntity.noContent().build(); // 204 No Content
+        return ResponseEntity.noContent().build(); 
     }
 }

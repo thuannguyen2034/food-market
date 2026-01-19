@@ -19,27 +19,24 @@ import java.util.UUID;
 public class Cart {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID) // Dùng UUID
+    @GeneratedValue(strategy = GenerationType.UUID) 
     @Column(name = "cart_id")
     private UUID id;
 
-    // Mối quan hệ 1-1 với User
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", unique = true) // Cột user_id là duy nhất
+    @JoinColumn(name = "user_id", unique = true) 
     private User user;
 
     @Column(name = "last_updated")
     private OffsetDateTime lastUpdated;
 
-    // Mối quan hệ 1-N với CartItems
     @OneToMany(
             mappedBy = "cart",
-            cascade = CascadeType.ALL, // Xóa Cart thì xóa hết CartItem
-            orphanRemoval = true // Xóa item khỏi Set thì xóa luôn trong DB
+            cascade = CascadeType.ALL, 
+            orphanRemoval = true 
     )
     private Set<CartItem> items = new HashSet<>();
 
-    // --- Hàm tiện ích (Helper Methods) ---
     public void addItem(CartItem item) {
         items.add(item);
         item.setCart(this);

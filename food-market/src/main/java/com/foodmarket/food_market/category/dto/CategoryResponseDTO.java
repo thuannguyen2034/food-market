@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Data
-@Builder // Dùng Builder Pattern để dễ tạo
+@Builder 
 public class CategoryResponseDTO {
     private Long id;
     private String name;

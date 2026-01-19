@@ -27,9 +27,6 @@ public class AdminInventoryController {
 
     private final InventoryService inventoryService;
 
-    /**
-     * API 1 (Admin): Nhập hàng (Cộng kho)
-     */
     @PostMapping("/import")
     public ResponseEntity<InventoryBatchDTO> importStockBatch(
             @Valid @RequestBody ImportStockRequestDTO requestDTO) {
@@ -38,9 +35,6 @@ public class AdminInventoryController {
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
-    /**
-     * API 2 (Admin): Điều chỉnh kho
-     */
     @PostMapping("/adjustments")
     public ResponseEntity<Void> adjustStock(
             @Valid @RequestBody AdjustStockRequestDTO requestDTO) {
@@ -56,21 +50,14 @@ public class AdminInventoryController {
         return ResponseEntity.ok(inventoryService.getBatchDetails(batchId));
     }
 
-    /**
-     * API: Lấy danh sách lô hàng (Có lọc theo ngày hết hạn)
-     * Sửa lỗi: Thêm @RequestParam và sửa kiểu trả về thành Page
-     */
     @GetMapping("")
     public ResponseEntity<Page<InventoryBatchDTO>> getInventoryBatches(
             @PageableDefault(size = 20, sort = "expirationDate", direction = Sort.Direction.ASC) Pageable pageable,
-            @RequestParam(required = false) Integer daysThreshold // null = lấy tất cả
+            @RequestParam(required = false) Integer daysThreshold
     ) {
         return ResponseEntity.ok(inventoryService.getInventoryBatches(pageable, daysThreshold));
     }
 
-    /**
-     * API: Hủy lô hàng (Destroy)
-     */
     @PostMapping("/{batchId}/destroy")
     public ResponseEntity<Void> destroyBatch(
             @PathVariable Long batchId,
@@ -81,10 +68,6 @@ public class AdminInventoryController {
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * API: Xem lịch sử điều chỉnh của 1 lô
-     * Sửa lỗi: Thêm tham số Pageable và cú pháp gọi hàm
-     */
     @GetMapping("/{batchId}/adjustments")
     public ResponseEntity<Page<InventoryAdjustmentDTO>> getAdjustments(
             @PathVariable Long batchId,

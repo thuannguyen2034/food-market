@@ -1,6 +1,6 @@
 package com.foodmarket.food_market.category.model;
 
-import com.foodmarket.food_market.product.model.Product; // Sẽ tạo sau
+import com.foodmarket.food_market.product.model.Product; 
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -17,7 +17,7 @@ import java.util.Set;
 public class Category {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY) // Vì là BIGSERIAL
+    @GeneratedValue(strategy = GenerationType.IDENTITY) 
     @Column(name = "category_id")
     private Long id;
 
@@ -30,20 +30,15 @@ public class Category {
     @Column(name = "slug", unique = true, nullable = false)
     private String slug;
 
-    // --- Mối quan hệ tự tham chiếu (Parent) ---
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id") // Tên cột FK trong DB
+    @JoinColumn(name = "parent_id") 
     private Category parent;
-
-    // --- Mối quan hệ tự tham chiếu (Children) ---
     @OneToMany(mappedBy = "parent", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Category> children = new HashSet<>();
 
-    // --- Mối quan hệ với Product (Để kiểm tra khi xóa) ---
     @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
     private Set<Product> products = new HashSet<>();
 
-    // --- Các hàm tiện ích (Helper Methods) ---
     public void addChild(Category child) {
         this.children.add(child);
         child.setParent(this);

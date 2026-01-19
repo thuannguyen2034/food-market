@@ -9,9 +9,7 @@ import java.util.List;
 
 public class ProductSpecification {
 
-    /**
-     *
-     */
+   
     public static Specification<Product> filterBy(
             String searchTerm,
             List<Long> categoryIds,
@@ -52,7 +50,6 @@ public class ProductSpecification {
             Expression<String> unaccentProductName = cb.function("unaccent", String.class, root.get("name"));
             Predicate namePredicate = cb.like(cb.lower(unaccentProductName), cb.lower(unaccentPattern));
 
-            // Join bảng category để lấy tên
             Expression<String> unaccentCategoryName = cb.function("unaccent", String.class, root.get("category").get("name"));
             Predicate categoryPredicate = cb.like(cb.lower(unaccentCategoryName), cb.lower(unaccentPattern));
 

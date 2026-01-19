@@ -1,12 +1,11 @@
-/* InventoryPage.module.css */
 .inventoryContainer {
   padding: 16px;
-  height: calc(100vh - 60px); /* Trừ header của layout chính */
+  height: calc(100vh - 60px);
   display: flex;
   flex-direction: column;
   gap: 12px;
   background-color: #f8f9fa;
-  overflow: hidden; /* Chặn scroll body */
+  overflow: hidden;
 }
 
 /* Header Compact */

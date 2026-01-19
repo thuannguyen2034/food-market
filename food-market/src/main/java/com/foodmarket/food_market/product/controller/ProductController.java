@@ -18,9 +18,7 @@ public class ProductController {
 
     private final ProductService productService;
 
-    /**
-     * API Public: Lấy danh sách sản phẩm (có phân trang, tìm kiếm, lọc)
-     */
+    
     @GetMapping
     public ResponseEntity<Page<ProductResponseDTO>> getProducts(
             @RequestParam(required = false) String search,
@@ -38,9 +36,7 @@ public class ProductController {
         return ResponseEntity.ok(productService.getSearchHints(keyword));
     }
 
-    /**
-     * API Public: Lấy chi tiết 1 sản phẩm (với giá đã tính)
-     */
+ 
     @GetMapping("/{slug}")
     public ResponseEntity<ProductResponseDTO> getProductDetails(@PathVariable String slug) {
         return ResponseEntity.ok(productService.getProductDetails(slug));

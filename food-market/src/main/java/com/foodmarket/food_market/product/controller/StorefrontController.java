@@ -16,7 +16,6 @@ public class StorefrontController {
 
     private final StorefrontService storefrontService;
 
-    // API: GET /api/v1/storefront/home
     @GetMapping("/home")
     public ResponseEntity<HomePageDataDTO> getHomePageData() {
         return ResponseEntity.ok(storefrontService.getHomePageData());

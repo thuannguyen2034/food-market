@@ -5,7 +5,7 @@ import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { useAuth } from '@/context/AuthContext';
 import Select from 'react-select';
 import { X, Upload, Save, Image as ImageIcon } from 'lucide-react';
-import styles from '../AdminCategory.module.css'; // Style mới
+import styles from '../AdminCategory.module.css';     
 
 type CategorySaveInputs = {
   name: string;

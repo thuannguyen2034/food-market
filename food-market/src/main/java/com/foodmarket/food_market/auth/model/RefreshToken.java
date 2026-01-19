@@ -21,15 +21,12 @@ public class RefreshToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Token là 1 chuỗi UUID duy nhất, không được trùng lặp
     @Column(nullable = false, unique = true)
     private String token;
 
-    // Hết hạn khi nào
     @Column(nullable = false)
     private Instant expiryDate;
 
-    // Token này của User nào
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", referencedColumnName = "user_id", nullable = false)
     private User user;

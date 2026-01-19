@@ -1,28 +1,21 @@
-/* src/styles/admin/AdminChat.module.css */
 
 .container {
   display: grid;
   grid-template-columns: 320px 1fr;
-  /* Bắt buộc chiều cao cứng để nội dung bên trong cuộn */
   height: calc(100vh - 64px);
-  /* Giả sử Header cao 64px, chỉnh số này khớp layout thật */
   background-color: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   overflow: hidden;
-  /* QUAN TRỌNG: Chặn scroll của body */
 }
 
-/* --- CỘT TRÁI --- */
 .sidebar {
   border-right: 1px solid #e5e7eb;
   display: flex;
   flex-direction: column;
   background-color: #f9fafb;
   height: 100%;
-  /* Full chiều cao cha */
   overflow: hidden;
-  /* Chặn tràn */
 }
 
 .tabs {
@@ -30,7 +23,6 @@
   border-bottom: 1px solid #e5e7eb;
   background: white;
   flex-shrink: 0;
-  /* Không bị co lại */
 }
 
 .tab {
@@ -61,7 +53,6 @@
   margin-left: 4px;
 }
 
-/* Bộ lọc Admin (Mới) */
 .filterBar {
   padding: 8px;
   border-bottom: 1px solid #e5e7eb;
@@ -79,11 +70,8 @@
 
 .list {
   flex: 1;
-  /* Chiếm hết phần còn lại */
   overflow-y: auto;
-  /* Cuộn dọc */
   min-height: 0;
-  /* Fix lỗi flexbox scroll */
 }
 
 .conversationItem {
@@ -160,9 +148,7 @@
   flex-direction: column;
   background-color: #fff;
   height: 100%;
-  /* Full chiều cao */
   overflow: hidden;
-  /* Chặn tràn */
 }
 
 .header {
@@ -220,17 +206,13 @@
 /* MESSAGE LIST */
 .messages {
   flex: 1;
-  /* Chiếm hết khoảng trống */
   padding: 20px;
   overflow-y: auto;
-  /* Cuộn dọc ở đây */
   display: flex;
   flex-direction: column;
   gap: 12px;
   background-color: #fdfdfd;
   min-height: 0;
-  
-  /* Fix lỗi flexbox */
 }
 
 .messageRow {

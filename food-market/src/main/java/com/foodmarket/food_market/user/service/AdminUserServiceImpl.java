@@ -15,16 +15,13 @@ import org.springframework.util.StringUtils;
 
 import java.util.UUID;
 
-@Service // Đánh dấu đây là một Spring Bean
+@Service 
 @RequiredArgsConstructor
 public class AdminUserServiceImpl implements AdminUserService {
 
     private final UserRepository userRepository;
 
-    /**
-     * 1. NÂNG CẤP: Lấy danh sách User có Phân trang & Tìm kiếm
-     * Thay vì findAll() list, ta trả về Page.
-     */
+   
     @Override
     @Transactional(readOnly = true)
     public Page<UserResponseDTO> getUsers(String keyword, String role, Pageable pageable) {
@@ -44,15 +41,12 @@ public class AdminUserServiceImpl implements AdminUserService {
     );
 }
 
-        // Trả về Page để Frontend phân trang (Trang 1, Trang 2...)
         return userRepository.findAll(spec, pageable)
                 .map(this::convertToDTO);
     }
 
 
-    /**
-     * TÍNH NĂNG MỚI: Cập nhật Role (Thăng chức/Giáng chức)
-     */
+    
     @Override
     @Transactional
     public void updateUserRole(UUID userId, Role role) {
@@ -63,10 +57,6 @@ public class AdminUserServiceImpl implements AdminUserService {
         userRepository.save(user);
     }
 
-    /**
-     * Phương thức private helper để chuyển đổi User Entity -> UserResponseDTO.
-     * Đảm bảo không làm lộ mật khẩu hoặc các thông tin nhạy cảm.
-     */
     private UserResponseDTO convertToDTO(User user) {
         return UserResponseDTO.builder()
                 .userId(user.getUserId())

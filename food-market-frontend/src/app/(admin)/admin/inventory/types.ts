@@ -3,26 +3,26 @@
 export type InventoryBatchDTO = {
     batchId: number;
     productId: number;
-    productName?: string; // Added for display
+    productName?: string; 
     batchCode: string;
     quantityReceived: number;
     currentQuantity: number;
-    entryDate: string; // OffsetDateTime from backend
-    expirationDate: string; // LocalDate from backend
+    entryDate: string; 
+    expirationDate: string; 
     adjustments?: InventoryAdjustmentDTO[];
 };
 
 export type ImportStockRequestDTO = {
     productId: number;
     batchCode?: string;
-    expirationDate: string; // LocalDate format: YYYY-MM-DD
+    expirationDate: string; 
     quantityReceived: number;
 };
 
 export type AdjustStockRequestDTO = {
     batchId: number;
     adjustedByUserId?: string;
-    adjustmentQuantity: number; // Negative to subtract, positive to add
+    adjustmentQuantity: number; 
     reason: string;
 };
 
@@ -33,7 +33,7 @@ export type InventoryAdjustmentDTO = {
     adjustedByUserName: string;
     adjustmentQuantity: number;
     reason: string;
-    adjustmentDate: string; // OffsetDateTime from backend
+    adjustmentDate: string; 
 };
 
 export type InventoryDestroyRequestDTO = {
@@ -44,7 +44,7 @@ export type PageResponse<T> = {
     content: T[];
     totalPages: number;
     totalElements: number;
-    number: number; // 0-based page index
+    number: number; 
     size: number;
     first: boolean;
     last: boolean;

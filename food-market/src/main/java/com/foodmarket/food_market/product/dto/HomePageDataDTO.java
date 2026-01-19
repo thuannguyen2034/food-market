@@ -7,6 +7,6 @@ import java.util.List;
 @Data
 @Builder
 public class HomePageDataDTO {
-    private List<ProductResponseDTO> flashSaleProducts; // List sản phẩm giảm giá
-    private List<HomeSectionDTO> categorySections;      // List các cụm danh mục (Thịt, Rau...)
+    private List<ProductResponseDTO> flashSaleProducts; 
+    private List<HomeSectionDTO> categorySections;      
 }

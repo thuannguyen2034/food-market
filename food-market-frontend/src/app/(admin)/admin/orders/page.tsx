@@ -21,7 +21,6 @@ type PageResponse = {
     size: number;
 };
 
-// Tab chọn nhanh trạng thái
 const STATUS_TABS = [
     { label: 'Tất cả', value: '' },
     { label: 'Chờ xử lý', value: OrderStatus.PENDING },
@@ -41,10 +40,10 @@ export default function OrdersPage() {
 
     // Filter State
     const [keyword, setKeyword] = useState('');
-    const [date, setDate] = useState(''); // Chỉ lọc theo 1 ngày cụ thể hoặc để trống
-    const [statusTab, setStatusTab] = useState(''); // Single select cho nhanh
+    const [date, setDate] = useState(''); 
+    const [statusTab, setStatusTab] = useState(''); 
     const [page, setPage] = useState(0);
-    const PAGE_SIZE = 25; // Compact mode -> show more
+    const PAGE_SIZE = 25; 
 
     // Debounce search
     useEffect(() => {
@@ -72,13 +71,11 @@ export default function OrdersPage() {
             params.append('size', PAGE_SIZE.toString());
             if (keyword) params.append('keyword', keyword);
             if (date) {
-                // Nếu chọn ngày, lọc from = to = date
                 params.append('dateFrom', date);
                 params.append('dateTo', date);
             }
             if (statusTab) params.append('statuses', statusTab);
             
-            // Mặc định sắp xếp mới nhất
             params.append('sort', 'createdAt,desc');
 
             const response = await authedFetch(`/api/v1/admin/orders?${params.toString()}`);
@@ -100,7 +97,6 @@ export default function OrdersPage() {
             const res = await authedFetch('/api/v1/admin/dashboard/order-status');
             if (res.ok) {
                 const data: { status: string; count: number }[] = await res.json();
-                // Tính toán đơn giản
                 const total = data.reduce((s, i) => s + i.count, 0);
                 const pending = data.find(s => s.status === 'PENDING')?.count || 0;
                 const delivered = data.find(s => s.status === 'DELIVERED')?.count || 0;
@@ -179,7 +175,7 @@ export default function OrdersPage() {
                 </button>
             </div>
 
-            {/* 3. MAIN TABLE (Full height, scrollable) */}
+            {/* 3. MAIN TABLE*/}
             <div className={styles.tableContainer}>
                 {loading ? (
                     <div className={styles.loadingOverlay}>Đang tải dữ liệu...</div>

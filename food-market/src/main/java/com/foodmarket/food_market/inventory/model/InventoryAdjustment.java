@@ -28,10 +28,10 @@ public class InventoryAdjustment {
     private User adjustedBy;
 
     @Column(name = "adjustment_quantity", nullable = false)
-    private int adjustmentQuantity; // Có thể là số âm (hủy hàng) hoặc dương (hiếm)
+    private int adjustmentQuantity;
 
     @Column(name = "reason", nullable = false)
-    private String reason; // Lý do điều chỉnh: HONG, HET_HAN, KIEM_KHO,...
+    private String reason;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

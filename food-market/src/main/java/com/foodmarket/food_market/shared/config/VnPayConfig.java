@@ -24,7 +24,6 @@ public class VnPayConfig {
     private String currCode;
     private String locale;
 
-    // Mã hóa dữ liệu (Checksum) theo tài liệu
     public static String hmacSHA512(final String key, final String data) {
         try {
             if (key == null || data == null) {
@@ -46,7 +45,6 @@ public class VnPayConfig {
         }
     }
 
-    // Tiện ích lấy IP Address [cite: 102]
     public static String getIpAddress(HttpServletRequest request) {
         String ipAdress;
         try {

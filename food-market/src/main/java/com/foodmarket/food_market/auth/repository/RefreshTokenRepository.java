@@ -15,7 +15,6 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long
     @Query("SELECT rt FROM RefreshToken rt JOIN FETCH rt.user u WHERE rt.token = :token")
     Optional<RefreshToken> findByToken(@Param("token") String token);
 
-    // Xóa token của 1 user (dùng khi login để dọn dẹp token cũ)
     void deleteByUser(User user);
 
 }

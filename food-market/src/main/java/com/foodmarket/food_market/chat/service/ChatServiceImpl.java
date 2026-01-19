@@ -226,8 +226,6 @@ public class ChatServiceImpl implements ChatService {
             pusher.trigger(userChannel, EVENT_NEW_MESSAGE, payload);
             String chatChannel = "chat-" + conversation.getId();
             pusher.trigger(chatChannel, EVENT_NEW_MESSAGE, payload);
-            // Logic: Nếu customer nhắn -> Update Dashboard (để nổi lên đầu)
-            // Nếu Staff nhắn -> Cũng nên Update Dashboard để cập nhật "Last Message Preview" cho Admin thấy
             pushConversationUpdate(conversation);
         } catch (Exception e) {
             log.error("Pusher error: ", e);
@@ -240,7 +238,7 @@ public class ChatServiceImpl implements ChatService {
             //Lấy last msg realtime cho pusher
             String lastestMessage = chatMessageRepository.findFirstByConversation_IdOrderBySentAtDesc(conversation.getId())
                     .map(ChatMessage::getContent)
-                    .orElse("Hình ảnh/File"); // Fallback nếu sau này làm ảnh
+                    .orElse("Hình ảnh/File"); 
             dto.setLastMessagePreview(lastestMessage);
             // Tính lại unread realtime
             long unread = chatMessageRepository.countByConversation_IdAndIsReadFalseAndSenderType(

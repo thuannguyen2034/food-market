@@ -14,7 +14,7 @@ public class ChatMessageDTO {
     private Long id;
     private UUID conversationId;
     private UUID senderId;
-    private SenderType senderType; // CUSTOMER, STAFF, SYSTEM
+    private SenderType senderType; 
     private String content;
     private boolean isRead;
     private OffsetDateTime sentAt;
@@ -22,7 +22,6 @@ public class ChatMessageDTO {
     public static ChatMessageDTO fromEntity(ChatMessage message) {
         return ChatMessageDTO.builder()
                 .id(message.getId())
-                // Lấy ID từ object session để tránh query ngược lại DB
                 .conversationId(message.getConversation().getId())
                 .senderId(message.getSenderId())
                 .senderType(message.getSenderType())

@@ -28,13 +28,11 @@ export default function InventoryStats() {
 
     const fetchStats = async () => {
         try {
-            // Fetch all batches to calculate stats
             const response = await authedFetch('/api/v1/admin/inventory?size=1000');
             if (response.ok) {
                 const data = await response.json();
                 const batches = data.content || [];
 
-                // Calculate statistics
                 const totalBatches = batches.length;
                 const expiringSoon = batches.filter((batch: any) => {
                     const daysUntilExpiry = Math.ceil(
@@ -48,8 +46,6 @@ export default function InventoryStats() {
                     (batch: any) => batch.currentQuantity < 10
                 ).length;
 
-                // For demo purposes, calculate a simple total value
-                // In production, you'd need product prices multiplied by quantity
                 const totalValue = batches.reduce(
                     (sum: number, batch: any) => sum + batch.currentQuantity,
                     0

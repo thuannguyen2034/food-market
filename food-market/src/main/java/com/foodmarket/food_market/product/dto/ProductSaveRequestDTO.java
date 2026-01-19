@@ -24,20 +24,18 @@ public class ProductSaveRequestDTO {
     @Positive(message = "Giá gốc phải lớn hơn 0")
     private BigDecimal basePrice;
 
-    // --- Thêm field cho khuyến mãi ---
     @Min(value = 0, message = "Giá khuyến mãi không được âm")
     private BigDecimal salePrice;
 
-    private Boolean isOnSale; // True/False
-    // --------------------------------
+    private Boolean isOnSale;
 
     @NotBlank(message = "Đơn vị tính không được để trống")
-    private String unit; // kg, g, bó, vỉ...
+    private String unit;
 
     @NotNull(message = "Danh mục không được để trống")
     private Long categoryId;
 
-    private List<String> tags; // Admin gửi tên tag: ["Tươi", "Hữu cơ"]
+    private List<String> tags; 
 
-    private List<Long> deletedImageIds; // Id các ảnh muốn xoá khi update
+    private List<Long> deletedImageIds; 
 }

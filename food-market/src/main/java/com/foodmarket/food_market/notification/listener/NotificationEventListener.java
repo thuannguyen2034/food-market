@@ -25,9 +25,7 @@ public class NotificationEventListener {
 
     private final NotificationService notificationService;
     private final Pusher pusher;
-    /**
-     * (MỚI) Lắng nghe sự kiện thay đổi trạng thái Order
-     */
+   
     @Async
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
@@ -37,12 +35,11 @@ public class NotificationEventListener {
             OrderStatus status = event.getNewStatus();
             log.info("Đang xử lý sự kiện OrderStatusChanged cho Order ID: {}, Status: {}", order.getId(), status);
 
-            // Dùng switch để tạo Message (nội dung)
             String message = switch (status) {
                 case OUT_FOR_DELIVERY -> "Shipper đang trên đường giao hàng cho bạn. Hãy chú ý điện thoại";
                 case DELIVERED -> "Đơn hàng đã được giao thành công. Cảm ơn bạn!";
                 case CANCELLED -> "Đơn hàng của bạn đã bị hủy.";
-                default -> null; // (PENDING không cần thông báo)
+                default -> null;
             };
 
             if (message != null) {

@@ -23,14 +23,11 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/orders")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('CUSTOMER')") // Chỉ Customer
+@PreAuthorize("hasRole('CUSTOMER')")
 public class OrderController {
 
     private final OrderService orderService;
 
-    /**
-     * API Checkout - Đặt hàng
-     */
     @PostMapping
     public ResponseEntity<OrderResponseDTO> placeOrder(
             Authentication authentication,
@@ -41,9 +38,7 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(order);
     }
 
-    /**
-     * API Lấy lịch sử đơn hàng
-     */
+   
     @GetMapping
     public ResponseEntity<Page<OrderResponseDTO>> getMyOrderHistory(
             Authentication authentication,
@@ -53,9 +48,6 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getOrderHistory(user.getUserId(), status, pageable));
     }
 
-    /**
-     * API Lấy chi tiết 1 đơn hàng
-     */
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderResponseDTO> getMyOrderDetails(
             Authentication authentication,
@@ -69,7 +61,7 @@ public class OrderController {
     public ResponseEntity<Void> cancelOrder(
             Authentication authentication,
             @PathVariable UUID orderId,
-            @RequestBody CancelOrderRequestDTO request // DTO chứa String reason
+            @RequestBody CancelOrderRequestDTO request 
     ) {
         User user = (User) authentication.getPrincipal();
         orderService.cancelOrder(user.getUserId(), orderId, request.getReason());

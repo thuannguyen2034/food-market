@@ -33,13 +33,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 1. Kích hoạt CORS với cấu hình source bên dưới
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 2. Tắt CSRF
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // 3. Authorize Requests
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Quan trọng: Cho phép Pre-flight request
                         .requestMatchers(
@@ -55,12 +52,10 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
-                // 4. Session Stateless
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
 
-                // 5. Auth Provider & Filter
                 .authenticationProvider(authenticationProvider)
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -71,9 +66,6 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // QUAN TRỌNG: Dùng allowedOriginPatterns("*") thay vì allowedOrigins("*")
-        // để có thể hoạt động được khi allowCredentials(true)
-        // Điều này cho phép Localhost, IP LAN (192.168...), Domain thật, v.v...
         configuration.setAllowedOriginPatterns(List.of("*"));
 
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));

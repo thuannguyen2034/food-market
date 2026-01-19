@@ -22,7 +22,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponseDTO> handleValidationExceptions(
             MethodArgumentNotValidException ex, HttpServletRequest request) {
 
-        // Lấy thông điệp lỗi validation đầu tiên
         String errorMessage = ex.getBindingResult().getAllErrors().get(0).getDefaultMessage();
 
         ErrorResponseDTO errorResponse = new ErrorResponseDTO(
@@ -46,7 +45,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.BAD_REQUEST.value(),
                 "Bad Request",
-                ex.getMessage(), // Lấy thông điệp từ "throw new IllegalArgumentException(...)"
+                ex.getMessage(), 
                 request.getRequestURI()
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
@@ -63,7 +62,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.UNAUTHORIZED.value(),
                 "Unauthorized",
-                "Email hoặc mật khẩu không chính xác", // Thông điệp an toàn
+                "Email hoặc mật khẩu không chính xác", 
                 request.getRequestURI()
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
@@ -81,7 +80,7 @@ public class GlobalExceptionHandler {
                 LocalDateTime.now(),
                 HttpStatus.NOT_FOUND.value(),
                 "Not Found",
-                ex.getMessage(), // Lấy thông điệp từ "throw new EntityNotFoundException(...)"
+                ex.getMessage(), 
                 request.getRequestURI()
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.NOT_FOUND);

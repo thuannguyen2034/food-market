@@ -9,7 +9,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import styles from './AdminChat.module.css';
 
-// Interface phụ cho Staff List
 interface StaffDTO {
   userId: string;
   fullName: string;
@@ -35,14 +34,14 @@ export default function AdminChatPage() {
 
   // --- STATE INPUT & PAGINATION ---
   const [inputMessage, setInputMessage] = useState('');
-  const [loading, setLoading] = useState(false); // Loading tổng quan
-  const [page, setPage] = useState(0);           // Page hiện tại của tin nhắn
-  const [hasMore, setHasMore] = useState(true);  // Còn tin cũ hơn không?
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false); // Đang load thêm tin cũ?
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   // Refs
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null); // Để bắt sự kiện scroll
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // ================= 1. FETCH CONVERSATIONS & STATS =================
   const fetchConversations = async () => {
@@ -78,7 +77,6 @@ export default function AdminChatPage() {
   };
 
   const fetchStaffList = async () => {
-    // Chỉ fetch 1 lần nếu chưa có data
     if (staffList.length > 0) return;
     try {
       const res = await authedFetch('/api/v1/admin/users?role=STAFF&size=100');
@@ -98,7 +96,7 @@ export default function AdminChatPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchConversations();
-    }, 500); // Debounce 500ms
+    }, 500);
 
     return () => clearTimeout(timer);
   }, [searchTerm, activeTab, adminFilter]);
@@ -136,7 +134,6 @@ export default function AdminChatPage() {
 
   // ================= 3. MESSAGE LOGIC (Load & Infinite Scroll) =================
 
-  // Hàm tải tin nhắn chung (dùng cho cả Init và Load More)
   const fetchMessages = async (convId: string, pageIndex: number, isLoadMore: boolean) => {
     try {
       if (isLoadMore) setIsLoadingHistory(true);
@@ -146,16 +143,14 @@ export default function AdminChatPage() {
 
       if (res.ok) {
         const data = await res.json();
-        const newMessages = data.content.reverse(); // API trả về DESC (Mới -> Cũ), ta đảo lại để hiển thị (Cũ -> Mới)
+        const newMessages = data.content.reverse();
 
         if (isLoadMore) {
-          // Giữ vị trí scroll khi load thêm
           const container = messagesContainerRef.current;
           const oldScrollHeight = container ? container.scrollHeight : 0;
 
           setMessages(prev => [...newMessages, ...prev]);
 
-          // Sau khi render, chỉnh lại scrollTop
           setTimeout(() => {
             if (container) {
               const newScrollHeight = container.scrollHeight;
@@ -167,9 +162,8 @@ export default function AdminChatPage() {
           scrollToBottom();
         }
 
-        // Update pagination state
         setPage(pageIndex);
-        setHasMore(!data.last); // Nếu data.last = true -> hết tin
+        setHasMore(!data.last);
       }
     } catch (err) { console.error(err); }
     finally {
@@ -180,12 +174,9 @@ export default function AdminChatPage() {
 
   const handleSelectConversation = (conv: Conversation) => {
     setSelectedConv(conv);
-    // Reset state pagination
     setPage(0);
     setHasMore(true);
     setMessages([]);
-
-    // Fetch trang đầu tiên (page 0)
     fetchMessages(conv.id, 0, false);
   };
 
@@ -193,13 +184,11 @@ export default function AdminChatPage() {
     const container = messagesContainerRef.current;
     if (!container) return;
 
-    // Nếu cuộn lên đỉnh (scrollTop = 0) và còn tin cũ + không đang load
     if (container.scrollTop === 0 && hasMore && !isLoadingHistory) {
       fetchMessages(selectedConv!.id, page + 1, true);
     }
   };
 
-  // Pusher message listener
   useEffect(() => {
     if (!selectedConv) return;
     const channelName = `chat-${selectedConv.id}`;
@@ -224,8 +213,6 @@ export default function AdminChatPage() {
     }, 100);
   };
 
-  // ================= 4. ACTIONS (Send, Assign, Finish, Revoke) =================
-
   const sendMessage = async () => {
     if (!inputMessage.trim() || !selectedConv) return;
     try {
@@ -238,7 +225,6 @@ export default function AdminChatPage() {
     } catch (err) { alert('Lỗi gửi tin'); }
   };
 
-  // Mở Modal Assign
   const openAssignModal = () => {
     if (user?.role === 'ADMIN') {
       fetchStaffList();
@@ -247,7 +233,6 @@ export default function AdminChatPage() {
     }
   };
 
-  // Thực thi Assign (Gọi API)
   const executeAssign = async (targetId: string | null) => {
     if (!selectedConv) return;
     try {
@@ -259,7 +244,6 @@ export default function AdminChatPage() {
         body: body
       });
 
-      // Optimistic UI Update
       const updatedConv = {
         ...selectedConv,
         status: 'ACTIVE' as ConversationStatus,
@@ -268,10 +252,9 @@ export default function AdminChatPage() {
       setSelectedConv(updatedConv);
       setShowAssignModal(false);
 
-      // Chuyển tab nếu cần
       setActiveTab('ACTIVE');
       if (user?.role === 'ADMIN' && targetId && targetId !== user.userId) {
-        setAdminFilter('ALL'); // Nếu gán cho người khác thì chuyển filter ALL để thấy
+        setAdminFilter('ALL');
       } else {
         setAdminFilter('MY');
       }
@@ -300,10 +283,8 @@ export default function AdminChatPage() {
     } catch (e) { alert('Lỗi đưa về hàng chờ'); }
   };
 
-  // Re-open: Từ IDLE/History muốn chat tiếp -> Tự assign cho mình
   const reopenConversation = async () => {
     if (!selectedConv) return;
-    // Re-open bản chất là Assign cho chính mình
     await executeAssign(user!.userId);
   };
 
@@ -439,10 +420,8 @@ export default function AdminChatPage() {
                   </>
                 )}
 
-                {/* Nút Kết thúc (ACTIVE + Của mình) */}
                 {selectedConv.status === 'ACTIVE' && (
                   <div className="flex items-center gap-2">
-                    {/* Hiển thị label ai đang chat ngay trên header */}
                     {selectedConv.staffName && (
                       <span className="text-sm text-gray-500 mr-2 bg-gray-100 px-2 py-1 rounded">
                         Nhân viên đang tiếp nhận: <b>{selectedConv.staffName}</b>

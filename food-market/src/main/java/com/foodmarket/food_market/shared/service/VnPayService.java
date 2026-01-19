@@ -18,7 +18,6 @@ public class VnPayService {
     public String createPaymentUrl(Order order, HttpServletRequest request) {
         String vnp_TxnRef = order.getId().toString(); // Dùng UUID của Order làm mã giao dịch [cite: 81]
         String vnp_IpAddr = VnPayConfig.getIpAddress(request);
-        // Số tiền bắt buộc nhân 100 [cite: 84]
         long amount = order.getTotalAmount().longValue() * 100;
 
         Map<String, String> vnp_Params = new HashMap<>();
@@ -33,7 +32,6 @@ public class VnPayService {
         vnp_Params.put("vnp_Locale", vnPayConfig.getLocale());
 
         // Return URL: Nơi trình duyệt user chuyển về sau khi thanh toán
-        // URL này trỏ về Frontend (Next.js)
         vnp_Params.put("vnp_ReturnUrl", "http://localhost:3000/payment-result");
 
         vnp_Params.put("vnp_IpAddr", vnp_IpAddr);
@@ -110,7 +108,7 @@ public class VnPayService {
 
         // 5. So sánh hash tự tính (signValue) với hash VNPAY gửi (vnp_SecureHash)
         if (signValue.equals(vnp_SecureHash)) {
-            return 1; // Hợp lệ
+            return 1;
         } else {
             return -1; // Chữ ký không khớp (Dữ liệu bị thay đổi hoặc giả mạo)
         }

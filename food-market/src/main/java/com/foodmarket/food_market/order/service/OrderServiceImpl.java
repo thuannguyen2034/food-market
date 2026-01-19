@@ -128,7 +128,6 @@ public class OrderServiceImpl implements OrderService {
         newOrder.setPaymentStatus(PaymentStatus.PENDING);
         Order savedOrder = orderRepository.save(newOrder);
 
-        // 4. LOGIC CỐT LÕI
         for (CartItem cartItem : cart.getItems()) {
             Product product = cartItem.getProduct();
 
@@ -276,7 +275,6 @@ public class OrderServiceImpl implements OrderService {
         // 7. Cập nhật trạng thái Payment (nếu đang Pending)
 
     }
-    // Trong OrderServiceImpl.java
 
     @Override
     @Transactional
@@ -284,7 +282,6 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Order not found"));
 
-        // Logic hoàn kho (Copy từ hàm cancelOrder cũ hoặc tách ra hàm private dùng chung)
         for (OrderItem item : order.getItems()) {
             inventoryService.restoreStock(
                     item.getInventoryBatch().getBatchId(),
@@ -299,7 +296,7 @@ public class OrderServiceImpl implements OrderService {
 
         // Nếu payment đang failed/pending -> set thành CANCELLED luôn cho gọn
         if (order.getPaymentStatus() != PaymentStatus.PAID) {
-            order.setPaymentStatus(PaymentStatus.CANCELLED); // Cần thêm Enum này nếu chưa có
+            order.setPaymentStatus(PaymentStatus.CANCELLED); 
         }
 
         orderRepository.save(order);
@@ -318,23 +315,18 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public DashboardSummaryDTO getDashboardSummary(OffsetDateTime start, OffsetDateTime end) {
-        // 1. Tính toán khoảng thời gian (duration)
-        // VD: start=22/11, end=22/11 -> days = 0 -> duration = 1 ngày
         long daysDiff = ChronoUnit.DAYS.between(start, end);
-        long duration = daysDiff + 1; // Cộng 1 để bao gồm cả ngày bắt đầu
+        long duration = daysDiff + 1; 
 
-        // 2. Tính kỳ trước (Previous Period)
         OffsetDateTime prevStart = start.minusDays(duration);
         OffsetDateTime prevEnd = end.minusDays(duration);
 
-        // 3. Query DB (Giả sử Repo đã có hàm sumRevenue và countOrders nhận OffsetDateTime)
         BigDecimal currentRev = orderRepository.sumRevenueBetween(start, end, OrderStatus.ACTIVE_STATUSES);
         BigDecimal prevRev = orderRepository.sumRevenueBetween(prevStart, prevEnd, OrderStatus.ACTIVE_STATUSES);
 
         long currentOrd = orderRepository.countOrdersBetween(start, end);
         long prevOrd = orderRepository.countOrdersBetween(prevStart, prevEnd);
 
-        // Xử lý null nếu DB trả về null
         if (currentRev == null) currentRev = BigDecimal.ZERO;
         if (prevRev == null) prevRev = BigDecimal.ZERO;
 
@@ -352,12 +344,9 @@ public class OrderServiceImpl implements OrderService {
     public List<ChartDataDTO> getComparisonChart(OffsetDateTime start, OffsetDateTime end) {
         long daysDiff = ChronoUnit.DAYS.between(start, end);
 
-        // LOGIC QUYẾT ĐỊNH CHIẾN LƯỢC
         if (daysDiff == 0) {
-            // ==> CHẾ ĐỘ 1 NGÀY: Xử lý theo GIỜ (0h - 23h)
             return getHourlyChartData(start, end);
         } else {
-            // ==> CHẾ ĐỘ NHIỀU NGÀY: Xử lý theo NGÀY (Logic cũ của bạn)
             return getDailyChartData(start, end, daysDiff);
         }
     }
@@ -367,14 +356,11 @@ public class OrderServiceImpl implements OrderService {
 
         OffsetDateTime prevStart = start.minusDays(duration);
 
-        // Lấy Raw Data từ DB (List các ngày có doanh thu)
         List<DailyRevenueStat> currentStats = orderRepository.getDailyRevenueStats(start, end, OrderStatus.ACTIVE_STATUSES_Strings);
         List<DailyRevenueStat> prevStats = orderRepository.getDailyRevenueStats(prevStart, start.minusNanos(1), OrderStatus.ACTIVE_STATUSES_Strings);
-        // start.minusNanos(1) để tránh trùng lặp biên
 
         List<ChartDataDTO> result = new ArrayList<>();
 
-        // Vòng lặp để fill đủ số ngày (tránh trường hợp ngày không có doanh thu bị thiếu)
         for (int i = 0; i < duration; i++) {
             OffsetDateTime currDateTarget = start.plusDays(i);
             OffsetDateTime prevDateTarget = prevStart.plusDays(i);
@@ -383,7 +369,7 @@ public class OrderServiceImpl implements OrderService {
             BigDecimal prevVal = findValueByDate(prevStats, prevDateTarget);
 
             result.add(ChartDataDTO.builder()
-                    .label(currDateTarget.format(DateTimeFormatter.ofPattern("dd/MM"))) // Label theo kỳ hiện tại
+                    .label(currDateTarget.format(DateTimeFormatter.ofPattern("dd/MM")))
                     .currentRevenue(currVal)
                     .previousRevenue(prevVal)
                     .build());
@@ -392,21 +378,17 @@ public class OrderServiceImpl implements OrderService {
     }
 
     private List<ChartDataDTO> getHourlyChartData(OffsetDateTime start, OffsetDateTime end) {
-        // Tính kỳ trước (Lùi lại 1 ngày)
         OffsetDateTime prevStart = start.minusDays(1);
         OffsetDateTime prevEnd = end.minusDays(1);
 
-        // Query DB lấy dữ liệu gom nhóm theo giờ
         List<HourlyRevenueStat> currentStats = orderRepository.getHourlyRevenueStats(start, end, OrderStatus.ACTIVE_STATUSES_Strings);
         List<HourlyRevenueStat> prevStats = orderRepository.getHourlyRevenueStats(prevStart, prevEnd, OrderStatus.ACTIVE_STATUSES_Strings);
 
         List<ChartDataDTO> result = new ArrayList<>();
 
-        // Loop cứng từ 0 đến 23 giờ
         for (int hour = 0; hour < 24; hour++) {
             int currentHour = hour;
 
-            // Tìm doanh thu trong list (hoặc = 0)
             BigDecimal currVal = currentStats.stream()
                     .filter(s -> s.getHour() == currentHour)
                     .findFirst()
@@ -419,7 +401,6 @@ public class OrderServiceImpl implements OrderService {
                     .map(HourlyRevenueStat::getTotalRevenue)
                     .orElse(BigDecimal.ZERO);
 
-            // Tạo Label theo giờ (Ví dụ: "08:00")
             String label = String.format("%02d:00", currentHour);
 
             result.add(ChartDataDTO.builder()
@@ -469,12 +450,10 @@ public class OrderServiceImpl implements OrderService {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new EntityNotFoundException("Không tìm thấy đơn hàng"));
 
-        // Logic nghiệp vụ: Nếu đánh dấu là PAID, có thể cần cập nhật ngày thanh toán
         if (newStatus == PaymentStatus.PAID && order.getPaymentStatus() != PaymentStatus.PAID) {
             order.setPaymentDate(LocalDateTime.now());
         }
 
-        // Nếu đánh dấu là FAILED/PENDING, có thể cần clear ngày thanh toán
         if (newStatus != PaymentStatus.PAID) {
             order.setPaymentDate(null);
         }
@@ -482,10 +461,8 @@ public class OrderServiceImpl implements OrderService {
         order.setPaymentStatus(newStatus);
         orderRepository.save(order);
 
-        // Log hoặc bắn event nếu cần
     }
 
-    /** Helper */
 
 // Helper tính % tăng trưởng
     private Double calculateGrowth(BigDecimal current, BigDecimal previous) {

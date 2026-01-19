@@ -14,12 +14,10 @@ import java.util.List;
 
 public interface ProductService {
 
-    // --- Public ---
     Page<ProductResponseDTO> getProducts( String searchTerm,String categorySlug ,String sortParam,Pageable pageable,Boolean isOnSale);
     List<String> getSearchHints(String keyword);
     ProductResponseDTO getProductDetails(String slug);
-    // ==================================================================
-    // --- Admin Methods ---
+    
     // ==================================================================
     Page<AdminProductResponseDTO> getAdminProducts(Pageable pageable, String searchTerm, Long categoryId, String sortParam, String deletedMode,Boolean isLowStock, Boolean isOnSale);
     long countLowStockProducts();

@@ -24,7 +24,6 @@ public class AdminRecipeService {
     private final RecipeRepository recipeRepository;
     private final ImageService imageService;
 
-    // 1. Xem danh sách (Phân trang + Lọc)
     @Transactional
     public Page<RecipeResponseDTO> getRecipes(RecipeFilter filter, Pageable pageable) {
         return recipeRepository.findAll(RecipeSpecification.filterBy(filter), pageable)
@@ -38,35 +37,29 @@ public class AdminRecipeService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm được công thức"));
     }
 
-    // 2. Tạo công thức mới
     @Transactional
     public RecipeResponseDTO createRecipe(RecipeRequestDTO request, MultipartFile imageFile) throws IOException {
         Recipe recipe = new Recipe();
         mapRequestToEntity(request, recipe);
 
-        // Lưu trước để có ID (dùng cho tên ảnh)
         recipe = recipeRepository.save(recipe);
 
-        // Xử lý upload ảnh nếu có
         if (imageFile != null && !imageFile.isEmpty()) {
             String imageUrl = imageService.uploadRecipeImage(imageFile, recipe.getId());
             recipe.setImageUrl(imageUrl);
-            recipe = recipeRepository.save(recipe); // Update lại URL
+            recipe = recipeRepository.save(recipe); 
         }
 
         return RecipeResponseDTO.fromEntity(recipe);
     }
 
-    // 3. Cập nhật công thức
     @Transactional
     public RecipeResponseDTO updateRecipe(Long id, RecipeRequestDTO request, MultipartFile imageFile) throws IOException {
         Recipe recipe = recipeRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Recipe not found with id: " + id));
 
-        // Cập nhật thông tin cơ bản
         mapRequestToEntity(request, recipe);
 
-        // Nếu có ảnh mới thì upload và ghi đè
         if (imageFile != null && !imageFile.isEmpty()) {
             String imageUrl = imageService.uploadRecipeImage(imageFile, recipe.getId());
             recipe.setImageUrl(imageUrl);
@@ -83,7 +76,6 @@ public class AdminRecipeService {
         recipe.setCookingSteps(request.getCookingSteps());
         recipe.setIngredients(request.getIngredients());
         if (request.getTags() != null) {
-            // Xóa tất cả khoảng trắng
             String cleanTags = request.getTags().replaceAll(",\\s+", ",");
             recipe.setTags(cleanTags);
         }

@@ -10,16 +10,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/tags") // <-- Base path public
+@RequestMapping("/api/v1/tags") 
 @RequiredArgsConstructor
 public class TagController {
 
     private final TagService tagService;
 
-    /**
-     * API 1: (Public) Lấy tất cả tag
-     * Dùng cho bộ lọc, tag cloud...
-     */
+    
     @GetMapping
     @PreAuthorize("permitAll()")
     public ResponseEntity<List<TagDTO>> getPublicAllTags() {

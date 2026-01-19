@@ -11,11 +11,11 @@ public record InventoryAdjustmentDTO(
         String adjustedByUserName,
         int adjustmentQuantity,
         String reason,
-        OffsetDateTime adjustmentDate  // Giả sử entity có @CreationTimestamp cho field này
+        OffsetDateTime adjustmentDate 
 ) {
     public static InventoryAdjustmentDTO fromEntity(InventoryAdjustment adjustment) {
         return new InventoryAdjustmentDTO(
-                adjustment.getAdjustmentId(),  // Giả sử entity có ID
+                adjustment.getAdjustmentId(), 
                 adjustment.getInventoryBatch().getBatchId(),
                 adjustment.getAdjustedBy().getUserId().toString(),
                 adjustment.getAdjustedBy().getEmail(),

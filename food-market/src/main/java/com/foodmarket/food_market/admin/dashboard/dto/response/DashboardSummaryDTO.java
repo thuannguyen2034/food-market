@@ -14,9 +14,8 @@ import java.math.BigDecimal;
 public class DashboardSummaryDTO {
     private BigDecimal currentRevenue;
     private BigDecimal previousRevenue;
-    private Double revenueGrowth; // Ví dụ: 15.5 (tăng 15.5%), -5.0 (giảm 5%)
+    private Double revenueGrowth; 
 
-    // Đơn hàng
     private Long currentOrders;
     private Long previousOrders;
     private Double ordersGrowth;

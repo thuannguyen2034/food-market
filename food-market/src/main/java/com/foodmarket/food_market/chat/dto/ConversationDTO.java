@@ -14,7 +14,6 @@ import java.util.UUID;
 public class ConversationDTO {
     private UUID id;
 
-    // Thông tin khách hàng (Lấy từ User Entity)
     private UUID customerId;
     private String customerName;
     private String customerAvatar;
@@ -31,10 +30,6 @@ public class ConversationDTO {
     private String lastMessagePreview;
     private int unreadCount;
 
-    /**
-     * Mapper thủ công: Chuyển từ Entity sang DTO
-     * Cách này nhanh, hiệu năng cao hơn dùng Reflection của thư viện.
-     */
     public static ConversationDTO fromEntity(Conversation conversation) {
         User customer = conversation.getCustomer();
 

@@ -60,7 +60,7 @@ export default function InventoryPage() {
                 )}
                 {activeTab === 'import' && <ImportStockForm onSuccess={() => {
                     handleRefresh();
-                    setActiveTab('batches'); // Auto switch back
+                    setActiveTab('batches');
                 }} />}
                 {activeTab === 'history' && <AdjustmentHistory />}
             </div>

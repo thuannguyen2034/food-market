@@ -21,16 +21,15 @@ import java.time.OffsetDateTime;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder; // <-- TIÊM PasswordEncoder
-    private final EmailService emailService; // <-- TIÊM EmailService
-    // Sau này sẽ thêm 1 Mapper (ví dụ: MapStruct)
+    private final PasswordEncoder passwordEncoder; 
+    private final EmailService emailService; 
+    
 
     @Override
     public UserResponseDTO getCurrentUser(String email) {
         var user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user"));
 
-        // (Tạm thời map thủ công, sau này sẽ dùng MapStruct)
         return UserResponseDTO.builder()
                 .userId(user.getUserId())
                 .fullName(user.getFullName())
@@ -72,10 +71,8 @@ public class UserServiceImpl implements UserService {
     public UserResponseDTO updateUserInfo(String email, UserInfoUpdateDTO userRequest) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user"));
-        //Cập nhật tên và số điện thoại
         user.setFullName(userRequest.getFullName());
         user.setPhone(userRequest.getPhone());
-        //Lưu thay đổi
         userRepository.save(user);
         return UserResponseDTO.builder()
                 .userId(user.getUserId())
@@ -93,9 +90,7 @@ public class UserServiceImpl implements UserService {
     public UserResponseDTO updateAvatar(String email, String newAvatarUrl) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user"));
-        //Cập nhật avatar url
         user.setAvatarUrl(newAvatarUrl);
-        //Lưu thay đổi
         userRepository.save(user);
         return UserResponseDTO.builder()
                 .userId(user.getUserId())
@@ -111,14 +106,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void deleteAvatar(String email) {
-        // 1. Lấy lên (SELECT)
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy user"));
-
-        // 2. Thay đổi trạng thái (logic)
-        user.setAvatarUrl(null); // Hoặc user.removeAvatar();
-
-        // 3. Cập nhật xuống (UPDATE)
+        user.setAvatarUrl(null); 
         userRepository.save(user);
     }
 
@@ -130,11 +120,8 @@ public class UserServiceImpl implements UserService {
     }
     @Override
     public UserStatsDTO getUserStats() {
-        // 1. Tính thời điểm đầu tháng này
         OffsetDateTime startOfMonth = OffsetDateTime.now().withDayOfMonth(1)
                 .withHour(0).withMinute(0).withSecond(0).withNano(0);
-
-        // 2. Gọi Repository đếm (Database count rất nhanh)
         long totalUsers = userRepository.count();
         long totalCustomers = userRepository.countByRole(Role.CUSTOMER);
         long totalAdmins = userRepository.countByRole(Role.ADMIN);

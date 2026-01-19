@@ -9,7 +9,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "chat_messages") // Số nhiều
+@Table(name = "chat_messages") 
 @Getter
 @Setter
 @NoArgsConstructor

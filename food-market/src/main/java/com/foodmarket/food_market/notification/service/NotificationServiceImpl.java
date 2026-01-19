@@ -22,7 +22,7 @@ import java.util.UUID;
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
-    private final UserRepository userRepository; // Cần để gắn User vào
+    private final UserRepository userRepository; 
 
     @Override
     @Transactional(readOnly = true)
@@ -48,9 +48,6 @@ public class NotificationServiceImpl implements NotificationService {
         return NotificationDTO.fromEntity(saved);
     }
 
-    /**
-     * Hàm nội bộ. Không @Transactional để đảm bảo nó chạy trong transaction của listener.
-     */
     @Override
     public void createNotification(UUID userId, String message, NotificationType type, String linkTo) {
         User userRef = userRepository.getReferenceById(userId);

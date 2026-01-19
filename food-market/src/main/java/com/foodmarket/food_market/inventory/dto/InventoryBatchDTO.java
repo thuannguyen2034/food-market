@@ -6,7 +6,6 @@ import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 
-// Trong package dto
 public record InventoryBatchDTO(
         Long batchId,
         Long productId,
@@ -26,7 +25,7 @@ public record InventoryBatchDTO(
                 batch.getBatchCode(),
                 batch.getQuantityReceived(),
                 batch.getCurrentQuantity(),
-                batch.getReceivedDate(), // Giả sử entity có field này; nếu chưa, thêm
+                batch.getReceivedDate(), 
                 batch.getExpirationDate(),
                 adjustments
         );

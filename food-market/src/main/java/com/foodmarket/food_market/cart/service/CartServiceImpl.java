@@ -35,8 +35,8 @@ public class CartServiceImpl implements CartService {
     @Transactional
     public CartResponseDTO getCart(UUID userId) {
         Cart cart = findOrCreateCart(userId, true);
-        Map<Long, String> note = new HashMap<>(); // List chứa thông báo thay đổi
-        boolean isCartChanged = false; // Cờ đánh dấu để gọi save() nếu cần
+        Map<Long, String> note = new HashMap<>(); 
+        boolean isCartChanged = false; 
 
         for (CartItem item : cart.getItems()) {
             Product product = item.getProduct();
@@ -70,9 +70,6 @@ public class CartServiceImpl implements CartService {
         return mapCartToDTO(cart, note);
     }
 
-    // ==================================================================
-    // 2. ADD ITEM TO CART (Đã sửa logic check kho & giá)
-    // ==================================================================
     @Override
     @Transactional
     public CartResponseDTO addItemToCart(UUID userId, CartItemRequestDTO request) {
@@ -95,7 +92,6 @@ public class CartServiceImpl implements CartService {
         }
 
         // 2. Xử lý Thêm hoặc Cập nhật
-        // LƯU Ý: Luôn lấy giá thực tế hiện tại (getFinalPrice) để lưu
         BigDecimal priceToAdd = product.getFinalPrice();
 
         if (existingItemOpt.isPresent()) {
@@ -104,7 +100,7 @@ public class CartServiceImpl implements CartService {
             cartItemRepository.save(item);
         } else {
             CartItem newItem = new CartItem(cart, product, request.getQuantity());
-            newItem.setPrice(priceToAdd); // Lưu giá hiện tại
+            newItem.setPrice(priceToAdd);
             cartItemRepository.save(newItem);
         }
 
@@ -112,9 +108,6 @@ public class CartServiceImpl implements CartService {
         return getCart(userId);
     }
 
-    // ==================================================================
-    // 3. UPDATE ITEM (Đã sửa logic check kho & giá)
-    // ==================================================================
     @Override
     @Transactional
     public CartResponseDTO updateCartItem(UUID userId, Long cartItemId, CartItemUpdateDTO request) {
@@ -141,9 +134,6 @@ public class CartServiceImpl implements CartService {
         return getCart(userId);
     }
 
-    // ==================================================================
-    // 4. REMOVE ITEM
-    // ==================================================================
     @Override
     @Transactional
     public CartResponseDTO removeCartItem(UUID userId, Long cartItemId) {
@@ -158,15 +148,6 @@ public class CartServiceImpl implements CartService {
         return getCart(userId);
     }
 
-    // ==================================================================
-    // --- Private Helper Methods ---
-    // ==================================================================
-
-    /**
-     * Hàm tiện ích tìm giỏ hàng. Tự tạo nếu chưa có.
-     *
-     * @param fetchItems Dùng query JOIN FETCH (tốn kém) hay không?
-     */
     private Cart findOrCreateCart(UUID userId, boolean fetchItems) {
         Optional<Cart> cartOpt = fetchItems ?
                 cartRepository.findByUserIdWithItems(userId) :

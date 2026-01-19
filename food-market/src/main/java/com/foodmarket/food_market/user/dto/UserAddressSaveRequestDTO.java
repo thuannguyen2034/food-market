@@ -22,7 +22,6 @@ public class UserAddressSaveRequestDTO {
     @NotBlank(message = "Địa chỉ không được để trống")
     private String streetAddress;
     private String addressType;
-    // Mặc định là 'false' nếu không được cung cấp
     private boolean isDefault = false;
 
     public void toEntity(UserAddress userAddress) {

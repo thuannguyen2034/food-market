@@ -1,9 +1,8 @@
-package com.foodmarket.food_market.product.dto; // (Package DTO của bạn)
+package com.foodmarket.food_market.product.dto; 
 
 import com.foodmarket.food_market.product.model.ProductImage;
 import lombok.Builder;
 import lombok.Data;
-// import ...ProductImage;
 
 @Data
 @Builder

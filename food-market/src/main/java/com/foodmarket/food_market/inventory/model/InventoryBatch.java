@@ -31,19 +31,16 @@ public class InventoryBatch {
     private OffsetDateTime receivedDate;
 
     @Column(name = "expiration_date", nullable = false)
-    private LocalDate expirationDate; // Chỉ cần ngày, không cần giờ
+    private LocalDate expirationDate;
 
     @Column(name = "quantity_received", nullable = false)
-    private int quantityReceived; // Số lượng ban đầu khi nhập
-
+    private int quantityReceived;
     @Column(name = "current_quantity", nullable = false)
-    private int currentQuantity; // Số lượng thực tế còn lại trong kho
+    private int currentQuantity;
 
     /**
      * Một lô hàng có thể có nhiều lần điều chỉnh (hỏng, mất, v.v.)
      */
     @OneToMany(mappedBy = "inventoryBatch", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<InventoryAdjustment> adjustments;
-
-    // Constructors, equals, hashCode...
 }

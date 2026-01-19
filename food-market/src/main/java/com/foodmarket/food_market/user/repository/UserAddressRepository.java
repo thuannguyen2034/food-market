@@ -10,10 +10,6 @@ import java.util.UUID;
 
 @Repository
 public interface UserAddressRepository extends JpaRepository<UserAddress, Long> {
-    // Check địa chỉ có thuộc user không
     Optional<UserAddress> findByIdAndUser_UserId(Long id, UUID userId);
-    /**
-     * Dùng để lấy danh sách địa chỉ của user
-     */
     List<UserAddress> findByUser_UserId(UUID userId);
 }

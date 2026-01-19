@@ -28,7 +28,6 @@ export default function AdminDashboard() {
   const [urgentOrders, setUrgentOrders] = useState<UrgentOrder[]>([]);
 
   // --- Filter State ---
-  // '1D': 1 Ngày (theo giờ), '1W': 1 Tuần, '1M': 1 Tháng
   const [timeFilter, setTimeFilter] = useState<'1D' | '1W' | '1M'>('1W');
 
   // --- Logic tính toán ngày (Memoized) ---
@@ -37,18 +36,18 @@ export default function AdminDashboard() {
     let start, end;
     let lblCur = "", lblPrev = "";
 
-    end = endOfDay(now); // Luôn kết thúc vào cuối ngày hôm nay
+    end = endOfDay(now);
 
     if (timeFilter === '1D') {
       start = startOfDay(now);
       lblCur = "Hôm nay";
       lblPrev = "Hôm qua";
     } else if (timeFilter === '1W') {
-      start = startOfDay(subDays(now, 6)); // 7 ngày (bao gồm hôm nay)
+      start = startOfDay(subDays(now, 6));
       lblCur = "7 ngày qua";
       lblPrev = "7 ngày trước";
     } else {
-      start = startOfDay(subDays(now, 29)); // 30 ngày
+      start = startOfDay(subDays(now, 29));
       lblCur = "30 ngày qua";
       lblPrev = "30 ngày trước";
     }
@@ -66,16 +65,12 @@ export default function AdminDashboard() {
     const fetchDashboardData = async () => {
       setLoading(true);
       try {
-        // Query string chung cho các API cần lọc ngày
         const query = `?startDate=${startDateIso}&endDate=${endDateIso}`;
 
-        // 1. Tổng quan (Summary)
         const summaryPromise = authedFetch(`/api/v1/admin/dashboard/summary${query}`);
         
-        // 2. Biểu đồ doanh thu 2 đường
         const chartPromise = authedFetch(`/api/v1/admin/dashboard/revenue-chart${query}`);
 
-        // 3. Các API khác (giữ nguyên hoặc thêm lọc nếu cần)
         const statusPromise = authedFetch('/api/v1/admin/dashboard/order-status');
         const topProductsPromise = authedFetch(`/api/v1/admin/dashboard/top-products${query}&size=5`);
         const newUserPromise = authedFetch('/api/v1/admin/dashboard/new-users-count');
@@ -109,7 +104,6 @@ export default function AdminDashboard() {
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(val);
 
-  // Component hiển thị % tăng trưởng
   const GrowthBadge = ({ percent }: { percent: number }) => {
     const isPositive = percent >= 0;
     return (
@@ -211,7 +205,6 @@ export default function AdminDashboard() {
 
       {/* 2. Charts Row */}
       <div className={styles.chartsGrid}>
-        {/* Line Chart 2 Đường */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>
              Biểu đồ doanh thu ({labelCurrent})
@@ -220,7 +213,6 @@ export default function AdminDashboard() {
             <ResponsiveContainer>
               <LineChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
-                {/* XAxis hiển thị label từ Backend (Giờ hoặc Ngày) */}
                 <XAxis 
                   dataKey="label" 
                   style={{ fontSize: '0.8rem' }}
@@ -237,7 +229,6 @@ export default function AdminDashboard() {
                 />
                 <Legend />
                 
-                {/* Đường Hiện tại (Nét liền, màu xanh) */}
                 <Line 
                   name={labelCurrent}
                   type="monotone" 
@@ -248,7 +239,6 @@ export default function AdminDashboard() {
                   activeDot={{ r: 6 }} 
                 />
                 
-                {/* Đường Quá khứ (Nét đứt, màu xám) */}
                 <Line 
                   name={labelPrev}
                   type="monotone" 
@@ -293,7 +283,6 @@ export default function AdminDashboard() {
 
       {/* 3. Bottom Row (Tables) */}
       <div className={styles.bottomGrid}>
-        {/* ... Giữ nguyên logic Top Products và Urgent Orders ... */}
         <div className={styles.card}>
           <div className={styles.cardHeader}>Top 5 Sản phẩm bán chạy</div>
           <table className={styles.table}>

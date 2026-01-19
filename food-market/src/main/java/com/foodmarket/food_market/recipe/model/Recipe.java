@@ -43,7 +43,6 @@ public class Recipe {
     @OneToMany(mappedBy = "recipe", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     List<RecipeProduct> products = new ArrayList<>();
 
-    // Helper method để thêm product dễ dàng (Pragmatic DDD)
     public void addProduct(Long productId) {
         RecipeProduct link = RecipeProduct.builder()
                 .recipe(this)
@@ -52,26 +51,20 @@ public class Recipe {
         this.products.add(link);
     }
 
-    // Sửa trong class Recipe.java hoặc Helper của bạn
-
     public void updateProducts(List<Long> newProductIds) {
         if (newProductIds == null) {
             this.products.clear();
             return;
         }
 
-        // 1. Tìm các sản phẩm cần XÓA (Có trong DB nhưng không có trong request mới)
-        // Dùng removeIf để xóa trực tiếp trên collection hiện tại (Hibernate sẽ tự track và delete)
         this.products.removeIf(rp -> !newProductIds.contains(rp.getProductId()));
 
-        // 2. Tìm các sản phẩm cần THÊM (Có trong request mới nhưng chưa có trong DB)
-        // Lấy danh sách ID hiện tại
         Set<Long> existingProductIds = this.products.stream()
                 .map(RecipeProduct::getProductId)
                 .collect(Collectors.toSet());
 
         newProductIds.stream()
-                .filter(id -> !existingProductIds.contains(id)) // Chỉ lấy cái chưa có
-                .forEach(this::addProduct); // Thêm mới
+                .filter(id -> !existingProductIds.contains(id))
+                .forEach(this::addProduct);
     }
 }

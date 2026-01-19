@@ -24,7 +24,7 @@ public class PusherConfig {
     public Pusher pusher() {
         Pusher pusher = new Pusher(appId, key, secret);
         pusher.setCluster(cluster);
-        pusher.setEncrypted(true); // Bắt buộc dùng SSL
+        pusher.setEncrypted(true);
         return pusher;
     }
 }

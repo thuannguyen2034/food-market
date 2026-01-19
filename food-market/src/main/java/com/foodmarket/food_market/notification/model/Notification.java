@@ -18,7 +18,7 @@ import java.util.UUID;
 public class Notification {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID) // Dùng UUID
+    @GeneratedValue(strategy = GenerationType.UUID) 
     @Column(name = "notification_id")
     private UUID id;
 
@@ -36,7 +36,7 @@ public class Notification {
     @Column(name = "type", length = 50)
     private NotificationType type;
 
-    @Column(name = "link_to", length = 500) // Đường dẫn trên app (ví dụ: /orders/uuid...)
+    @Column(name = "link_to", length = 500) 
     private String linkTo;
 
     @Column(name = "created_at")

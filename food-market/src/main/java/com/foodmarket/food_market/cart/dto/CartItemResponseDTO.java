@@ -15,8 +15,8 @@ public class CartItemResponseDTO {
     private BigDecimal basePrice;
     private BigDecimal itemPrice;
     private BigDecimal totalBasePrice;
-    private BigDecimal totalItemPrice; // quantity * unitPrice
-    private CartItemProductInfoDTO product; // DTO con cho thông tin SP
+    private BigDecimal totalItemPrice; 
+    private CartItemProductInfoDTO product;
     private String note;
     public static CartItemResponseDTO fromEntity(CartItem cartItem, String note) {
         Product product = cartItem.getProduct();

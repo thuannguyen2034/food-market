@@ -15,7 +15,6 @@ import java.util.UUID;
 
 @Repository
 public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> {
-    // Lấy tin nhắn của một hội thoại (Sắp xếp theo thời gian gửi)
     Page<ChatMessage> findByConversation_Id(UUID conversationId, Pageable pageable);
     long countByConversation_IdAndIsReadFalseAndSenderType(UUID conversationId, SenderType senderType);
     @Query("SELECT m.conversation.id, COUNT(m) FROM ChatMessage m " +
@@ -26,8 +25,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     List<Object[]> countUnreadBatch(@Param("conversationIds") List<UUID> conversationIds,
                                     @Param("senderType") SenderType senderType);
 
-    // 2. Lấy nội dung tin nhắn cuối cùng cho một list conversation IDs (Native Query PostgreSQL)
-    // Dùng DISTINCT ON để lấy dòng mới nhất của mỗi conversation_id
     @Query(value = "SELECT DISTINCT ON (m.conversation_id) m.conversation_id, m.content " +
             "FROM chat_messages m " +
             "WHERE m.conversation_id IN :conversationIds " +
@@ -35,7 +32,6 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
             nativeQuery = true)
     List<Object[]> findLatestContentBatch(@Param("conversationIds") List<UUID> conversationIds);
 
-    // Helper tìm tin nhắn cuối để lấy content (giữ lại logic cũ cho trường hợp lẻ)
     @Query("SELECT m FROM ChatMessage m WHERE m.conversation.id = :conversationId ORDER BY m.sentAt DESC LIMIT 1")
     Optional<ChatMessage> findFirstByConversation_IdOrderBySentAtDesc(@Param("conversationId") UUID conversationId);
 }

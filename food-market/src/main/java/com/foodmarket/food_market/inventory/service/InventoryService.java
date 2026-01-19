@@ -21,32 +21,15 @@ public interface InventoryService {
     // Cao ưu tiên 3: destroyBatch
     void destroyBatch(Long batchId, String reason, String userId);
 
-    /**
-     * Nghiệp vụ 1: Nhập hàng (Cộng kho).
-     * Tạo một lô hàng mới trong kho.
-     *
-     * @param requestDTO Thông tin lô hàng mới.
-     * @return Lô hàng vừa được tạo.
-     */
+
     InventoryBatchDTO importStock(ImportStockRequestDTO requestDTO, UUID currentAdminId);
 
     /**
-     * Nghiệp vụ 2 (Nâng cấp): Phân bổ kho cho Đơn hàng (Logic FEFO).
-     *
-     * Được gọi bởi OrderService. Tự động trừ kho (FEFO) và trả về
-     * danh sách các lô đã bị trừ.
-     *
-     * @param productId Mã sản phẩm cần trừ.
-     * @param quantityToAllocate Số lượng cần trừ.
-     * @return Danh sách các lô đã phân bổ (và số lượng lấy từ lô đó).
-     * @throws com.foodmarket.food_market.inventory.exception.InsufficientStockException Nếu không đủ hàng.
+     * Phân bổ kho cho Đơn hàng (Logic FEFO).
      */
     List<AllocatedBatchDTO> allocateForOrder(Long productId, int quantityToAllocate, UUID userId,UUID orderId);
     /**
-     * Nghiệp vụ 3: Điều chỉnh kho.
-     * Dùng để sửa kho thủ công (hàng hỏng, mất, kiểm kho).
-     *
-     * @param requestDTO Thông tin điều chỉnh.
+    Điều chỉnh kho.
      */
     void adjustStock(AdjustStockRequestDTO requestDTO);
 

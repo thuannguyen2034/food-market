@@ -9,15 +9,9 @@ import java.util.UUID;
 
 public interface NotificationService {
 
-    // --- API cho Client ---
     Page<NotificationDTO> getMyNotifications(UUID userId, Pageable pageable);
     long getUnreadCount(UUID userId);
     NotificationDTO markAsRead(UUID userId, UUID notificationId);
-
-    // --- API nội bộ (Internal) ---
-    /**
-     * Dùng bởi Event Listeners để tạo thông báo
-     */
     void createNotification(UUID userId, String message, NotificationType type, String linkTo);
     void markAllAsRead(UUID userId);
 }

@@ -105,7 +105,6 @@ public class ChatController {
     ) {
         User currentUser = (User) auth.getPrincipal();
         UUID targetStaffId = (request != null) ? request.getStaffId() : null;
-        //Staff thường không được gán cho người khác
         if (currentUser.getRole() == Role.STAFF && targetStaffId != null && !targetStaffId.equals(currentUser.getUserId())) {
             return ResponseEntity.status(403).build();
         }
@@ -117,7 +116,6 @@ public class ChatController {
         }
     }
 
-    // 6. Kết thúc (Finish/Idle)
     @PatchMapping("/admin/conversations/{conversationId}/finish")
     @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
     public ResponseEntity<Void> finishConversation(

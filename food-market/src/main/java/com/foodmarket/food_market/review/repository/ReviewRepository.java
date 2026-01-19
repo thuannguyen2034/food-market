@@ -17,6 +17,5 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
     boolean existsByUserIdAndOrderIdAndProductId(UUID userId, UUID orderId, Long productId);
     @Query("SELECT r.product.id FROM Review r WHERE r.orderId = :orderId")
     List<Long> findReviewedProductIdsByOrderId(@Param("orderId") UUID orderId);
-    // Lấy danh sách review theo sản phẩm (để hiển thị trang chi tiết Product)
     Page<Review> findByProductId(Long productId, Pageable pageable);
 }

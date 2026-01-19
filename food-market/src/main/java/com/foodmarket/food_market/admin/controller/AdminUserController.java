@@ -20,15 +20,13 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')") // Chỉ ADMIN mới được truy cập Class này
+@PreAuthorize("hasRole('ADMIN')") 
 public class AdminUserController {
 
     private final AdminUserService adminService;
     private  final UserService userService;
-    /**
-     * 1. Lấy danh sách User (Có tìm kiếm & Phân trang)
-     * URL: GET /api/v1/admin/users?keyword=nam&page=0&size=10
-     */
+    
+    
     @GetMapping
     public ResponseEntity<Page<UserResponseDTO>> getUsers(
             @RequestParam(required = false) String keyword,
@@ -38,11 +36,7 @@ public class AdminUserController {
         return ResponseEntity.ok(adminService.getUsers(keyword,role, pageable));
     }
 
-    /**
-     * 2. Cập nhật Role (Thăng chức/Giáng chức)
-     * URL: PATCH /api/v1/admin/users/{userId}/role
-     * Body: { "role": "ADMIN" }
-     */
+    
     @PatchMapping("/{userId}/role")
     public ResponseEntity<Void> updateUserRole(
             @PathVariable UUID userId,

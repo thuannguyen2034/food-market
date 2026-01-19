@@ -12,6 +12,5 @@ public class CategorySaveRequestDTO {
 
     private MultipartFile imageFile;
 
-    // ID của danh mục cha. Null nếu là danh mục gốc.
     private Long parentId;
 }

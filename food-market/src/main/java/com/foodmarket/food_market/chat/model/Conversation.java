@@ -33,15 +33,15 @@ public class Conversation {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
-    private ConversationStatus status; // WAITING, ACTIVE, IDLE
+    private ConversationStatus status;
 
     @Column(name = "title")
-    private String title; // (Optional) Ví dụ: "Hỏi về đơn hàng #123"
+    private String title;
 
     @Column(name = "last_message_at")
     private OffsetDateTime lastMessageAt;
 
-    // Audit fields (Nên có)
+    
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
