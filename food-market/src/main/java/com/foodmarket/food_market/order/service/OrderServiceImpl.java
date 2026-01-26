@@ -7,6 +7,8 @@ import com.foodmarket.food_market.admin.dashboard.dto.projection.TopProductStat;
 import com.foodmarket.food_market.admin.dashboard.dto.response.ChartDataDTO;
 import com.foodmarket.food_market.admin.dashboard.dto.response.DashboardSummaryDTO;
 import com.foodmarket.food_market.admin.dashboard.dto.response.TopProductResponseDTO;
+import com.foodmarket.food_market.admin.dto.OrderStatsDTO;
+import com.foodmarket.food_market.admin.dto.TimeRange;
 import com.foodmarket.food_market.cart.model.Cart;
 import com.foodmarket.food_market.cart.model.CartItem;
 import com.foodmarket.food_market.cart.repository.CartRepository;
@@ -304,10 +306,20 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional(readOnly = true)
     public Page<OrderResponseDTO> getAllOrders(OrderFilterDTO filterDTO, Pageable pageable) {
-        Sort sort = Sort.by("status").descending()
-                .and(Sort.by("deliveryDate").descending())
-                .and(Sort.by("deliveryTimeslot").descending());
-        pageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort);
+        // Sử dụng sort từ Pageable, nếu không có thì dùng default
+        Sort sort = pageable.getSort();
+        if (sort.isUnsorted()) {
+            // Default sort: createdAt descending
+            sort = Sort.by("createdAt").descending();
+        }
+        
+        // Tạo lại Pageable với sort đã xử lý
+        pageable = PageRequest.of(
+            pageable.getPageNumber(), 
+            pageable.getPageSize(), 
+            sort
+        );
+        
         Specification<Order> spec = OrderSpecification.filterBy(filterDTO);
         return orderRepository.findAll(spec, pageable)
                 .map(order -> OrderResponseDTO.fromEntity(order, new HashSet<>()));
@@ -483,6 +495,82 @@ public class OrderServiceImpl implements OrderService {
                 .findFirst()
                 .map(DailyRevenueStat::getTotalRevenue)
                 .orElse(BigDecimal.ZERO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderStatsDTO getOrderStatsByTimeRange(TimeRange timeRange) {
+        OffsetDateTime now = OffsetDateTime.now();
+        OffsetDateTime start;
+        OffsetDateTime end = now;
+
+        switch (timeRange) {
+            case ALL:
+                start = null;
+                break;
+            case TODAY:
+                start = now.toLocalDate().atStartOfDay(now.getOffset()).toOffsetDateTime();
+                break;
+            case WEEK:
+                start = now.minusDays(7);
+                break;
+            case MONTH:
+                start = now.minusDays(30);
+                break;
+            default:
+                start = null;
+        }
+
+        // Lấy thống kê từ repository
+        List<OrderStatusStat> statusStats;
+        BigDecimal totalRevenue;
+            
+        if (start == null) {
+            // ALL: Không filter theo ngày
+            statusStats = orderRepository.countOrdersByStatus();
+            totalRevenue = orderRepository.sumTotalRevenue(OrderStatus.ACTIVE_STATUSES);
+        } else {
+            statusStats = orderRepository.countOrdersByStatusBetween(start, end);
+            totalRevenue = orderRepository.sumRevenueBetween(start, end, OrderStatus.ACTIVE_STATUSES);
+        }
+
+        if (totalRevenue == null) {
+            totalRevenue = BigDecimal.ZERO;
+        }
+
+        // Map sang DTO
+        long totalOrders = statusStats.stream().mapToLong(OrderStatusStat::getCount).sum();
+        long pending = statusStats.stream()
+                .filter(s -> s.getStatus() == OrderStatus.PENDING)
+                .mapToLong(OrderStatusStat::getCount)
+                .sum();
+        long confirmed = statusStats.stream()
+                .filter(s -> s.getStatus() == OrderStatus.CONFIRMED)
+                .mapToLong(OrderStatusStat::getCount)
+                .sum();
+        long outForDelivery = statusStats.stream()
+                .filter(s -> s.getStatus() == OrderStatus.OUT_FOR_DELIVERY)
+                .mapToLong(OrderStatusStat::getCount)
+                .sum();
+        long delivered = statusStats.stream()
+                .filter(s -> s.getStatus() == OrderStatus.DELIVERED)
+                .mapToLong(OrderStatusStat::getCount)
+                .sum();
+        long cancelled = statusStats.stream()
+                .filter(s -> s.getStatus() == OrderStatus.CANCELLED)
+                .mapToLong(OrderStatusStat::getCount)
+                .sum();
+
+        return OrderStatsDTO.builder()
+                .totalOrders(totalOrders)
+                .pendingOrders(pending)
+                .confirmedOrders(confirmed)
+                .outForDeliveryOrders(outForDelivery)
+                .deliveredOrders(delivered)
+                .cancelledOrders(cancelled)
+                .totalRevenue(totalRevenue)
+                .timeRange(timeRange)
+                .build();
     }
 }
 

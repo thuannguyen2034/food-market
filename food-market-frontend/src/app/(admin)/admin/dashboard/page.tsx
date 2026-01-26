@@ -6,7 +6,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, Legend 
 } from 'recharts';
-import { DollarSign, ShoppingBag, Users, AlertCircle, ArrowUp, ArrowDown, Calendar } from 'lucide-react';
+import { DollarSign, ShoppingBag, Users, AlertCircle, ArrowUp, ArrowDown } from 'lucide-react';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { vi } from 'date-fns/locale';
 import styles from '@/styles/admin/Dashboard.module.css';
@@ -21,14 +21,14 @@ export default function AdminDashboard() {
   
   // --- States for Data ---
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
-  const [chartData, setChartData] = useState<ChartData[]>([]); // Dữ liệu biểu đồ mới
+  const [chartData, setChartData] = useState<ChartData[]>([]); 
   const [statusData, setStatusData] = useState<OrderStatusStat[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [newUsersCount, setNewUsersCount] = useState<number>(0);
   const [urgentOrders, setUrgentOrders] = useState<UrgentOrder[]>([]);
 
   // --- Filter State ---
-  const [timeFilter, setTimeFilter] = useState<'1D' | '1W' | '1M'>('1W');
+  const [timeFilter, setTimeFilter] = useState<'1D' | '1W' | '1M'>('1M');
 
   // --- Logic tính toán ngày (Memoized) ---
   const { startDateIso, endDateIso, labelCurrent, labelPrev } = useMemo(() => {

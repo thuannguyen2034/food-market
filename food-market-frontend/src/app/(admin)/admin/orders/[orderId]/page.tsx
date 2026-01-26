@@ -163,8 +163,8 @@ export default function OrderDetailPage() {
                                         <th style={{ width: '45%' }}>Sản phẩm</th>
                                         <th style={{ width: '15%' }}>Giá</th>
                                         <th style={{ width: '10%' }}>SL</th>
-                                        <th style={{ width: '15%' }}>Batch</th>
-                                        <th style={{ width: '15%', textAlign: 'right' }}>Tổng</th>
+                                        <th style={{ width: '15%' }}>Lô hàng</th>
+                                        <th style={{ width: '15%', textAlign: 'right' }}>Tổng tiền</th>
                                     </tr>
                                 </thead>
                                 <tbody>

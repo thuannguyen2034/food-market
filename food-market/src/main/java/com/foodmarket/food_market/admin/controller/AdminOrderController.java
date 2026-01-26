@@ -1,5 +1,7 @@
 package com.foodmarket.food_market.admin.controller;
 
+import com.foodmarket.food_market.admin.dto.OrderStatsDTO;
+import com.foodmarket.food_market.admin.dto.TimeRange;
 import com.foodmarket.food_market.order.dto.OrderFilterDTO;
 import com.foodmarket.food_market.order.dto.OrderResponseDTO;
 import com.foodmarket.food_market.order.dto.UpdateOrderStatusDTO;
@@ -64,5 +66,12 @@ public class AdminOrderController {
         PaymentStatus newStatus = PaymentStatus.valueOf(statusStr);
         orderService.updatePaymentStatus(orderId, newStatus);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<OrderStatsDTO> getOrderStats(
+            @RequestParam(defaultValue = "TODAY") TimeRange timeRange
+    ) {
+        return ResponseEntity.ok(orderService.getOrderStatsByTimeRange(timeRange));
     }
 }

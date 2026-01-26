@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import {
     Search, RefreshCw, Eye, ChevronLeft, ChevronRight,
-    ShoppingBag, Clock, CheckCircle
+    ShoppingBag, Clock, CheckCircle, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { vi } from 'date-fns/locale';
@@ -31,7 +31,7 @@ const STATUS_TABS = [
 
 export default function OrdersPage() {
     const { authedFetch } = useAuth();
-    
+
     // Core Data
     const [loading, setLoading] = useState(true);
     const [orders, setOrders] = useState<OrderDTO[]>([]);
@@ -40,43 +40,81 @@ export default function OrdersPage() {
 
     // Filter State
     const [keyword, setKeyword] = useState('');
-    const [date, setDate] = useState(''); 
-    const [statusTab, setStatusTab] = useState(''); 
+    const [date, setDate] = useState('');
+    const [statusTab, setStatusTab] = useState('');
     const [page, setPage] = useState(0);
-    const PAGE_SIZE = 25; 
+    const PAGE_SIZE = 25;
+
+    // Time Range for Stats AND Order Filtering
+    const [timeRange, setTimeRange] = useState<'ALL' | 'TODAY' | 'WEEK' | 'MONTH'>('ALL');
+
+    // Sorting
+    const [sortField, setSortField] = useState<'createdAt' | 'totalAmount' | 'status'>('createdAt');
+    const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
     // Debounce search
     useEffect(() => {
         const timer = setTimeout(() => {
-            fetchOrders(0);
+            fetchOrders(0, true);
         }, 500);
         return () => clearTimeout(timer);
     }, [keyword, date, statusTab]);
 
     // Re-fetch when page changes
     useEffect(() => {
-        fetchOrders(page);
+        fetchOrders(page, true);
     }, [page]);
 
-    // Initial load
+    // Re-fetch when sorting changes (no loading flash)
     useEffect(() => {
-        fetchStats();
-    }, []);
+        fetchOrders(0, false);
+    }, [sortField, sortDirection]);
 
-    const fetchOrders = async (pageIndex: number) => {
-        setLoading(true);
+    // Re-fetch when time range changes
+    useEffect(() => {
+        fetchOrders(0, true);
+        fetchStats();
+    }, [timeRange]);
+
+    const fetchOrders = async (pageIndex: number, showLoading: boolean = true) => {
+        if (showLoading) setLoading(true);
         try {
             const params = new URLSearchParams();
             params.append('page', pageIndex.toString());
             params.append('size', PAGE_SIZE.toString());
             if (keyword) params.append('keyword', keyword);
-            if (date) {
+
+            // Time range filter (if not ALL and no specific date selected)
+            if (timeRange !== 'ALL' && !date) {
+                const now = new Date();
+                let fromDate: Date;
+
+                switch (timeRange) {
+                    case 'TODAY':
+                        fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                        break;
+                    case 'WEEK':
+                        fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                        break;
+                    case 'MONTH':
+                        fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                        break;
+                    default:
+                        fromDate = now;
+                }
+
+                const formatDate = (d: Date) => d.toISOString().split('T')[0];
+                params.append('dateFrom', formatDate(fromDate));
+                params.append('dateTo', formatDate(now));
+            } else if (date) {
                 params.append('dateFrom', date);
                 params.append('dateTo', date);
             }
+
             if (statusTab) params.append('statuses', statusTab);
-            
-            params.append('sort', 'createdAt,desc');
+
+            // Dynamic sorting
+            params.append('sort', `${sortField},${sortDirection}`);
 
             const response = await authedFetch(`/api/v1/admin/orders?${params.toString()}`);
             if (response.ok) {
@@ -94,15 +132,35 @@ export default function OrdersPage() {
 
     const fetchStats = async () => {
         try {
-            const res = await authedFetch('/api/v1/admin/dashboard/order-status');
+            const res = await authedFetch(`/api/v1/admin/orders/stats?timeRange=${timeRange}`);
             if (res.ok) {
-                const data: { status: string; count: number }[] = await res.json();
-                const total = data.reduce((s, i) => s + i.count, 0);
-                const pending = data.find(s => s.status === 'PENDING')?.count || 0;
-                const delivered = data.find(s => s.status === 'DELIVERED')?.count || 0;
-                setStats({ totalToday: total, pending, delivered });
+                const data = await res.json();
+                setStats({
+                    totalToday: data.totalOrders,
+                    pending: data.pendingOrders,
+                    delivered: data.deliveredOrders
+                });
             }
         } catch (e) { console.error(e); }
+    };
+
+    const handleSort = (field: typeof sortField) => {
+        if (sortField === field) {
+            // Toggle direction if same field
+            setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+        } else {
+            // New field, default to descending
+            setSortField(field);
+            setSortDirection('desc');
+        }
+        setPage(0); // Reset to first page when sorting changes
+    };
+
+    const renderSortIcon = (field: typeof sortField) => {
+        if (sortField !== field) return null;
+        return sortDirection === 'asc' ?
+            <ArrowUp className={styles.sortIcon} size={12} /> :
+            <ArrowDown className={styles.sortIcon} size={12} />;
     };
 
     const formatCurrency = (val: number) =>
@@ -115,7 +173,35 @@ export default function OrdersPage() {
                 <div className={styles.pageTitle}>
                     <ShoppingBag size={20} /> Đơn hàng
                 </div>
-                
+
+                {/* Time Range Selector */}
+                <div className={styles.timeRangeSelector}>
+                    <button
+                        className={`${styles.timeRangeBtn} ${timeRange === 'ALL' ? styles.active : ''}`}
+                        onClick={() => setTimeRange('ALL')}
+                    >
+                        Tất cả
+                    </button>
+                    <button
+                        className={`${styles.timeRangeBtn} ${timeRange === 'TODAY' ? styles.active : ''}`}
+                        onClick={() => setTimeRange('TODAY')}
+                    >
+                        Hôm nay
+                    </button>
+                    <button
+                        className={`${styles.timeRangeBtn} ${timeRange === 'WEEK' ? styles.active : ''}`}
+                        onClick={() => setTimeRange('WEEK')}
+                    >
+                        7 ngày
+                    </button>
+                    <button
+                        className={`${styles.timeRangeBtn} ${timeRange === 'MONTH' ? styles.active : ''}`}
+                        onClick={() => setTimeRange('MONTH')}
+                    >
+                        30 ngày
+                    </button>
+                </div>
+
                 {/* Mini Stats Strip */}
                 <div className={styles.statsStrip}>
                     <div className={`${styles.miniStat} ${styles.statPending}`}>
@@ -129,7 +215,7 @@ export default function OrdersPage() {
                         <span className={styles.statValue}>{stats.delivered}</span>
                     </div>
                     <div className={styles.miniStat}>
-                        <span className={styles.statLabel}>Tổng hôm nay:</span>
+                        <span className={styles.statLabel}>Tổng:</span>
                         <span className={styles.statValue}>{stats.totalToday}</span>
                     </div>
                 </div>
@@ -149,8 +235,8 @@ export default function OrdersPage() {
                 </div>
 
                 {/* Quick Date */}
-                <input 
-                    type="date" 
+                <input
+                    type="date"
                     className={styles.dateInput}
                     value={date}
                     onChange={e => setDate(e.target.value)}
@@ -185,13 +271,31 @@ export default function OrdersPage() {
                     <table className={styles.compactTable}>
                         <thead>
                             <tr>
-                                <th style={{ width: '100px' }}>Mã đơn</th>
-                                <th style={{ width: '130px' }}>Ngày tạo</th>
-                                <th>Khách hàng</th>
-                                <th>Sản phẩm (Tóm tắt)</th>
-                                <th style={{ textAlign: 'right' }}>Tổng tiền</th>
-                                <th style={{ textAlign: 'center' }}>Trạng thái</th>
-                                <th className={styles.colAction}>#</th>
+                                <th style={{ width: '90px' }}>Mã đơn</th>
+                                <th
+                                    className={styles.sortableHeader}
+                                    style={{ width: '110px' }}
+                                    onClick={() => handleSort('createdAt')}
+                                >
+                                    Ngày tạo {renderSortIcon('createdAt')}
+                                </th>
+                                <th style={{ width: '180px' }}>Khách hàng</th>
+                                <th style={{ width: 'auto' }}>Sản phẩm (Tóm tắt)</th>
+                                <th
+                                    className={styles.sortableHeader}
+                                    style={{ width: '120px', textAlign: 'right' }}
+                                    onClick={() => handleSort('totalAmount')}
+                                >
+                                    Tổng tiền {renderSortIcon('totalAmount')}
+                                </th>
+                                <th
+                                    className={styles.sortableHeader}
+                                    style={{ width: '110px', textAlign: 'center' }}
+                                    onClick={() => handleSort('status')}
+                                >
+                                    Trạng thái {renderSortIcon('status')}
+                                </th>
+                                <th style={{ width: '50px', textAlign: 'center' }}>#</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -240,8 +344,8 @@ export default function OrdersPage() {
                         Hiển thị <b>{orders.length}</b> / {pageData.totalElements} đơn
                     </span>
                     <div className={styles.pageControls}>
-                        <button 
-                            className={styles.pageBtn} 
+                        <button
+                            className={styles.pageBtn}
                             disabled={pageData.number === 0}
                             onClick={() => setPage(p => p - 1)}
                         >
@@ -250,8 +354,8 @@ export default function OrdersPage() {
                         <span style={{ padding: '4px 8px', fontSize: '0.9rem' }}>
                             Trang {pageData.number + 1}
                         </span>
-                        <button 
-                            className={styles.pageBtn} 
+                        <button
+                            className={styles.pageBtn}
                             disabled={pageData.number >= pageData.totalPages - 1}
                             onClick={() => setPage(p => p + 1)}
                         >

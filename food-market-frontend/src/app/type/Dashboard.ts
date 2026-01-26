@@ -4,16 +4,16 @@ export type DashboardSummary = {
   // Doanh thu
   currentRevenue: number;
   previousRevenue: number;
-  revenueGrowth: number; // % tăng trưởng
+  revenueGrowth: number; 
 
   // Đơn hàng
   currentOrders: number;
   previousOrders: number;
-  ordersGrowth: number; // % tăng trưởng
+  ordersGrowth: number; 
 };
 
 export type ChartData = {
-  label: string; // "08:00" (nếu lọc theo giờ) hoặc "22/11" (nếu lọc theo ngày)
+  label: string; 
   currentRevenue: number;
   previousRevenue: number;
 };

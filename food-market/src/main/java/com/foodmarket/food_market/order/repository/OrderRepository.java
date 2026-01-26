@@ -34,6 +34,11 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
                                  @Param("end") OffsetDateTime end,
                                  @Param("statusList") Set<OrderStatus> statusList);
 
+    // Tính tổng doanh thu không lọc theo ngày (ALL)
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM Order o " +
+            "WHERE o.status IN :statusList")
+    BigDecimal sumTotalRevenue(@Param("statusList") Set<OrderStatus> statusList);
+
     //  Tổng số đơn
     @Query("SELECT COUNT(o) FROM Order o WHERE o.createdAt BETWEEN :start AND :end")
     long countOrdersBetween(@Param("start") OffsetDateTime start,
@@ -70,6 +75,16 @@ public interface OrderRepository extends JpaRepository<Order, UUID>, JpaSpecific
     @Query("SELECT o.status AS status, COUNT(o) AS count " +
             "FROM Order o GROUP BY o.status")
     List<OrderStatusStat> countOrdersByStatus();
+
+    // Đếm orders theo status trong khoảng thời gian
+    @Query("SELECT o.status AS status, COUNT(o) AS count " +
+            "FROM Order o " +
+            "WHERE o.createdAt BETWEEN :start AND :end " +
+            "GROUP BY o.status")
+    List<OrderStatusStat> countOrdersByStatusBetween(
+            @Param("start") OffsetDateTime start,
+            @Param("end") OffsetDateTime end
+    );
 
 
     // Lấy top đơn cũ nhất đang chờ xử lý

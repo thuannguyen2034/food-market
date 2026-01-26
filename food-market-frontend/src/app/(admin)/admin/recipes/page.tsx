@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import styles from '@/styles/admin/Recipes.module.css'; 
+import styles from '@/styles/admin/Recipes.module.css';
 import {
   ChefHat,
   Plus,
@@ -40,8 +40,30 @@ export default function RecipeListPage() {
 
   const [dataPage, setDataPage] = useState<PageResponse<RecipeResponse> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
-  const [keyword, setKeyword] = useState('');
+
+  // Lấy page từ sessionStorage để giữ trạng thái khi quay lại
+  const [page, setPage] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = sessionStorage.getItem('recipes_page');
+      return saved ? parseInt(saved, 10) : 0;
+    }
+    return 0;
+  });
+  const [keyword, setKeyword] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return sessionStorage.getItem('recipes_keyword') || '';
+    }
+    return '';
+  });
+
+  // Lưu page và keyword vào sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('recipes_page', page.toString());
+  }, [page]);
+
+  useEffect(() => {
+    sessionStorage.setItem('recipes_keyword', keyword);
+  }, [keyword]);
 
   // Fetch dữ liệu
   const fetchRecipes = useCallback(async () => {
@@ -71,8 +93,8 @@ export default function RecipeListPage() {
   // Handle Search
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setPage(0); 
-    fetchRecipes(); 
+    setPage(0);
+    fetchRecipes();
   };
 
   // UI Helper
@@ -130,11 +152,11 @@ export default function RecipeListPage() {
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Hình ảnh</th>
-              <th>Tên món & Nguyên liệu</th>
-              <th>Tags (AI)</th>
-              <th>Hành động</th>
+              <th style={{ width: '60px' }}>ID</th>
+              <th style={{ width: '70px' }}>Hình ảnh</th>
+              <th style={{ width: 'auto' }}>Tên món & Nguyên liệu</th>
+              <th style={{ width: '200px' }}>Tags (AI)</th>
+              <th style={{ width: '100px' }}>Hành động</th>
             </tr>
           </thead>
           <tbody>

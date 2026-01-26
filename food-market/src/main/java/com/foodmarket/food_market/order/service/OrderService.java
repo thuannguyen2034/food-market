@@ -6,6 +6,8 @@ import com.foodmarket.food_market.admin.dashboard.dto.projection.TopProductStat;
 import com.foodmarket.food_market.admin.dashboard.dto.response.ChartDataDTO;
 import com.foodmarket.food_market.admin.dashboard.dto.response.DashboardSummaryDTO;
 import com.foodmarket.food_market.admin.dashboard.dto.response.TopProductResponseDTO;
+import com.foodmarket.food_market.admin.dto.OrderStatsDTO;
+import com.foodmarket.food_market.admin.dto.TimeRange;
 import com.foodmarket.food_market.order.dto.CheckoutRequestDTO;
 import com.foodmarket.food_market.order.dto.OrderFilterDTO;
 import com.foodmarket.food_market.order.dto.OrderResponseDTO;
@@ -46,4 +48,7 @@ public interface OrderService {
     List<TopProductResponseDTO> findTopSellingProducts(OffsetDateTime startDate, OffsetDateTime endDate, Pageable pageable);
     OrderResponseDTO getAdminOrderDetails(UUID orderId);
     void updatePaymentStatus(UUID orderId, PaymentStatus newStatus);
+    
+    // New method for time-ranged order statistics
+    OrderStatsDTO getOrderStatsByTimeRange(TimeRange timeRange);
 }
